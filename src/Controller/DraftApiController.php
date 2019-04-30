@@ -1,0 +1,339 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Grigor
+ * Date: 3/19/19
+ * Time: 4:33 PM
+ */
+
+namespace App\Controller;
+
+use App\Entity\Account;
+use App\Entity\Draft;
+use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Swagger\Annotations as SWG;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+
+/**
+ * Class DraftApiController
+ * @package AppBundle\Controller
+ *
+ * @Route("/api/draft")
+ */
+class DraftApiController extends Controller
+{
+    /**
+     * @Route("/create", methods={"PUT"})
+     * @SWG\Put(
+     *     summary="Create draft",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="title", type="string"),
+     *             @SWG\Property(property="headline", type="string"),
+     *             @SWG\Property(property="content", type="string"),
+     *             @SWG\Property(property="forAdults", type="boolean"),
+     *             @SWG\Property(property="reference", type="string"),
+     *             @SWG\Property(property="sourceOfMaterial", type="string"),
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Draft")
+     * @param Request $request
+     * @return Response
+     */
+    public function createDraft(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $contentArr = json_decode($content, true);
+
+            $title = $contentArr['title'];
+            $headline = $contentArr['headline'];
+            $content = $contentArr['content'];
+            $forAdults = $contentArr['forAdults'];
+            $reference = $contentArr['reference'];
+            $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+        } else {
+            $title = $request->request->get('title');
+            $headline = $request->request->get('headline');
+            $content = $request->request->get('content');
+            $forAdults = $request->request->get('forAdults');
+            $reference = $request->request->get('reference');
+            $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+        }
+
+        $draft = new Draft();
+
+        try {
+            $draft->setAccount($account);
+            $draft->setTitle($title);
+            $draft->setHeadline($headline);
+            $draft->setContent($content);
+            $draft->setForAdults($forAdults);
+            $draft->setReference($reference);
+            $draft->setSourceOfMaterial($sourceOfMaterial);
+
+            $em->persist($draft);
+            $em->flush();
+
+            $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
+
+            return new JsonResponse($draft);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("/{id}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Update draft",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="title", type="string"),
+     *             @SWG\Property(property="headline", type="string"),
+     *             @SWG\Property(property="content", type="string"),
+     *             @SWG\Property(property="forAdults", type="boolean"),
+     *             @SWG\Property(property="reference", type="string"),
+     *             @SWG\Property(property="sourceOfMaterial", type="string"),
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=403, description="Forbidden for user")
+     * @SWG\Response(response=404, description="Draft not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Draft")
+     * @param Request $request
+     * @param $id
+     * @return Response
+     */
+    public function updateDraft(Request $request, $id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $draft = $em->getRepository(Draft::class)->find($id);
+        if (!$draft) {
+            return new JsonResponse('', Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user has permission to update - only owner has
+        if ($account !== $draft->getAccount()) {
+            return new JsonResponse('', Response::HTTP_FORBIDDEN);
+        }
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $contentArr = json_decode($content, true);
+
+            $title = $contentArr['title'];
+            $headline = $contentArr['headline'];
+            $content = $contentArr['content'];
+            $forAdults = $contentArr['forAdults'];
+            $reference = $contentArr['reference'];
+            $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+        } else {
+            $title = $request->request->get('title');
+            $headline = $request->request->get('headline');
+            $content = $request->request->get('content');
+            $forAdults = $request->request->get('forAdults');
+            $reference = $request->request->get('reference');
+            $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+        }
+
+        try {
+            $draft->setTitle($title);
+            $draft->setHeadline($headline);
+            $draft->setContent($content);
+            $draft->setForAdults($forAdults);
+            $draft->setReference($reference);
+            $draft->setSourceOfMaterial($sourceOfMaterial);
+
+            $em->persist($draft);
+            $em->flush();
+
+            $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
+
+            return new JsonResponse($draft);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("/{id}", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Delete draft",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Draft")
+     * @param $id
+     * @return Response
+     */
+    public function deleteDraft($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $draft = $em->getRepository(Draft::class)->findOneBy(["id" => $id, "account" => $account]);
+        if (!$draft) {
+            return new JsonResponse(['message' => 'no_such_draft_associated_with_user'], Response::HTTP_CONFLICT);
+        }
+
+        try {
+            $em->remove($draft);
+            $em->flush();
+
+            return new JsonResponse('', Response::HTTP_NO_CONTENT);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("s", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Delete all drafts",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Draft")
+     * @return Response
+     */
+    public function deleteAllDrafts()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account]);
+        if ($drafts) {
+            try {
+                foreach ($drafts as $draft) {
+                    $em->remove($draft);
+                    $em->flush();
+                }
+
+                return new JsonResponse('', Response::HTTP_NO_CONTENT);
+            } catch (\Exception $e) {
+                return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+            }
+        }
+
+        return new JsonResponse('', Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{id}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get draft",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Draft")
+     * @param $id
+     * @return Response
+     */
+    public function getDraft($id)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $draft = $em->getRepository(Draft::class)->findOneBy(["id" => $id, "account" => $account]);
+        if (!$draft) {
+            return new JsonResponse(['message' => 'no_such_draft_associated_with_user'], Response::HTTP_CONFLICT);
+        }
+
+        $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
+
+        return new JsonResponse($draft);
+    }
+
+    /**
+     * @Route("s", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get all drafts",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Draft")
+     * @return Response
+     */
+    public function getDrafts()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account]);
+        $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList']]);
+
+        return new JsonResponse($drafts);
+    }
+}
