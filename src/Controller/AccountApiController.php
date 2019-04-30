@@ -205,6 +205,47 @@ class AccountApiController extends Controller
     }
 
     /**
+     * @Route("/set-language/{language}", methods={"POST"}, name="update_account_language")
+     * @SWG\Post(
+     *     summary="Update user language",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param string $language
+     * @return JsonResponse
+     */
+    public function updateLanguage(string $language)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        //  save data into database
+        try {
+            $account->setLanguage($language);
+            $em->persist($account);
+            $em->flush();
+
+            $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
+            $account['publicKey'] = $account['address'];
+            unset($account['address']);
+            unset($account['apiKey']);
+
+            return new JsonResponse($account);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
      * @Route("/author-data/{publicKey}", methods={"GET"}, name="get_author_data")
      * @SWG\Get(
      *     summary="Get author data",

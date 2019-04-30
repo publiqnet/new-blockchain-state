@@ -75,6 +75,13 @@ class Account implements UserInterface
     private $image;
 
     /**
+     * @var string
+     * @ORM\Column(type="string", length=16, nullable=true)
+     * @Groups({"account"})
+     */
+    private $language;
+
+    /**
      * @ORM\Column(name="whole", type="integer")
      * @Groups({"account"})
      */
@@ -287,6 +294,22 @@ class Account implements UserInterface
     public function setImage($image)
     {
         $this->image = $image;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    /**
+     * @param mixed $language
+     */
+    public function setLanguage($language)
+    {
+        $this->language = $language;
     }
 
     /**
