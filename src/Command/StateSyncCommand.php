@@ -40,7 +40,7 @@ class StateSyncCommand extends ContainerAwareCommand
 
     use LockableTrait;
 
-    protected static $defaultName = 'state:sync-new-blockchain-stage';
+    protected static $defaultName = 'state:sync-new-blockchain';
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;
