@@ -71,18 +71,34 @@ class DraftApiController extends Controller
             $contentArr = json_decode($content, true);
 
             $title = $contentArr['title'];
-            $headline = $contentArr['headline'];
             $content = $contentArr['content'];
-            $forAdults = $contentArr['forAdults'];
-            $reference = $contentArr['reference'];
-            $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            if ($contentArr['headline']) {
+                $headline = $contentArr['headline'];
+            }
+            if ($contentArr['forAdults']) {
+                $forAdults = $contentArr['forAdults'];
+            }
+            if ($contentArr['reference']) {
+                $reference = $contentArr['reference'];
+            }
+            if ($contentArr['sourceOfMaterial']) {
+                $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            }
         } else {
             $title = $request->request->get('title');
-            $headline = $request->request->get('headline');
             $content = $request->request->get('content');
-            $forAdults = $request->request->get('forAdults');
-            $reference = $request->request->get('reference');
-            $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            if ($request->request->get('headline')) {
+                $headline = $request->request->get('headline');
+            }
+            if ($request->request->get('forAdults')) {
+                $forAdults = $request->request->get('forAdults');
+            }
+            if ($request->request->get('reference')) {
+                $reference = $request->request->get('reference');
+            }
+            if ($request->request->get('sourceOfMaterial')) {
+                $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            }
         }
 
         $draft = new Draft();
@@ -90,11 +106,19 @@ class DraftApiController extends Controller
         try {
             $draft->setAccount($account);
             $draft->setTitle($title);
-            $draft->setHeadline($headline);
             $draft->setContent($content);
-            $draft->setForAdults($forAdults);
-            $draft->setReference($reference);
-            $draft->setSourceOfMaterial($sourceOfMaterial);
+            if (isset($headline)) {
+                $draft->setHeadline($headline);
+            }
+            if (isset($forAdults)) {
+                $draft->setForAdults($forAdults);
+            }
+            if (isset($reference)) {
+                $draft->setReference($reference);
+            }
+            if (isset($sourceOfMaterial)) {
+                $draft->setSourceOfMaterial($sourceOfMaterial);
+            }
 
             $em->persist($draft);
             $em->flush();
@@ -166,27 +190,51 @@ class DraftApiController extends Controller
             $contentArr = json_decode($content, true);
 
             $title = $contentArr['title'];
-            $headline = $contentArr['headline'];
             $content = $contentArr['content'];
-            $forAdults = $contentArr['forAdults'];
-            $reference = $contentArr['reference'];
-            $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            if ($contentArr['headline']) {
+                $headline = $contentArr['headline'];
+            }
+            if ($contentArr['forAdults']) {
+                $forAdults = $contentArr['forAdults'];
+            }
+            if ($contentArr['reference']) {
+                $reference = $contentArr['reference'];
+            }
+            if ($contentArr['sourceOfMaterial']) {
+                $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            }
         } else {
             $title = $request->request->get('title');
-            $headline = $request->request->get('headline');
             $content = $request->request->get('content');
-            $forAdults = $request->request->get('forAdults');
-            $reference = $request->request->get('reference');
-            $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            if ($request->request->get('headline')) {
+                $headline = $request->request->get('headline');
+            }
+            if ($request->request->get('forAdults')) {
+                $forAdults = $request->request->get('forAdults');
+            }
+            if ($request->request->get('reference')) {
+                $reference = $request->request->get('reference');
+            }
+            if ($request->request->get('sourceOfMaterial')) {
+                $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            }
         }
 
         try {
             $draft->setTitle($title);
-            $draft->setHeadline($headline);
             $draft->setContent($content);
-            $draft->setForAdults($forAdults);
-            $draft->setReference($reference);
-            $draft->setSourceOfMaterial($sourceOfMaterial);
+            if (isset($headline)) {
+                $draft->setHeadline($headline);
+            }
+            if (isset($forAdults)) {
+                $draft->setForAdults($forAdults);
+            }
+            if (isset($reference)) {
+                $draft->setReference($reference);
+            }
+            if (isset($sourceOfMaterial)) {
+                $draft->setSourceOfMaterial($sourceOfMaterial);
+            }
 
             $em->persist($draft);
             $em->flush();
