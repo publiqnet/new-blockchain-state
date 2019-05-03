@@ -72,16 +72,16 @@ class DraftApiController extends Controller
 
             $title = $contentArr['title'];
             $content = $contentArr['content'];
-            if ($contentArr['headline']) {
+            if (isset($contentArr['headline'])) {
                 $headline = $contentArr['headline'];
             }
-            if ($contentArr['forAdults']) {
+            if (isset($contentArr['forAdults'])) {
                 $forAdults = $contentArr['forAdults'];
             }
-            if ($contentArr['reference']) {
+            if (isset($contentArr['reference'])) {
                 $reference = $contentArr['reference'];
             }
-            if ($contentArr['sourceOfMaterial']) {
+            if (isset($contentArr['sourceOfMaterial'])) {
                 $sourceOfMaterial = $contentArr['sourceOfMaterial'];
             }
         } else {
@@ -191,16 +191,16 @@ class DraftApiController extends Controller
 
             $title = $contentArr['title'];
             $content = $contentArr['content'];
-            if ($contentArr['headline']) {
+            if (isset($contentArr['headline'])) {
                 $headline = $contentArr['headline'];
             }
-            if ($contentArr['forAdults']) {
+            if (isset($contentArr['forAdults'])) {
                 $forAdults = $contentArr['forAdults'];
             }
-            if ($contentArr['reference']) {
+            if (isset($contentArr['reference'])) {
                 $reference = $contentArr['reference'];
             }
-            if ($contentArr['sourceOfMaterial']) {
+            if (isset($contentArr['sourceOfMaterial'])) {
                 $sourceOfMaterial = $contentArr['sourceOfMaterial'];
             }
         } else {
