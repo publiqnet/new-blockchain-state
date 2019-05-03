@@ -61,7 +61,7 @@ class Draft
      * @ORM\Column(name="for_adults", type="boolean", options={"default":0})
      * @Groups({"draft"})
      */
-    private $forAdults;
+    private $forAdults = 0;
 
     /**
      * @var string
