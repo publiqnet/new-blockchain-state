@@ -549,13 +549,57 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->updateAccountBalance($fromAccount, $whole, $fraction, true);
                         $this->updateAccountBalance($toAccount, $whole, $fraction, false);
                     }
+                } elseif ($action->getAction() instanceof Role) {
+                    /**
+                     * @var Role $role
+                     */
+                    $role = $action->getAction();
+
+                    //  get role data
+                    $nodeAddress = $role->getNodeAddress();
+                    $nodeType = $role->getNodeType();
+
+                    $nodeAccount = $this->checkAccount($nodeAddress);
+
+                    if ($appliedReverted) {
+                        if ($nodeType == NodeType::channel) {
+                            $nodeAccount->setChannel(true);
+                        } elseif ($nodeType == NodeType::storage) {
+                            $nodeAccount->setStorage(true);
+                        } elseif ($nodeType == NodeType::blockchain) {
+                            $nodeAccount->setBlockchain(true);
+                        }
+                        $this->em->persist($nodeAccount);
+                        $this->em->flush();
+
+                        //  add transaction record with relation to content
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, false);
+                    } else {
+                        if ($nodeType == NodeType::channel) {
+                            $nodeAccount->setChannel(false);
+                        } elseif ($nodeType == NodeType::storage) {
+                            $nodeAccount->setStorage(false);
+                        } elseif ($nodeType == NodeType::blockchain) {
+                            $nodeAccount->setBlockchain(false);
+                        }
+                        $this->em->persist($nodeAccount);
+                        $this->em->flush();
+
+                        //  update account balances
+                        $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, true);
+                    }
                 }
 
                 //  delete transaction with all data
                 if (!$appliedReverted) {
                     $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                    $this->em->remove($transaction);
-                    $this->em->flush();
+                    if ($transaction) {
+                        $this->em->remove($transaction);
+                        $this->em->flush();
+                    }
                 }
             } else {
                 var_dump($action);
