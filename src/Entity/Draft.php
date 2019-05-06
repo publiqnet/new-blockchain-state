@@ -94,6 +94,13 @@ class Draft
     private $updated;
 
     /**
+     * @var array
+     * @ORM\Column(name="content_uris", type="array", nullable=true)
+     * @Groups({"draft"})
+     */
+    private $contentUris = [];
+
+    /**
      * @return int
      */
     public function getId()
@@ -245,5 +252,21 @@ class Draft
     public function setUpdated($updated)
     {
         $this->updated = $updated;
+    }
+
+    /**
+     * @return array
+     */
+    public function getContentUris()
+    {
+        return $this->contentUris;
+    }
+
+    /**
+     * @param array $contentUris
+     */
+    public function setContentUris(array $contentUris)
+    {
+        $this->contentUris = $contentUris;
     }
 }

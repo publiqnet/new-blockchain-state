@@ -38,6 +38,16 @@ class ContentUnit
     private $contentId;
 
     /**
+     * @ORM\Column(name="title", type="string", length=256, nullable=false)
+     */
+    private $title;
+
+    /**
+     * @ORM\Column(name="text", type="text", nullable=false)
+     */
+    private $text;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
      */
     private $author;
@@ -106,6 +116,38 @@ class ContentUnit
     public function setContentId($contentId)
     {
         $this->contentId = $contentId;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param mixed $title
+     */
+    public function setTitle($title)
+    {
+        $this->title = $title;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getText()
+    {
+        return $this->text;
+    }
+
+    /**
+     * @param mixed $text
+     */
+    public function setText($text)
+    {
+        $this->text = $text;
     }
 
     /**

@@ -37,13 +37,14 @@ class BlockChain
      * @param $url
      * @param $header
      * @param string $dataString
+     * @param string $method
      * @return array
      */
-    public function callJsonRPC($url, $header, $dataString = null)
+    public function callJsonRPC($url, $header, $dataString = null, $method = 'POST')
     {
         $ch = curl_init($url);
 
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
@@ -237,5 +238,27 @@ class BlockChain
         $validateRes = Rtt::validate($body['data']);
 
         return $validateRes;
+    }
+
+    /**
+     * @param string $uri
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function getContentUnitData(string $uri)
+    {
+        $header = ['Content-Type:application/json'];
+
+        $body = $this->callJsonRPC($this->storageEndpointGet . '?file=' . $uri, $header, null, 'GET');
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with getting content unit data');
+        }
+
+        return $body['data'];
     }
 }

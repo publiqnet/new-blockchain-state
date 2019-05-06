@@ -199,6 +199,16 @@ class StateSyncCommand extends ContainerAwareCommand
                             $channelAddress = $contentUnit->getChannelAddress();
                             $fileUris = $contentUnit->getFileUris();
 
+                            //  get content unit data from storage
+                            $storageData = $this->blockChainService->getContentUnitData($uri);
+                            if (strpos($storageData, '</h1>')) {
+                                $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                            } else {
+                                $contentUnitTitle = 'Old content without title';
+                                $contentUnitText = $storageData;
+                            }
+
                             //  create objects
                             $authorAccount = $this->checkAccount($authorAddress);
                             $channelAccount = $this->checkAccount($channelAddress);
@@ -210,6 +220,8 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $contentUnitEntity->setContentId($contentId);
                                 $contentUnitEntity->setAuthor($authorAccount);
                                 $contentUnitEntity->setChannel($channelAccount);
+                                $contentUnitEntity->setTitle($contentUnitTitle);
+                                $contentUnitEntity->setText($contentUnitText);
                                 foreach ($fileUris as $uri) {
                                     $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
                                     $contentUnitEntity->addFile($fileEntity);
@@ -434,6 +446,16 @@ class StateSyncCommand extends ContainerAwareCommand
                     $channelAddress = $contentUnit->getChannelAddress();
                     $fileUris = $contentUnit->getFileUris();
 
+                    //  get content unit data from storage
+                    $storageData = $this->blockChainService->getContentUnitData($uri);
+                    if (strpos($storageData, '</h1>')) {
+                        $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                    } else {
+                        $contentUnitTitle = 'Old content without title';
+                        $contentUnitText = $storageData;
+                    }
+
                     //  create objects
                     $authorAccount = $this->checkAccount($authorAddress);
                     $channelAccount = $this->checkAccount($channelAddress);
@@ -445,6 +467,8 @@ class StateSyncCommand extends ContainerAwareCommand
                         $contentUnitEntity->setContentId($contentId);
                         $contentUnitEntity->setAuthor($authorAccount);
                         $contentUnitEntity->setChannel($channelAccount);
+                        $contentUnitEntity->setTitle($contentUnitTitle);
+                        $contentUnitEntity->setText($contentUnitText);
                         foreach ($fileUris as $uri) {
                             $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
                             $contentUnitEntity->addFile($fileEntity);

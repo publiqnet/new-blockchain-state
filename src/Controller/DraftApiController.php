@@ -44,6 +44,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="forAdults", type="boolean"),
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
+     *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -84,6 +85,9 @@ class DraftApiController extends Controller
             if (isset($contentArr['sourceOfMaterial'])) {
                 $sourceOfMaterial = $contentArr['sourceOfMaterial'];
             }
+            if (isset($contentArr['contentUris'])) {
+                $contentUris = $contentArr['contentUris'];
+            }
         } else {
             $title = $request->request->get('title');
             $content = $request->request->get('content');
@@ -98,6 +102,9 @@ class DraftApiController extends Controller
             }
             if ($request->request->get('sourceOfMaterial')) {
                 $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            }
+            if ($request->request->get('contentUris')) {
+                $contentUris = $request->request->get('contentUris');
             }
         }
 
@@ -118,6 +125,9 @@ class DraftApiController extends Controller
             }
             if (isset($sourceOfMaterial)) {
                 $draft->setSourceOfMaterial($sourceOfMaterial);
+            }
+            if (isset($contentUris)) {
+                $draft->setContentUris($contentUris);
             }
 
             $em->persist($draft);
@@ -150,6 +160,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="forAdults", type="boolean"),
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
+     *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -203,6 +214,9 @@ class DraftApiController extends Controller
             if (isset($contentArr['sourceOfMaterial'])) {
                 $sourceOfMaterial = $contentArr['sourceOfMaterial'];
             }
+            if (isset($contentArr['contentUris'])) {
+                $contentUris = $contentArr['contentUris'];
+            }
         } else {
             $title = $request->request->get('title');
             $content = $request->request->get('content');
@@ -217,6 +231,9 @@ class DraftApiController extends Controller
             }
             if ($request->request->get('sourceOfMaterial')) {
                 $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            }
+            if ($request->request->get('contentUris')) {
+                $contentUris = $request->request->get('contentUris');
             }
         }
 
@@ -234,6 +251,9 @@ class DraftApiController extends Controller
             }
             if (isset($sourceOfMaterial)) {
                 $draft->setSourceOfMaterial($sourceOfMaterial);
+            }
+            if (isset($contentUris)) {
+                $draft->setContentUris($contentUris);
             }
 
             $em->persist($draft);
