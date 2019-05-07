@@ -33,7 +33,7 @@ class ContentUnit
     private $uri;
 
     /**
-     * @ORM\Column(name="blockchain_content_id", type="string", length=64, unique=true)
+     * @ORM\Column(name="blockchain_content_id", type="string", length=64)
      */
     private $contentId;
 

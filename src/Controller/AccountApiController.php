@@ -149,7 +149,7 @@ class AccountApiController extends Controller
             $account->setApiKey();
             $em->persist($account);
             $em->flush();
-            
+
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
