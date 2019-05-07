@@ -122,6 +122,41 @@ class AccountApiController extends Controller
     }
 
     /**
+     * @Route("/signout", methods={"POST"}, name="logout_account")
+     * @SWG\Post(
+     *     summary="Logout user",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @return JsonResponse
+     * @throws \Exception
+     */
+    public function signout()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        try {
+            $account->setApiKey();
+            $em->persist($account);
+            $em->flush();
+            
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
      * @Route("", methods={"POST"}, name="update_account")
      * @SWG\Post(
      *     summary="Update user data",
