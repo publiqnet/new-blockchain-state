@@ -33,13 +33,13 @@ class Subscription
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="subscribers")
-     * @Groups({"subscription"})
+     * @Groups({"subscription_author"})
      */
     private $author;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="subscribers")
-     * @Groups({"subscription"})
+     * @Groups({"subscription_publication"})
      */
     private $publication;
 

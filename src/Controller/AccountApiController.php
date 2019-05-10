@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\Publication;
 use App\Entity\Subscription;
 use App\Service\Oauth;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -387,10 +388,13 @@ class AccountApiController extends Controller
          */
         $account = $this->getUser();
 
-        $subscriptions = $em->getRepository(Subscription::class)->findBy(['subscriber' => $account]);
-        $subscriptions = $this->get('serializer')->normalize($subscriptions, null, ['groups' => ['subscription', 'publication', 'accountBase']]);
+        $subscriptionsAuthors = $em->getRepository(Account::class)->getUserSubscriptions($account);
+        $subscriptionsPublications = $em->getRepository(Publication::class)->getUserSubscriptions($account);
 
-        return new JsonResponse($subscriptions);
+        $subscriptionsAuthors = $this->get('serializer')->normalize($subscriptionsAuthors, null, ['groups' => ['accountBase']]);
+        $subscriptionsPublications = $this->get('serializer')->normalize($subscriptionsPublications, null, ['groups' => ['publication']]);
+
+        return new JsonResponse(['authors' => $subscriptionsAuthors, 'publications' => $subscriptionsPublications]);
     }
 
     /**

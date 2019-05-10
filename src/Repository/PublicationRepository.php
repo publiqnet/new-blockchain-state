@@ -68,4 +68,15 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
     }
+
+    public function getUserSubscriptions(Account $user)
+    {
+        return $this->createQueryBuilder('p')
+            ->select('p')
+            ->join('p.subscribers', 's')
+            ->where('s.subscriber = :user')
+            ->setParameters(['user' => $user])
+            ->getQuery()
+            ->getResult();
+    }
 }
