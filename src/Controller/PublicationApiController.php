@@ -520,6 +520,9 @@ class PublicationApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
+        //  get subscribers
+        $subscribers = $em->getRepository(Subscription::class)->findBy(['publication' => $publication]);
+
         //  if authorized user check if user is owner of Publication
         $memberStatus = 0;
         if ($account) {
@@ -581,6 +584,8 @@ class PublicationApiController extends Controller
                     unset($publication['requests'][$i]['address']);
                 }
 
+                $publication['subscribers'] = count($subscribers);
+
                 return new JsonResponse($publication);
             } elseif ($publicationMember) {
                 $memberStatus = $publicationMember->getStatus();
@@ -602,6 +607,7 @@ class PublicationApiController extends Controller
         }
 
         $publication['memberStatus'] = $memberStatus;
+        $publication['subscribers'] = count($subscribers);
 
         return new JsonResponse($publication);
     }

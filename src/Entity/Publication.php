@@ -106,7 +106,6 @@ class Publication
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="publication", cascade="remove")
-     * @Groups({"publicationMembers"})
      */
     private $subscribers;
 
