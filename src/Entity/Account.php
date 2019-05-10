@@ -181,6 +181,16 @@ class Account implements UserInterface
     private $notifications;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="subscriber")
+     */
+    private $subscriptions;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="author", cascade="remove")
+     */
+    private $subscribers;
+
+    /**
      * @var integer
      * @Groups({"accountMemberStatus"})
      */
@@ -201,6 +211,8 @@ class Account implements UserInterface
         $this->publicationInvitees = new ArrayCollection();
         $this->performedNotifications = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->subscriptions = new ArrayCollection();
+        $this->subscribers = new ArrayCollection();
     }
 
     public function __toString()
@@ -534,6 +546,22 @@ class Account implements UserInterface
     public function getNotifications()
     {
         return $this->notifications;
+    }
+
+    /**
+     * Get subscriptions
+     */
+    public function getSubscriptions()
+    {
+        return $this->subscriptions;
+    }
+
+    /**
+     * Get subscribers
+     */
+    public function getSubscribers()
+    {
+        return $this->subscribers;
     }
 
     /**

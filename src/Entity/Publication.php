@@ -105,6 +105,12 @@ class Publication
     private $notifications;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="publication", cascade="remove")
+     * @Groups({"publicationMembers"})
+     */
+    private $subscribers;
+
+    /**
      * @var integer
      * @Groups({"publicationMemberStatus"})
      */
@@ -120,6 +126,7 @@ class Publication
     {
         $this->members = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->subscribers = new ArrayCollection();
     }
 
     /**
@@ -270,6 +277,14 @@ class Publication
     public function getNotifications()
     {
         return $this->notifications;
+    }
+
+    /**
+     * Get subscribers
+     */
+    public function getSubscribers()
+    {
+        return $this->subscribers;
     }
 
     /**

@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\Publication;
 use App\Entity\PublicationMember;
+use App\Entity\Subscription;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
@@ -1293,6 +1294,92 @@ class PublicationApiController extends Controller
             PublicationMembershipCancelEvent::NAME,
             new PublicationMembershipCancelEvent($publication, $account, $member)
         );
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/subscribe", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Subscribe to Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function subscribe(string $slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is already subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['publication' => $publication, 'subscriber' => $account]);
+        if (!$subscription) {
+            $subscription = new Subscription();
+            $subscription->setPublication($publication);
+            $subscription->setSubscriber($account);
+
+            $em->persist($subscription);
+            $em->flush();
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/subscribe", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Unsubscribe from Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function unsubscribe(string $slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is already subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['publication' => $publication, 'subscriber' => $account]);
+        if ($subscription) {
+            $em->remove($subscription);
+            $em->flush();
+        }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }

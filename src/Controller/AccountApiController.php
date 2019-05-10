@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\Subscription;
 use App\Service\Oauth;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -361,5 +362,120 @@ class AccountApiController extends Controller
         }
 
         return new JsonResponse($users);
+    }
+
+    /**
+     * @Route("/subscriptions", methods={"GET"}, name="get_user_subscriptions")
+     * @SWG\Get(
+     *     summary="Get user subscriptions",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Parameter(name="X-API-TOKEN", in="header", type="string")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=404, description="Not found")
+     * @SWG\Tag(name="User")
+     * @return JsonResponse
+     */
+    public function getSubscriptions()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $subscriptions = $em->getRepository(Subscription::class)->findBy(['subscriber' => $account]);
+        $subscriptions = $this->get('serializer')->normalize($subscriptions, null, ['groups' => ['subscription', 'publication', 'accountBase']]);
+
+        return new JsonResponse($subscriptions);
+    }
+
+    /**
+     * @Route("/{publicKey}/subscribe", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Subscribe to Author",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param string $publicKey
+     * @return JsonResponse
+     */
+    public function subscribe(string $publicKey)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Account $author
+         */
+        $author = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        if (!$author) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is already subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['author' => $author, 'subscriber' => $account]);
+        if (!$subscription) {
+            $subscription = new Subscription();
+            $subscription->setAuthor($author);
+            $subscription->setSubscriber($account);
+
+            $em->persist($subscription);
+            $em->flush();
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{publicKey}/subscribe", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Unsubscribe from Author",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param string $publicKey
+     * @return JsonResponse
+     */
+    public function unsubscribe(string $publicKey)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Account $author
+         */
+        $author = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        if (!$author) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is already subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['author' => $author, 'subscriber' => $account]);
+        if ($subscription) {
+            $em->remove($subscription);
+            $em->flush();
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
