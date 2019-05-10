@@ -419,7 +419,7 @@ class DraftApiController extends Controller
          */
         $account = $this->getUser();
 
-        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account]);
+        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account], ['id' => 'DESC']);
         $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList']]);
 
         return new JsonResponse($drafts);
