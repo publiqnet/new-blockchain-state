@@ -101,6 +101,13 @@ class Draft
     private $contentUris = [];
 
     /**
+     * @var string
+     * @ORM\Column(name="publication", type="string", length=256, nullable=true)
+     * @Groups({"draft"})
+     */
+    private $publication;
+
+    /**
      * @return int
      */
     public function getId()
@@ -268,5 +275,21 @@ class Draft
     public function setContentUris(array $contentUris)
     {
         $this->contentUris = $contentUris;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPublication()
+    {
+        return $this->publication;
+    }
+
+    /**
+     * @param string $publication
+     */
+    public function setPublication($publication)
+    {
+        $this->publication = $publication;
     }
 }
