@@ -99,14 +99,14 @@ class StateSyncCommand extends ContainerAwareCommand
         if ($indexNumber) {
             $index = $indexNumber->getId();
         }
-        $this->io->writeln(sprintf('Started at with index=%s: %s', ($index ? $index + 1 : $index), date('H:i:s')));
+        $this->io->writeln(sprintf('Started at with index=%s: %s', ($index ? $index + 1 : $index), date('Y-m-d H:i:s')));
 
         /**
          * @var LoggedTransactions $loggedTransactions
          */
         $loggedTransactions = $this->blockChainService->getLoggedTransactions($index ? $index + 1 : $index);
 
-        $this->io->writeln(sprintf('Data received at: %s', date('H:i:s')));
+        $this->io->writeln(sprintf('Data received at: %s', date('Y-m-d H:i:s')));
 
         /**
          * @var LoggedTransaction $loggedTransaction
@@ -671,7 +671,7 @@ class StateSyncCommand extends ContainerAwareCommand
 
         $this->em->flush();
 
-        $this->io->writeln(sprintf('Finished at with index=%s: %s', $index, date('H:i:s')));
+        $this->io->writeln(sprintf('Finished at with index=%s: %s', $index, date('Y-m-d H:i:s')));
         $this->io->success('BlockChain is synced now!');
 
         $this->release();

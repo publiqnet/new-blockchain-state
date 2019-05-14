@@ -16,7 +16,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @package App\Entity
  *
  * @ORM\Table(name="content_unit")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\ContentUnitRepository")
  */
 class ContentUnit
 {

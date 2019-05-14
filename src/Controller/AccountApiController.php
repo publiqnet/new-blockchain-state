@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Entity\Subscription;
 use App\Service\Oauth;
@@ -315,12 +316,21 @@ class AccountApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
+        //  check if user subscribed to author
+        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+
+        //  get author total subscribers
+        $subscribers = $em->getRepository(Subscription::class)->findBy(['author' => $author]);
+
+        //  get author articles count
+        $articles = $em->getRepository(ContentUnit::class)->getAuthorArticlesCount($author);
+
         $stats = [
-            'subscribersCount' => 0,
+            'subscribersCount' => count($subscribers),
             'rating' => 0,
             'views' => 0,
-            'articlesCount' => 0,
-            'isSubscribed' => 0,
+            'articlesCount' => count($articles),
+            'isSubscribed' => ($subscribed ? 1: 0),
             'publicKey' => $publicKey,
             'firstName' => $author->getFirstName(),
             'lastName' => $author->getLastName(),
