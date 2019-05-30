@@ -104,6 +104,13 @@ class Account implements UserInterface
     private $storage = 0;
 
     /**
+     * @var string
+     * @ORM\Column(type="string", length=64, nullable=true)
+     * @Groups({"account"})
+     */
+    private $url;
+
+    /**
      * @ORM\Column(name="blockchain", type="boolean")
      */
     private $blockchain = 0;
@@ -458,6 +465,22 @@ class Account implements UserInterface
     public function setStorage($storage)
     {
         $this->storage = $storage;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    /**
+     * @param mixed $url
+     */
+    public function setUrl($url)
+    {
+        $this->url = $url;
     }
 
     /**

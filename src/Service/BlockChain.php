@@ -252,13 +252,16 @@ class BlockChain
         $body = $this->callJsonRPC($this->storageEndpointGet . '?file=' . $uri, $header, null, 'GET');
 
         $headerStatusCode = $body['status_code'];
-        $data = json_decode($body['data'], true);
 
-        //  check for errors
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with getting content unit data');
+        //  check data
+        if ($headerStatusCode == 200) {
+            return $body['data'];
         }
 
-        return $body['data'];
+        if ($headerStatusCode == 404) {
+            return null;
+        }
+
+        throw new \Exception('Issue with getting content unit data');
     }
 }

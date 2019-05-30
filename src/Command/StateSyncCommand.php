@@ -201,12 +201,17 @@ class StateSyncCommand extends ContainerAwareCommand
 
                             //  get content unit data from storage
                             $storageData = $this->blockChainService->getContentUnitData($uri);
-                            if (strpos($storageData, '</h1>')) {
-                                $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
-                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                            if ($storageData === null) {
+                                $contentUnitTitle = 'Mismatch content title';
+                                $contentUnitText = 'Mismatch content text';
                             } else {
-                                $contentUnitTitle = 'Old content without title';
-                                $contentUnitText = $storageData;
+                                if (strpos($storageData, '</h1>')) {
+                                    $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                                } else {
+                                    $contentUnitTitle = 'Old content without title';
+                                    $contentUnitText = $storageData;
+                                }
                             }
 
                             //  create objects
@@ -718,31 +723,34 @@ class StateSyncCommand extends ContainerAwareCommand
      */
     private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null)
     {
-        $transaction = new Transaction();
+        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+        if (!$transaction) {
+            $transaction = new Transaction();
 
-        if ($block) {
-            $transaction->setBlock($block);
-        }
-        $transaction->setTransactionHash($transactionHash);
-        $transaction->setTransactionSize($transactionSize);
-        $transaction->setTimeSigned($timeSigned);
-        $transaction->setFeeWhole($feeWhole);
-        $transaction->setFeeFraction($feeFraction);
-        if ($file) {
-            $transaction->setFile($file);
-        }
-        if ($contentUnit) {
-            $transaction->setContentUnit($contentUnit);
-        }
-        if ($content) {
-            $transaction->setContent($content);
-        }
-        if ($transfer) {
-            $transaction->setTransfer($transfer);
-        }
+            if ($block) {
+                $transaction->setBlock($block);
+            }
+            $transaction->setTransactionHash($transactionHash);
+            $transaction->setTransactionSize($transactionSize);
+            $transaction->setTimeSigned($timeSigned);
+            $transaction->setFeeWhole($feeWhole);
+            $transaction->setFeeFraction($feeFraction);
+            if ($file) {
+                $transaction->setFile($file);
+            }
+            if ($contentUnit) {
+                $transaction->setContentUnit($contentUnit);
+            }
+            if ($content) {
+                $transaction->setContent($content);
+            }
+            if ($transfer) {
+                $transaction->setTransfer($transfer);
+            }
 
-        $this->em->persist($transaction);
-        $this->em->flush();
+            $this->em->persist($transaction);
+            $this->em->flush();
+        }
 
         return null;
     }
