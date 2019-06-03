@@ -68,7 +68,7 @@ class FileApiController extends Controller
                     return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
                 }
             } else {
-                return new JsonResponse(['Error type: ' . get_class($uploadResult)], Response::HTTP_CONFLICT);
+                return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
             }
         }
 
