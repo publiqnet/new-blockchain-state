@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class ContentUnit
@@ -29,6 +30,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
+     * @Groups({"contentUnit"})
      */
     private $uri;
 
@@ -39,11 +41,13 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="title", type="string", length=256, nullable=false)
+     * @Groups({"contentUnit"})
      */
     private $title;
 
     /**
      * @ORM\Column(name="text", type="text", nullable=false)
+     * @Groups({"contentUnit"})
      */
     private $text;
 
@@ -59,6 +63,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits")
+     * @Groups({"contentUnit"})
      */
     private $files;
 

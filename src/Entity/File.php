@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class File
@@ -29,11 +30,13 @@ class File
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
+     * @Groups({"file"})
      */
     private $uri;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="files")
+     * @Groups({"file"})
      */
     private $author;
 
@@ -47,10 +50,16 @@ class File
      */
     private $contentUnits;
 
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Account", mappedBy="storageFiles")
+     */
+    private $storages;
+
 
     public function __construct()
     {
         $this->contentUnits = new ArrayCollection();
+        $this->storages = new ArrayCollection();
     }
 
     /**
@@ -107,5 +116,13 @@ class File
     public function getContentUnits()
     {
         return $this->contentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorages()
+    {
+        return $this->storages;
     }
 }

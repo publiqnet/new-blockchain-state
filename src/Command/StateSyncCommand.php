@@ -17,6 +17,7 @@ use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
+use PubliqAPI\Base\UpdateType;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\File;
@@ -25,6 +26,8 @@ use PubliqAPI\Model\LoggedTransactions;
 use PubliqAPI\Model\Content;
 use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
+use PubliqAPI\Model\ServiceStatistics;
+use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
 use PubliqAPI\Model\Transfer;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -234,7 +237,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->em->persist($contentUnitEntity);
                                 $this->em->flush();
 
-                                //  add transaction record with relation to file
+                                //  add transaction record with relation to content unit
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
 
                                 //  update account balances
@@ -349,7 +352,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->em->persist($nodeAccount);
                                 $this->em->flush();
 
-                                //  add transaction record with relation to content
+                                //  add transaction record without relation
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
 
                                 //  update account balances
@@ -370,6 +373,71 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, true);
                             }
+                        } elseif ($transaction->getAction() instanceof StorageUpdate) {
+                            /**
+                             * @var StorageUpdate $storageUpdate
+                             */
+                            $storageUpdate = $transaction->getAction();
+
+                            $status = $storageUpdate->getStatus();
+                            $storageAddress = $storageUpdate->getStorageAddress();
+                            $fileUri = $storageUpdate->getFileUri();
+
+                            $storageAddressAccount = $this->checkAccount($storageAddress);
+
+                            if ($appliedReverted) {
+                                $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                                if ($status == UpdateType::store) {
+                                    $storageAddressAccount->addStorageFile($fileEntity);
+                                } else {
+                                    $storageAddressAccount->removeStorageFile($fileEntity);
+                                }
+                                $this->em->persist($storageAddressAccount);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                                if ($status == UpdateType::store) {
+                                    $storageAddressAccount->removeStorageFile($fileEntity);
+                                } else {
+                                    $storageAddressAccount->addStorageFile($fileEntity);
+                                }
+                                $this->em->persist($storageAddressAccount);
+                                $this->em->flush();
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof ServiceStatistics) {
+                            /**
+                             * @var ServiceStatistics $serviceStatistics
+                             */
+                            $serviceStatistics = $transaction->getAction();
+
+                            $serverAddress = $serviceStatistics->getServerAddress();
+                            $serverAddressAccount = $this->checkAccount($serverAddress);
+
+                            if ($appliedReverted) {
+                                //  add transaction record without relation
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } else {
+                            var_dump($transaction->getAction());exit();
                         }
                     }
                 }
@@ -481,7 +549,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->persist($contentUnitEntity);
                         $this->em->flush();
 
-                        //  add transaction record with relation to file
+                        //  add transaction record with relation to content unit
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
 
                         //  update account balances
@@ -601,7 +669,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->persist($nodeAccount);
                         $this->em->flush();
 
-                        //  add transaction record with relation to content
+                        //  add transaction record without relation
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
 
                         //  update account balances
@@ -620,6 +688,67 @@ class StateSyncCommand extends ContainerAwareCommand
                         //  update account balances
                         $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, true);
                     }
+                } elseif ($action->getAction() instanceof StorageUpdate) {
+                    /**
+                     * @var StorageUpdate $storageUpdate
+                     */
+                    $storageUpdate = $action->getAction();
+
+                    $status = $storageUpdate->getStatus();
+                    $storageAddress = $storageUpdate->getStorageAddress();
+                    $fileUri = $storageUpdate->getFileUri();
+
+                    $storageAddressAccount = $this->checkAccount($storageAddress);
+
+                    if ($appliedReverted) {
+                        $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                        if ($status == UpdateType::store) {
+                            $storageAddressAccount->addStorageFile($fileEntity);
+                        } else {
+                            $storageAddressAccount->removeStorageFile($fileEntity);
+                        }
+                        $this->em->persist($storageAddressAccount);
+                        $this->em->flush();
+
+                        //  add transaction record without relation
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, false);
+                    } else {
+                        $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                        if ($status == UpdateType::store) {
+                            $storageAddressAccount->removeStorageFile($fileEntity);
+                        } else {
+                            $storageAddressAccount->addStorageFile($fileEntity);
+                        }
+                        $this->em->persist($storageAddressAccount);
+                        $this->em->flush();
+
+                        //  update account balances
+                        $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, true);
+                    }
+                } elseif ($action->getAction() instanceof ServiceStatistics) {
+                    /**
+                     * @var ServiceStatistics $serviceStatistics
+                     */
+                    $serviceStatistics = $action->getAction();
+
+                    $serverAddress = $serviceStatistics->getServerAddress();
+                    $serverAddressAccount = $this->checkAccount($serverAddress);
+
+                    if ($appliedReverted) {
+                        //  add transaction record without relation
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, false);
+                    } else {
+                        //  update account balances
+                        $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, true);
+                    }
+                } else {
+                    var_dump($action->getAction());exit();
                 }
 
                 //  delete transaction with all data

@@ -203,6 +203,11 @@ class Account implements UserInterface
      */
     private $memberStatus;
 
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="storages")
+     */
+    private $storageFiles;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -220,6 +225,7 @@ class Account implements UserInterface
         $this->notifications = new ArrayCollection();
         $this->subscriptions = new ArrayCollection();
         $this->subscribers = new ArrayCollection();
+        $this->storageFiles = new ArrayCollection();
     }
 
     public function __toString()
@@ -585,6 +591,24 @@ class Account implements UserInterface
     public function getSubscribers()
     {
         return $this->subscribers;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorageFiles()
+    {
+        return $this->storageFiles;
+    }
+
+    public function addStorageFile(File $file)
+    {
+        $this->storageFiles[] = $file;
+    }
+
+    public function removeStorageFile(File $file)
+    {
+        $this->storageFiles->removeElement($file);
     }
 
     /**

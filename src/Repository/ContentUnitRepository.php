@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
 /**
@@ -34,5 +35,48 @@ class ContentUnitRepository extends EntityRepository
             ->groupBy('cu.contentId')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @param Account $account
+     * @param int $count
+     * @param ContentUnit|null $fromContentUnit
+     * @return array|null
+     */
+    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        if ($fromContentUnit) {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu')
+                ->join('cu.transaction', 't')
+                ->where('t.block is not null')
+                ->andWhere('cu.author = :author')
+                ->andWhere('cu.id < :fromId')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu')
+                ->join('cu.transaction', 't')
+                ->where('t.block is not null')
+                ->andWhere('cu.author = :author')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameter('author', $account)
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        }
     }
 }
