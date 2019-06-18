@@ -263,7 +263,7 @@ class ContentApiController extends Controller
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
-     * @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
@@ -280,6 +280,94 @@ class ContentApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+
+        $fromContentUnit = null;
+        if ($fromUri) {
+            $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+        }
+
+        if ($account) {
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account,$count + 1, $fromContentUnit);
+        } else {
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getArticles($count + 1, $fromContentUnit);
+        }
+
+        //  get files & find storage address
+        if ($contentUnits) {
+            /**
+             * @var \App\Entity\ContentUnit $contentUnit
+             */
+            foreach ($contentUnits as $contentUnit) {
+                $files = $contentUnit->getFiles();
+                if ($files) {
+                    $fileStorageUrls = [];
+
+                    /**
+                     * @var File $file
+                     */
+                    foreach ($files as $file) {
+                        $storageUrl = '';
+
+                        /**
+                         * @var Account[] $fileStorages
+                         */
+                        $fileStorages = $file->getStorages();
+                        if ($fileStorages) {
+                            $randomStorage = rand(0, count($fileStorages) - 1);
+                            $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                        }
+                        $fileStorageUrls[$file->getUri()] = $storageUrl;
+                    }
+
+                    //  replace file uri to url
+                    foreach ($fileStorageUrls as $uri => $url) {
+                        $contentUnitText = $contentUnit->getText();
+                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
+                        $contentUnit->setText($contentUnitText);
+                    }
+                }
+            }
+        }
+
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnit', 'file', 'accountBase']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($contentUnits) > $count) {
+            unset($contentUnits[$count]);
+            $more = true;
+        }
+
+        return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
+    }
+
+    /**
+     * @Route("s/{publicKey}/{count}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get custom user contents",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param string $publicKey
+     * @param int $count
+     * @param string $fromUri
+     * @return JsonResponse
+     */
+    public function authorContents(string $publicKey, int $count, string $fromUri)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
 
         $fromContentUnit = null;
         if ($fromUri) {
