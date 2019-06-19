@@ -30,7 +30,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"contentUnit"})
+     * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $uri;
 
@@ -41,18 +41,19 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="title", type="string", length=256, nullable=false)
-     * @Groups({"contentUnit"})
+     * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $title;
 
     /**
      * @ORM\Column(name="text", type="text", nullable=false)
-     * @Groups({"contentUnit"})
+     * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $text;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
+     * @Groups({"contentUnitFull"})
      */
     private $author;
 
@@ -63,7 +64,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits")
-     * @Groups({"contentUnit"})
+     * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $files;
 

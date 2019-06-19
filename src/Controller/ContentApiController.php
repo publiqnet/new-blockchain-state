@@ -423,4 +423,62 @@ class ContentApiController extends Controller
 
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
+
+    /**
+     * @Route("/{uri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get content by uri",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param string $uri
+     * @return JsonResponse
+     */
+    public function content(string $uri)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+        if (!$contentUnit) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  get files & find storage address
+        $files = $contentUnit->getFiles();
+        if ($files) {
+            $fileStorageUrls = [];
+
+            /**
+             * @var File $file
+             */
+            foreach ($files as $file) {
+                $storageUrl = '';
+
+                /**
+                 * @var Account[] $fileStorages
+                 */
+                $fileStorages = $file->getStorages();
+                if ($fileStorages) {
+                    $randomStorage = rand(0, count($fileStorages) - 1);
+                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                }
+                $fileStorageUrls[$file->getUri()] = $storageUrl;
+            }
+
+            //  replace file uri to url
+            foreach ($fileStorageUrls as $uri => $url) {
+                $contentUnitText = $contentUnit->getText();
+                $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
+                $contentUnit->setText($contentUnitText);
+            }
+        }
+
+        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
+
+        return new JsonResponse($contentUnit);
+    }
 }
