@@ -42,7 +42,7 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Service\BlockChain:
-        arguments: ['%env(STATE_ENDPOINT)%', '%env(STORAGE_ENDPOINT_UPLOAD)%', '%env(STORAGE_ENDPOINT_GET)%']
+        arguments: ['%env(STATE_ENDPOINT)%', '%env(STORAGE_ENDPOINT_UPLOAD)%', '%env(STORAGE_ENDPOINT_GET)%','%env(STORAGE_ENDPOINT_API)%']
 
     App\Service\Oauth:
         arguments: ['%env(OAUTH_ENDPOINT)%']
