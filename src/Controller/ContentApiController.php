@@ -12,6 +12,7 @@ use App\Entity\Account;
 use App\Entity\File;
 use App\Service\BlockChain;
 use Exception;
+use Psr\Log\LoggerInterface;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Content;
 use PubliqAPI\Model\ContentUnit;
@@ -287,7 +288,7 @@ class ContentApiController extends Controller
         }
 
         if ($account) {
-            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account,$count + 1, $fromContentUnit);
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit);
         } else {
             $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getArticles($count + 1, $fromContentUnit);
         }
@@ -373,7 +374,7 @@ class ContentApiController extends Controller
         if ($fromUri) {
             $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
         }
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account,$count + 1, $fromContentUnit);
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit);
 
         //  get files & find storage address
         if ($contentUnits) {
@@ -437,8 +438,10 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param string $uri
      * @return JsonResponse
+     * @param Blockchain $blockChain
+     * @param LoggerInterface $logger
      */
-    public function content(string $uri)
+    public function content(string $uri, BlockChain $blockChain,LoggerInterface $logger)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -449,6 +452,7 @@ class ContentApiController extends Controller
 
         //  get files & find storage address
         $files = $contentUnit->getFiles();
+        $contentUnitUri = $contentUnit->getUri();
         if ($files) {
             $fileStorageUrls = [];
 
@@ -465,15 +469,27 @@ class ContentApiController extends Controller
                 if ($fileStorages) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                    $stageAddress = $fileStorages[$randomStorage]->getAddress();
                 }
-                $fileStorageUrls[$file->getUri()] = $storageUrl;
+                $fileStorageUrls[$file->getUri()] = [$storageUrl => $stageAddress];
             }
 
             //  replace file uri to url
-            foreach ($fileStorageUrls as $uri => $url) {
-                $contentUnitText = $contentUnit->getText();
-                $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
-                $contentUnit->setText($contentUnitText);
+            foreach ($fileStorageUrls as $uri => $UrlAddressArrays) {
+                foreach ($UrlAddressArrays as $url => $address){
+
+                    $contentUnitText = $contentUnit->getText();
+                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
+                    $contentUnit->setText($contentUnitText);
+                    try {
+                        $servedResult = $blockChain->servedFile($uri, $contentUnitUri, $address);
+                    }catch (\Exception $e) {
+                        $logger->error($e->getMessage());
+                       continue;
+                    }
+                }
+
+
             }
         }
 

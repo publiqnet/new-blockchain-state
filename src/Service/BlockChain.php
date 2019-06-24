@@ -15,6 +15,7 @@ use PubliqAPI\Model\Broadcast;
 use PubliqAPI\Model\Coin;
 use PubliqAPI\Model\Content;
 use PubliqAPI\Model\LoggedTransactionsRequest;
+use PubliqAPI\Model\Served;
 use PubliqAPI\Model\Signature;
 use PubliqAPI\Model\SignedTransaction;
 use PubliqAPI\Model\Transaction;
@@ -25,12 +26,14 @@ class BlockChain
     private $stateEndpoint;
     private $storageEndpointUpload;
     private $storageEndpointGet;
+    private $storageEndpointApi;
 
-    function __construct($stateEndpoint, $storageEndpointUpload, $storageEndpointGet)
+    function __construct($stateEndpoint, $storageEndpointUpload, $storageEndpointGet, $storageEndpointApi)
     {
         $this->stateEndpoint = $stateEndpoint;
         $this->storageEndpointUpload = $storageEndpointUpload;
         $this->storageEndpointGet = $storageEndpointGet;
+        $this->storageEndpointApi = $storageEndpointApi;
     }
 
     /**
@@ -42,6 +45,8 @@ class BlockChain
      */
     public function callJsonRPC($url, $header, $dataString = null, $method = 'POST')
     {
+
+
         $ch = curl_init($url);
 
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
@@ -52,6 +57,9 @@ class BlockChain
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 
         $response = curl_exec($ch);
+        if (curl_errno($ch)) {
+            echo 'Curl error: ' . curl_error($ch);
+        }
 
         $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
@@ -263,5 +271,34 @@ class BlockChain
         }
 
         throw new \Exception('Issue with getting content unit data');
+    }
+
+    public function servedFile(String $fileUri, $contentUnitUri, $peerAddress)
+    {
+        $serv = New Served();
+        $serv->setContentUnitUri($contentUnitUri);
+        $serv->setPeerAddress($peerAddress);
+        $serv->setFileUri($fileUri);
+        $data = $serv->convertToJson();
+
+
+
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        $body = $this->callJsonRPC($this->storageEndpointApi, $header, $data);
+        $headerStatusCode = $body['status_code'];
+        dd($body);
+
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with content publishing');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
+
     }
 }
