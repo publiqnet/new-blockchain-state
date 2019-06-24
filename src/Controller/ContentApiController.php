@@ -487,7 +487,7 @@ class ContentApiController extends Controller
                         }
                     }
 
-                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
+                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                 }
                 $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
             }
