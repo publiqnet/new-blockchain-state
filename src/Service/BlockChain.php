@@ -9,12 +9,14 @@
 namespace App\Service;
 
 use App\Command\StateSyncCommand;
+use PubliqAPI\Base\PublicAddressType;
 use PubliqAPI\Base\Rtt;
 use PubliqAPI\Model\Authority;
 use PubliqAPI\Model\Broadcast;
 use PubliqAPI\Model\Coin;
 use PubliqAPI\Model\Content;
 use PubliqAPI\Model\LoggedTransactionsRequest;
+use PubliqAPI\Model\PublicAddressesRequest;
 use PubliqAPI\Model\Served;
 use PubliqAPI\Model\Signature;
 use PubliqAPI\Model\SignedTransaction;
@@ -79,8 +81,8 @@ class BlockChain
         $request = new LoggedTransactionsRequest();
         $request->setStartIndex($id);
         $request->setMaxCount(StateSyncCommand::ACTION_COUNT);
-        $data = $request->convertToJson();
 
+        $data = $request->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
 
         $body = $this->callJsonRPC($this->stateEndpoint, $header, $data);
@@ -90,7 +92,34 @@ class BlockChain
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with getting blocks');
+            throw new \Exception('Issue with getting LoggedTransactions');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
+    }
+
+    /**
+     * @return int
+     * @throws \Exception
+     */
+    public function getPublicAddresses()
+    {
+        $request = new PublicAddressesRequest();
+        $request->setAddressType(PublicAddressType::rpc);
+
+        $data = $request->convertToJson();
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        $body = $this->callJsonRPC($this->stateEndpoint, $header, $data);
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with getting PublicAddresses');
         }
 
         $validateRes = Rtt::validate($body['data']);
