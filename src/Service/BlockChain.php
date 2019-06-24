@@ -18,6 +18,7 @@ use PubliqAPI\Model\LoggedTransactionsRequest;
 use PubliqAPI\Model\Served;
 use PubliqAPI\Model\Signature;
 use PubliqAPI\Model\SignedTransaction;
+use PubliqAPI\Model\StorageFileDetails;
 use PubliqAPI\Model\Transaction;
 use PubliqAPI\Model\TransactionBroadcastRequest;
 
@@ -277,16 +278,14 @@ class BlockChain
      * @return bool|string
      * @throws \Exception
      */
-    public function servedFile(String $fileUri, $contentUnitUri, $peerAddress)
+    public function servedFile(string $fileUri, $contentUnitUri, $peerAddress)
     {
         $served = New Served();
         $served->setContentUnitUri($contentUnitUri);
         $served->setPeerAddress($peerAddress);
         $served->setFileUri($fileUri);
+
         $data = $served->convertToJson();
-
-
-
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
 
         $body = $this->callJsonRPC($this->storageEndpointApi, $header, $data);
@@ -302,6 +301,38 @@ class BlockChain
         $validateRes = Rtt::validate($body['data']);
 
         return $validateRes;
+    }
 
+    /**
+     * @param string $fileUri
+     * @param string|null $storageUrl
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function getFileDetails(string $fileUri, string $storageUrl = null)
+    {
+        $storageFileDetails = New StorageFileDetails();
+        $storageFileDetails->setUri($fileUri);
+
+        $data = $storageFileDetails->convertToJson();
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        if ($storageUrl) {
+            $body = $this->callJsonRPC($storageUrl . '/api', $header, $data);
+        } else {
+            $body = $this->callJsonRPC($this->storageEndpointApi, $header, $data);
+        }
+        $headerStatusCode = $body['status_code'];
+
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with getting file details');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
     }
 }

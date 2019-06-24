@@ -19,6 +19,7 @@ use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\Done;
 use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\StorageFileAddress;
+use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\TransactionDone;
 use PubliqAPI\Model\UriError;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -440,10 +441,12 @@ class ContentApiController extends Controller
      * @return JsonResponse
      * @param Blockchain $blockChain
      * @param LoggerInterface $logger
+     * @throws Exception
      */
     public function content(string $uri, BlockChain $blockChain, LoggerInterface $logger)
     {
         $em = $this->getDoctrine()->getManager();
+        $channelAddress = $this->getParameter('channel_address');
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
@@ -472,6 +475,18 @@ class ContentApiController extends Controller
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
                     $storageAddress = $fileStorages[$randomStorage]->getAddress();
 
+                    //  get file details
+                    if (!$file->getMimeType()) {
+                        $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                        if ($fileDetails instanceof StorageFileDetailsResponse) {
+                            $file->setMimeType($fileDetails->getMimeType());
+                            $file->setSize($fileDetails->getSize());
+
+                            $em->persist($file);
+                            $em->flush();
+                        }
+                    }
+
                     $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
                 }
                 $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
@@ -481,7 +496,7 @@ class ContentApiController extends Controller
             try {
                 foreach ($fileStorageUrls as $uri => $fileStorageData) {
                     $contentUnitText = $contentUnit->getText();
-                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '"', $contentUnitText);
+                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files

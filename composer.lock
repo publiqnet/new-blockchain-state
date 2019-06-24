@@ -1896,7 +1896,7 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:PUBLIQNetwork/publiq-api.git",
-                "reference": "91e241aba8f96ce40768fdb860408e2482756100"
+                "reference": "a2bd64eea618477c77091e1c6ebf3acc97aa6310"
             },
             "require": {
                 "php": ">=5.3.0"
@@ -1926,7 +1926,7 @@
                 "api",
                 "publiq"
             ],
-            "time": "2019-05-31T10:55:21+00:00"
+            "time": "2019-06-24T13:25:46+00:00"
         },
         {
             "name": "sensio/framework-extra-bundle",

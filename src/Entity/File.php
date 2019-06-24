@@ -35,6 +35,18 @@ class File
     private $uri;
 
     /**
+     * @ORM\Column(name="mime_type", type="string", length=128)
+     * @Groups({"file"})
+     */
+    private $mimeType;
+
+    /**
+     * @ORM\Column(name="size", type="integer")
+     * @Groups({"file"})
+     */
+    private $size;
+
+    /**
      * @Groups({"file"})
      */
     private $url;
@@ -89,6 +101,38 @@ class File
     public function setUri($uri)
     {
         $this->uri = $uri;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMimeType()
+    {
+        return $this->mimeType;
+    }
+
+    /**
+     * @param mixed $mimeType
+     */
+    public function setMimeType($mimeType)
+    {
+        $this->mimeType = $mimeType;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSize()
+    {
+        return $this->size;
+    }
+
+    /**
+     * @param mixed $size
+     */
+    public function setSize($size)
+    {
+        $this->size = $size;
     }
 
     /**
