@@ -35,6 +35,11 @@ class File
     private $uri;
 
     /**
+     * @Groups({"file"})
+     */
+    private $url;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="files")
      * @Groups({"file"})
      */
@@ -84,6 +89,22 @@ class File
     public function setUri($uri)
     {
         $this->uri = $uri;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    /**
+     * @param mixed $url
+     */
+    public function setUrl($url)
+    {
+        $this->url = $url;
     }
 
     /**

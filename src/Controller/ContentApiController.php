@@ -471,6 +471,8 @@ class ContentApiController extends Controller
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
                     $storageAddress = $fileStorages[$randomStorage]->getAddress();
+
+                    $file->setUrl($storageUrl . '/storage?file=' . $uri);
                 }
                 $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
             }
