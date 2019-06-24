@@ -57,9 +57,6 @@ class BlockChain
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
 
         $response = curl_exec($ch);
-        if (curl_errno($ch)) {
-            echo 'Curl error: ' . curl_error($ch);
-        }
 
         $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
@@ -273,13 +270,20 @@ class BlockChain
         throw new \Exception('Issue with getting content unit data');
     }
 
+    /**
+     * @param String $fileUri
+     * @param $contentUnitUri
+     * @param $peerAddress
+     * @return bool|string
+     * @throws \Exception
+     */
     public function servedFile(String $fileUri, $contentUnitUri, $peerAddress)
     {
-        $serv = New Served();
-        $serv->setContentUnitUri($contentUnitUri);
-        $serv->setPeerAddress($peerAddress);
-        $serv->setFileUri($fileUri);
-        $data = $serv->convertToJson();
+        $served = New Served();
+        $served->setContentUnitUri($contentUnitUri);
+        $served->setPeerAddress($peerAddress);
+        $served->setFileUri($fileUri);
+        $data = $served->convertToJson();
 
 
 
@@ -287,13 +291,12 @@ class BlockChain
 
         $body = $this->callJsonRPC($this->storageEndpointApi, $header, $data);
         $headerStatusCode = $body['status_code'];
-        dd($body);
 
         $data = json_decode($body['data'], true);
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with content publishing');
+            throw new \Exception('Issue with file serving');
         }
 
         $validateRes = Rtt::validate($body['data']);

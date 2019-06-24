@@ -441,7 +441,7 @@ class ContentApiController extends Controller
      * @param Blockchain $blockChain
      * @param LoggerInterface $logger
      */
-    public function content(string $uri, BlockChain $blockChain,LoggerInterface $logger)
+    public function content(string $uri, BlockChain $blockChain, LoggerInterface $logger)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -461,6 +461,7 @@ class ContentApiController extends Controller
              */
             foreach ($files as $file) {
                 $storageUrl = '';
+                $storageAddress = '';
 
                 /**
                  * @var Account[] $fileStorages
@@ -469,27 +470,23 @@ class ContentApiController extends Controller
                 if ($fileStorages) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                    $stageAddress = $fileStorages[$randomStorage]->getAddress();
+                    $storageAddress = $fileStorages[$randomStorage]->getAddress();
                 }
-                $fileStorageUrls[$file->getUri()] = [$storageUrl => $stageAddress];
+                $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
             }
 
             //  replace file uri to url
-            foreach ($fileStorageUrls as $uri => $UrlAddressArrays) {
-                foreach ($UrlAddressArrays as $url => $address){
-
+            try {
+                foreach ($fileStorageUrls as $uri => $fileStorageData) {
                     $contentUnitText = $contentUnit->getText();
-                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
+                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '"', $contentUnitText);
                     $contentUnit->setText($contentUnitText);
-                    try {
-                        $servedResult = $blockChain->servedFile($uri, $contentUnitUri, $address);
-                    }catch (\Exception $e) {
-                        $logger->error($e->getMessage());
-                       continue;
-                    }
+
+                    //  inform Blockchain about served files
+                    $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
                 }
-
-
+            } catch (Exception $e) {
+                $logger->error($e->getMessage());
             }
         }
 
