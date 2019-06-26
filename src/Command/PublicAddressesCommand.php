@@ -97,7 +97,7 @@ class PublicAddressesCommand extends ContainerAwareCommand
 
                     $url = $ipAddress . ':' . $port;
                     if (strpos($url, 'http://') === false && strpos($url, 'https://') === false) {
-                        $url = 'http://' . $url;
+                        $url = 'https://' . $url;
                     }
 
                     $nodeEntity->setUrl($url);
