@@ -35,13 +35,13 @@ class File
     private $uri;
 
     /**
-     * @ORM\Column(name="mime_type", type="string", length=128)
+     * @ORM\Column(name="mime_type", type="string", length=128, nullable=true)
      * @Groups({"file"})
      */
     private $mimeType;
 
     /**
-     * @ORM\Column(name="size", type="integer")
+     * @ORM\Column(name="size", type="integer", nullable=true)
      * @Groups({"file"})
      */
     private $size;
