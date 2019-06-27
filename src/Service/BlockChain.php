@@ -27,16 +27,15 @@ use PubliqAPI\Model\TransactionBroadcastRequest;
 class BlockChain
 {
     private $stateEndpoint;
-    private $storageEndpointUpload;
-    private $storageEndpointGet;
-    private $storageEndpointApi;
 
-    function __construct($stateEndpoint, $storageEndpointUpload, $storageEndpointGet, $storageEndpointApi)
+    private $channelEndpoint;
+    private $channelStorageEndpoint;
+
+    function __construct($stateEndpoint, $channelEndpoint, $channelStorageEndpoint)
     {
         $this->stateEndpoint = $stateEndpoint;
-        $this->storageEndpointUpload = $storageEndpointUpload;
-        $this->storageEndpointGet = $storageEndpointGet;
-        $this->storageEndpointApi = $storageEndpointApi;
+        $this->channelEndpoint = $channelEndpoint;
+        $this->channelStorageEndpoint = $channelStorageEndpoint;
     }
 
     /**
@@ -48,8 +47,6 @@ class BlockChain
      */
     public function callJsonRPC($url, $header, $dataString = null, $method = 'POST')
     {
-
-
         $ch = curl_init($url);
 
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
@@ -64,6 +61,7 @@ class BlockChain
         $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
         $body = substr($response, $headerSize);
+
         curl_close($ch);
 
         $retArr = ['status_code' => $headerStatusCode, 'data' => $body];
@@ -137,7 +135,7 @@ class BlockChain
     {
         $header = ['Content-Type: ' . $fileMimeType, 'Content-Length: ' . strlen($fileData)];
 
-        $body = $this->callJsonRPC($this->storageEndpointUpload, $header, $fileData);
+        $body = $this->callJsonRPC($this->channelEndpoint . '/storage', $header, $fileData);
 
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);
@@ -284,7 +282,7 @@ class BlockChain
     {
         $header = ['Content-Type:application/json'];
 
-        $body = $this->callJsonRPC($this->storageEndpointGet . '?file=' . $uri, $header, null, 'GET');
+        $body = $this->callJsonRPC($this->channelStorageEndpoint . '/storage?file=' . $uri, $header, null, 'GET');
 
         $headerStatusCode = $body['status_code'];
 
@@ -317,7 +315,7 @@ class BlockChain
         $data = $served->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
 
-        $body = $this->callJsonRPC($this->storageEndpointApi, $header, $data);
+        $body = $this->callJsonRPC($this->channelEndpoint . '/api', $header, $data);
         $headerStatusCode = $body['status_code'];
 
         $data = json_decode($body['data'], true);
@@ -349,7 +347,7 @@ class BlockChain
         if ($storageUrl) {
             $body = $this->callJsonRPC($storageUrl . '/api', $header, $data);
         } else {
-            $body = $this->callJsonRPC($this->storageEndpointApi, $header, $data);
+            $body = $this->callJsonRPC($this->channelStorageEndpoint . '/api', $header, $data);
         }
         $headerStatusCode = $body['status_code'];
 

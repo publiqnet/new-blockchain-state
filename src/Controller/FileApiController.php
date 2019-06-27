@@ -60,10 +60,10 @@ class FileApiController extends Controller
 
             $uploadResult = $blockChain->uploadFile($fileData, $file->getMimeType());
             if ($uploadResult instanceof StorageFileAddress) {
-                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $this->getParameter('storage_endpoint_get') . '?file=' . $uploadResult->getUri()]);
+                return new JsonResponse(['uri' => $uploadResult->getUri()]);
             } elseif ($uploadResult instanceof UriError) {
                 if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                    return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $this->getParameter('storage_endpoint_get') . '?file=' . $uploadResult->getUri()]);
+                    return new JsonResponse(['uri' => $uploadResult->getUri()]);
                 } else {
                     return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
                 }
@@ -217,10 +217,10 @@ class FileApiController extends Controller
 
         $uploadResult = $blockChain->uploadFile($content, 'text/html');
         if ($uploadResult instanceof StorageFileAddress) {
-            return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $this->getParameter('storage_endpoint_get') . '?file=' . $uploadResult->getUri()]);
+            return new JsonResponse(['uri' => $uploadResult->getUri()]);
         } elseif ($uploadResult instanceof UriError) {
             if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $this->getParameter('storage_endpoint_get') . '?file=' . $uploadResult->getUri()]);
+                return new JsonResponse(['uri' => $uploadResult->getUri()]);
             } else {
                 return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
             }

@@ -6,7 +6,6 @@
 parameters:
     channel_address: '%env(CHANNEL_ADDRESS)%'
     channel_private_key: '%env(CHANNEL_PRIVATE_KEY)%'
-    storage_endpoint_get: '%env(STORAGE_ENDPOINT_GET)%'
     locale: 'en'
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
@@ -42,7 +41,7 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Service\BlockChain:
-        arguments: ['%env(STATE_ENDPOINT)%', '%env(STORAGE_ENDPOINT_UPLOAD)%', '%env(STORAGE_ENDPOINT_GET)%','%env(STORAGE_ENDPOINT_API)%']
+        arguments: ['%env(STATE_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT)%']
 
     App\Service\Oauth:
         arguments: ['%env(OAUTH_ENDPOINT)%']
