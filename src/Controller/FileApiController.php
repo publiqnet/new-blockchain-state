@@ -54,16 +54,17 @@ class FileApiController extends Controller
          * @var UploadedFile $file
          */
         $file = $request->files->get('file');
+        $channelStorageEndpoint = $this->getParameter('channel_storage_endpoint');
 
         if ($file && $file->getClientMimeType()) {
             $fileData = file_get_contents($file->getRealPath());
 
             $uploadResult = $blockChain->uploadFile($fileData, $file->getMimeType());
             if ($uploadResult instanceof StorageFileAddress) {
-                return new JsonResponse(['uri' => $uploadResult->getUri()]);
+                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
             } elseif ($uploadResult instanceof UriError) {
                 if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                    return new JsonResponse(['uri' => $uploadResult->getUri()]);
+                    return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
                 } else {
                     return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
                 }
@@ -215,12 +216,14 @@ class FileApiController extends Controller
             return new JsonResponse(['message' => 'Empty content'], Response::HTTP_CONFLICT);
         }
 
+        $channelStorageEndpoint = $this->getParameter('channel_storage_endpoint');
+
         $uploadResult = $blockChain->uploadFile($content, 'text/html');
         if ($uploadResult instanceof StorageFileAddress) {
-            return new JsonResponse(['uri' => $uploadResult->getUri()]);
+            return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
         } elseif ($uploadResult instanceof UriError) {
             if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                return new JsonResponse(['uri' => $uploadResult->getUri()]);
+                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
             } else {
                 return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
             }

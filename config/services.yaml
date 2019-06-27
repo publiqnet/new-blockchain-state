@@ -6,6 +6,7 @@
 parameters:
     channel_address: '%env(CHANNEL_ADDRESS)%'
     channel_private_key: '%env(CHANNEL_PRIVATE_KEY)%'
+    channel_storage_endpoint: '%env(CHANNEL_STORAGE_ENDPOINT)%'
     locale: 'en'
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
