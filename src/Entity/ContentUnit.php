@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\JoinColumn;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -50,6 +51,13 @@ class ContentUnit
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $text;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\File")
+     * @JoinColumn(name="cover_id", referencedColumnName="id")
+     * @Groups({"contentUnit", "contentUnitFull"})
+     */
+    private $cover;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
@@ -154,6 +162,22 @@ class ContentUnit
     public function setText($text)
     {
         $this->text = $text;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCover()
+    {
+        return $this->cover;
+    }
+
+    /**
+     * @param mixed $cover
+     */
+    public function setCover($cover)
+    {
+        $this->cover = $cover;
     }
 
     /**

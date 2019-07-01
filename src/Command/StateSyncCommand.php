@@ -201,6 +201,7 @@ class StateSyncCommand extends ContainerAwareCommand
                             $authorAddress = $contentUnit->getAuthorAddresses()[0];
                             $channelAddress = $contentUnit->getChannelAddress();
                             $fileUris = $contentUnit->getFileUris();
+                            $coverUri = null;
 
                             //  get content unit data from storage
                             $storageData = $this->blockChainService->getContentUnitData($uri);
@@ -209,7 +210,13 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $contentUnitText = 'Mismatch content text';
                             } else {
                                 if (strpos($storageData, '</h1>')) {
-                                    $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                                    if (strpos($storageData, '<h1>') > 0) {
+                                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                    }
+                                    $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
                                     $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
                                 } else {
                                     $contentUnitTitle = 'Old content without title';
@@ -233,6 +240,10 @@ class StateSyncCommand extends ContainerAwareCommand
                                 foreach ($fileUris as $uri) {
                                     $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
                                     $contentUnitEntity->addFile($fileEntity);
+                                }
+                                if ($coverUri) {
+                                    $coverFileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $coverUri]);
+                                    $contentUnitEntity->setCover($coverFileEntity);
                                 }
                                 $this->em->persist($contentUnitEntity);
                                 $this->em->flush();
