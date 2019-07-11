@@ -340,9 +340,65 @@ class PublicationApiController extends Controller
     }
 
     /**
-     * @Route("s", methods={"GET"})
+     * @Route("s/{count}/{slug}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get publications",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", required=false, in="header", type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param int $count
+     * @param null $slug
+     * @return Response
+     */
+    public function getPublications($count = 10, $slug = null)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+
+        $publications = $this->getDoctrine()->getRepository(Publication::class)->getPublications($count + 1, $publication);
+
+        if ($account && $publications) {
+            foreach ($publications as $publication) {
+                $memberStatus = 0;
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
+
+                //  if User is a Publication member return Publication info with members
+                if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                    $memberStatus = $publicationMember->getStatus();
+                }
+
+                $publication->setMemberStatus($memberStatus);
+            }
+        }
+
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus']]);
+
+        $more = false;
+        if (count($publications) > $count) {
+            $more = true;
+            unset($publications[$count]);
+        }
+
+        return new JsonResponse(['publications' => $publications, 'more' => $more]);
+    }
+
+    /**
+     * @Route("s-related", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get user related publications",
      *     consumes={"application/json"},
      *     @SWG\Parameter(name="X-API-TOKEN", required=true, in="header", type="string")
      * )
@@ -352,7 +408,7 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @return Response
      */
-    public function getPublications()
+    public function getRelatedPublications()
     {
         /**
          * @var Account $account
@@ -408,9 +464,9 @@ class PublicationApiController extends Controller
     }
 
     /**
-     * @Route("s/{type}", methods={"GET"})
+     * @Route("s-related/{type}", methods={"GET"})
      * @SWG\Get(
-     *     summary="Get publications by type: owned|membership|invitations|requests",
+     *     summary="Get user related publications by type: owned / membership / invitations / requests",
      *     consumes={"application/json"},
      *     @SWG\Parameter(name="X-API-TOKEN", required=true, in="header", type="string")
      * )
@@ -421,7 +477,7 @@ class PublicationApiController extends Controller
      * @param string $type
      * @return Response
      */
-    public function getPublicationsByType(string $type)
+    public function getRelatedPublicationsByType(string $type)
     {
         /**
          * @var Account $account

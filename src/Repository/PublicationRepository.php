@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\Publication;
 use App\Entity\PublicationMember;
 
 /**
@@ -17,6 +18,27 @@ use App\Entity\PublicationMember;
  */
 class PublicationRepository extends \Doctrine\ORM\EntityRepository
 {
+    public function getPublications(int $count = 10, Publication $publication = null)
+    {
+        if ($publication) {
+            return $this->createQueryBuilder('p')
+                ->select('p')
+                ->where('p.id < :id')
+                ->setParameters(['id' => $publication->getId()])
+                ->orderBy('p.id', 'DESC')
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('p')
+                ->select('p')
+                ->orderBy('p.id', 'DESC')
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
+    }
+
     public function getUserPublicationsOwner(Account $account)
     {
         return $this->createQueryBuilder('p')
