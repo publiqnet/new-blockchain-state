@@ -350,7 +350,7 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnit', 'file', 'accountBase']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
 
         //  check if more content exist
         $more = false;
@@ -452,7 +452,7 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnit', 'file', 'accountBase']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
 
         //  check if more content exist
         $more = false;
