@@ -272,11 +272,14 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param int $count
      * @param string $fromUri
+     * @param BlockChain $blockChain
      * @return JsonResponse
+     * @throws Exception
      */
-    public function myContents(int $count, string $fromUri)
+    public function myContents(int $count, string $fromUri, BlockChain $blockChain)
     {
         $em = $this->getDoctrine()->getManager();
+        $channelAddress = $this->getParameter('channel_address');
 
         /**
          * @var Account $account
@@ -309,6 +312,7 @@ class ContentApiController extends Controller
                      */
                     foreach ($files as $file) {
                         $storageUrl = '';
+                        $storageAddress = '';
 
                         /**
                          * @var Account[] $fileStorages
@@ -317,14 +321,29 @@ class ContentApiController extends Controller
                         if ($fileStorages) {
                             $randomStorage = rand(0, count($fileStorages) - 1);
                             $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                            $storageAddress = $fileStorages[$randomStorage]->getAddress();
+
+                            //  get file details
+                            if (!$file->getMimeType()) {
+                                $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                    $file->setMimeType($fileDetails->getMimeType());
+                                    $file->setSize($fileDetails->getSize());
+
+                                    $em->persist($file);
+                                    $em->flush();
+                                }
+                            }
+
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                         }
-                        $fileStorageUrls[$file->getUri()] = $storageUrl;
+                        $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
                     }
 
                     //  replace file uri to url
-                    foreach ($fileStorageUrls as $uri => $url) {
+                    foreach ($fileStorageUrls as $uri => $fileStorageData) {
                         $contentUnitText = $contentUnit->getText();
-                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
+                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
                         $contentUnit->setText($contentUnitText);
                     }
                 }
@@ -357,11 +376,14 @@ class ContentApiController extends Controller
      * @param string $publicKey
      * @param int $count
      * @param string $fromUri
+     * @param BlockChain $blockChain
      * @return JsonResponse
+     * @throws Exception
      */
-    public function authorContents(string $publicKey, int $count, string $fromUri)
+    public function authorContents(string $publicKey, int $count, string $fromUri, BlockChain $blockChain)
     {
         $em = $this->getDoctrine()->getManager();
+        $channelAddress = $this->getParameter('channel_address');
 
         /**
          * @var Account $account
@@ -392,6 +414,7 @@ class ContentApiController extends Controller
                      */
                     foreach ($files as $file) {
                         $storageUrl = '';
+                        $storageAddress = '';
 
                         /**
                          * @var Account[] $fileStorages
@@ -400,14 +423,29 @@ class ContentApiController extends Controller
                         if ($fileStorages) {
                             $randomStorage = rand(0, count($fileStorages) - 1);
                             $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                            $storageAddress = $fileStorages[$randomStorage]->getAddress();
+
+                            //  get file details
+                            if (!$file->getMimeType()) {
+                                $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                    $file->setMimeType($fileDetails->getMimeType());
+                                    $file->setSize($fileDetails->getSize());
+
+                                    $em->persist($file);
+                                    $em->flush();
+                                }
+                            }
+
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                         }
-                        $fileStorageUrls[$file->getUri()] = $storageUrl;
+                        $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
                     }
 
                     //  replace file uri to url
-                    foreach ($fileStorageUrls as $uri => $url) {
+                    foreach ($fileStorageUrls as $uri => $fileStorageData) {
                         $contentUnitText = $contentUnit->getText();
-                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $url . '/storage?file=' . $uri . '"', $contentUnitText);
+                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
                         $contentUnit->setText($contentUnitText);
                     }
                 }
