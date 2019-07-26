@@ -86,6 +86,12 @@ class ContentUnit
      */
     private $transaction;
 
+    /**
+     * @var integer
+     * @Groups({"contentUnit", "contentUnitFull"})
+     */
+    private $published;
+
 
     public function __construct()
     {
@@ -255,5 +261,21 @@ class ContentUnit
     public function setTransaction($transaction)
     {
         $this->transaction = $transaction;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPublished(): ?int
+    {
+        return $this->published;
+    }
+
+    /**
+     * @param int $published
+     */
+    public function setPublished(int $published)
+    {
+        $this->published = $published;
     }
 }

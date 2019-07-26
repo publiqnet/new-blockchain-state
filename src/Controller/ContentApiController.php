@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\File;
+use App\Entity\Transaction;
 use App\Service\BlockChain;
 use Exception;
 use Psr\Log\LoggerInterface;
@@ -261,7 +262,7 @@ class ContentApiController extends Controller
     /**
      * @Route("s/{count}/{fromUri}", methods={"GET"})
      * @SWG\Get(
-     *     summary="Get user contents",
+     *     summary="Get (user) contents",
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
@@ -347,6 +348,12 @@ class ContentApiController extends Controller
                         $contentUnit->setText($contentUnitText);
                     }
                 }
+
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $contentUnit->getTransaction();
+                $contentUnit->setPublished($transaction->getTimeSigned());
             }
         }
 
@@ -449,6 +456,12 @@ class ContentApiController extends Controller
                         $contentUnit->setText($contentUnitText);
                     }
                 }
+
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $contentUnit->getTransaction();
+                $contentUnit->setPublished($transaction->getTimeSigned());
             }
         }
 
@@ -544,6 +557,12 @@ class ContentApiController extends Controller
                 $logger->error($e->getMessage());
             }
         }
+
+        /**
+         * @var Transaction $transaction
+         */
+        $transaction = $contentUnit->getTransaction();
+        $contentUnit->setPublished($transaction->getTimeSigned());
 
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
 
