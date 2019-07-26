@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\IndexNumber;
+use App\Entity\PublicationArticle;
 use App\Entity\Reward;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -245,6 +246,14 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $coverFileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $coverUri]);
                                     $contentUnitEntity->setCover($coverFileEntity);
                                 }
+
+                                //  check for related Publication
+                                $publicationArticle = $this->em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
+                                if ($publicationArticle) {
+                                    $contentUnitEntity->setPublication($publicationArticle->getPublication());
+                                    $this->em->remove($publicationArticle);
+                                }
+
                                 $this->em->persist($contentUnitEntity);
                                 $this->em->flush();
 

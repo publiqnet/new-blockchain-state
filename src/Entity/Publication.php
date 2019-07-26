@@ -121,11 +121,23 @@ class Publication
      */
     private $inviter;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="publication")
+     */
+    private $contentUnits;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\PublicationArticle", mappedBy="publication")
+     */
+    private $articles;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
         $this->notifications = new ArrayCollection();
         $this->subscribers = new ArrayCollection();
+        $this->contentUnits = new ArrayCollection();
+        $this->articles = new ArrayCollection();
     }
 
     /**
@@ -316,5 +328,21 @@ class Publication
     public function setInviter($inviter)
     {
         $this->inviter = $inviter;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContentUnits()
+    {
+        return $this->contentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getArticles()
+    {
+        return $this->articles;
     }
 }

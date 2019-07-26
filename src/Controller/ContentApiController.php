@@ -10,6 +10,8 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\File;
+use App\Entity\Publication;
+use App\Entity\PublicationArticle;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
 use Exception;
@@ -209,7 +211,8 @@ class ContentApiController extends Controller
      *         @SWG\Schema(
      *             type="object",
      *             @SWG\Property(property="uri", type="string"),
-     *             @SWG\Property(property="contentId", type="string")
+     *             @SWG\Property(property="contentId", type="string"),
+     *             @SWG\Property(property="publicationSlug", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -224,6 +227,8 @@ class ContentApiController extends Controller
      */
     public function publishContent(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -237,9 +242,11 @@ class ContentApiController extends Controller
 
             $uri = $content['uri'];
             $contentId = $content['contentId'];
+            $publicationSlug = $content['publicationSlug'];
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
+            $publicationSlug = $request->request->get('publicationSlug');
         }
 
         try {
@@ -247,6 +254,18 @@ class ContentApiController extends Controller
             $content->setContentId($contentId);
             $content->setChannelAddress($this->getParameter('channel_address'));
             $content->addContentUnitUris($uri);
+
+            //  if publication selected, add temporary record
+            if ($publicationSlug) {
+                $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
+                if ($publication) {
+                    $publicationArticle = new PublicationArticle();
+                    $publicationArticle->setPublication($publication);
+                    $publicationArticle->setUri($uri);
+                    $em->persist($publicationArticle);
+                    $em->flush();
+                }
+            }
 
             $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'));
             if ($broadcastResult instanceof TransactionDone) {
@@ -357,7 +376,7 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -465,7 +484,7 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -564,7 +583,7 @@ class ContentApiController extends Controller
         $transaction = $contentUnit->getTransaction();
         $contentUnit->setPublished($transaction->getTimeSigned());
 
-        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'file', 'accountBase']]);
+        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
 
         return new JsonResponse($contentUnit);
     }

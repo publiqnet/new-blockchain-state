@@ -92,6 +92,12 @@ class ContentUnit
      */
     private $published;
 
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
+     * @Groups({"contentUnit", "contentUnitFull"})
+     */
+    private $publication;
+
 
     public function __construct()
     {
@@ -277,5 +283,21 @@ class ContentUnit
     public function setPublished(int $published)
     {
         $this->published = $published;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPublication()
+    {
+        return $this->publication;
+    }
+
+    /**
+     * @param mixed $publication
+     */
+    public function setPublication($publication)
+    {
+        $this->publication = $publication;
     }
 }
