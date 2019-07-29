@@ -341,7 +341,7 @@ class ContentApiController extends Controller
                          * @var Account[] $fileStorages
                          */
                         $fileStorages = $file->getStorages();
-                        if ($fileStorages) {
+                        if (count($fileStorages)) {
                             $randomStorage = rand(0, count($fileStorages) - 1);
                             $storageUrl = $fileStorages[$randomStorage]->getUrl();
                             $storageAddress = $fileStorages[$randomStorage]->getAddress();
