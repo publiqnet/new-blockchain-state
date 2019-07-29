@@ -359,7 +359,35 @@ class ContentApiController extends Controller
                             }
 
                             $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                        } elseif ($contentUnit->getContent()) {
+                            /**
+                             * @var \App\Entity\Content $content
+                             */
+                            $content = $contentUnit->getContent();
+
+                            /**
+                             * @var Account $channel
+                             */
+                            $channel = $content->getChannel();
+
+                            $storageUrl = $channel->getUrl();
+                            $storageAddress = $channel->getAddress();
+
+                            //  get file details
+                            if (!$file->getMimeType()) {
+                                $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                    $file->setMimeType($fileDetails->getMimeType());
+                                    $file->setSize($fileDetails->getSize());
+
+                                    $em->persist($file);
+                                    $em->flush();
+                                }
+                            }
+
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                         }
+
                         $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
                     }
 
@@ -449,7 +477,7 @@ class ContentApiController extends Controller
                          * @var Account[] $fileStorages
                          */
                         $fileStorages = $file->getStorages();
-                        if ($fileStorages) {
+                        if (count($fileStorages)) {
                             $randomStorage = rand(0, count($fileStorages) - 1);
                             $storageUrl = $fileStorages[$randomStorage]->getUrl();
                             $storageAddress = $fileStorages[$randomStorage]->getAddress();
@@ -467,7 +495,35 @@ class ContentApiController extends Controller
                             }
 
                             $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                        } elseif ($contentUnit->getContent()) {
+                            /**
+                             * @var \App\Entity\Content $content
+                             */
+                            $content = $contentUnit->getContent();
+
+                            /**
+                             * @var Account $channel
+                             */
+                            $channel = $content->getChannel();
+
+                            $storageUrl = $channel->getUrl();
+                            $storageAddress = $channel->getAddress();
+
+                            //  get file details
+                            if (!$file->getMimeType()) {
+                                $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                    $file->setMimeType($fileDetails->getMimeType());
+                                    $file->setSize($fileDetails->getSize());
+
+                                    $em->persist($file);
+                                    $em->flush();
+                                }
+                            }
+
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                         }
+
                         $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
                     }
 
@@ -543,7 +599,7 @@ class ContentApiController extends Controller
                  * @var Account[] $fileStorages
                  */
                 $fileStorages = $file->getStorages();
-                if ($fileStorages) {
+                if (count($fileStorages)) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
                     $storageAddress = $fileStorages[$randomStorage]->getAddress();
@@ -561,7 +617,35 @@ class ContentApiController extends Controller
                     }
 
                     $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                } elseif ($contentUnit->getContent()) {
+                    /**
+                     * @var \App\Entity\Content $content
+                     */
+                    $content = $contentUnit->getContent();
+
+                    /**
+                     * @var Account $channel
+                     */
+                    $channel = $content->getChannel();
+
+                    $storageUrl = $channel->getUrl();
+                    $storageAddress = $channel->getAddress();
+
+                    //  get file details
+                    if (!$file->getMimeType()) {
+                        $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                        if ($fileDetails instanceof StorageFileDetailsResponse) {
+                            $file->setMimeType($fileDetails->getMimeType());
+                            $file->setSize($fileDetails->getSize());
+
+                            $em->persist($file);
+                            $em->flush();
+                        }
+                    }
+
+                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                 }
+
                 $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
             }
 
