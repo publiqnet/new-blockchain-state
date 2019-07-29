@@ -228,6 +228,7 @@ class ContentApiController extends Controller
     public function publishContent(Request $request, BlockChain $blockChain)
     {
         $em = $this->getDoctrine()->getManager();
+        $publicationSlug = '';
 
         /**
          * @var Account $account
@@ -242,7 +243,9 @@ class ContentApiController extends Controller
 
             $uri = $content['uri'];
             $contentId = $content['contentId'];
-            $publicationSlug = $content['publicationSlug'];
+            if (isset($content['publicationSlug'])) {
+                $publicationSlug = $content['publicationSlug'];
+            }
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
