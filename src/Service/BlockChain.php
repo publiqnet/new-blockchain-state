@@ -20,6 +20,7 @@ use PubliqAPI\Model\PublicAddressesRequest;
 use PubliqAPI\Model\Served;
 use PubliqAPI\Model\Signature;
 use PubliqAPI\Model\SignedTransaction;
+use PubliqAPI\Model\SponsorContentUnit;
 use PubliqAPI\Model\StorageFileDetails;
 use PubliqAPI\Model\Transaction;
 use PubliqAPI\Model\TransactionBroadcastRequest;
@@ -356,6 +357,71 @@ class BlockChain
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
             throw new \Exception('Issue with getting file details');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
+    }
+
+    /**
+     * @param string $signature
+     * @param string $uri
+     * @param string $sponsorAddress
+     * @param $amount
+     * @param int $hours
+     * @param int $startTimePoint
+     * @param $creationTime
+     * @param $expiryTime
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function boostContent($signature, $uri, $sponsorAddress, $amount, $hours, $startTimePoint, $creationTime, $expiryTime)
+    {
+        $coin = new Coin();
+        $coin->setFraction(0);
+        $coin->setWhole($amount);
+
+        $sponsorContentUnit = new SponsorContentUnit();
+        $sponsorContentUnit->setUri($uri);
+        $sponsorContentUnit->setSponsorAddress($sponsorAddress);
+        $sponsorContentUnit->setAmount($coin);
+        $sponsorContentUnit->setHours($hours);
+        $sponsorContentUnit->setStartTimePoint($startTimePoint);
+
+        $coin = new Coin();
+        $coin->setFraction(0);
+        $coin->setWhole(0);
+
+        $transaction = new Transaction();
+        $transaction->setAction($sponsorContentUnit);
+        $transaction->setFee($coin);
+        $transaction->setCreation($creationTime);
+        $transaction->setExpiry($expiryTime);
+
+        $authority = new Authority();
+        $authority->setAddress($sponsorAddress);
+        $authority->setSignature($signature);
+
+        $signedTransaction = new SignedTransaction();
+        $signedTransaction->setTransactionDetails($transaction);
+        $signedTransaction->addAuthorizations($authority);
+
+        $broadcast = new Broadcast();
+        $broadcast->setPackage($signedTransaction);
+        $broadcast->setEchoes(2);
+
+        $data = $broadcast->convertToJson();
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        $body = $this->callJsonRPC($this->stateEndpoint, $header, $data);
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with boosting');
         }
 
         $validateRes = Rtt::validate($body['data']);

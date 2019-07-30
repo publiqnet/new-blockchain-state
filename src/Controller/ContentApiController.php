@@ -674,4 +674,81 @@ class ContentApiController extends Controller
 
         return new JsonResponse($contentUnit);
     }
+
+    /**
+     * @Route("/boost", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Boost content",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="signature", type="string"),
+     *             @SWG\Property(property="uri", type="string"),
+     *             @SWG\Property(property="amount", type="string"),
+     *             @SWG\Property(property="hours", type="integer"),
+     *             @SWG\Property(property="startTimePoint", type="integer"),
+     *             @SWG\Property(property="creationTime", type="integer"),
+     *             @SWG\Property(property="expiryTime", type="integer")
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param Request $request
+     * @param Blockchain $blockChain
+     * @return JsonResponse
+     */
+    public function boostContent(Request $request, BlockChain $blockChain)
+    {
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
+        }
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $signature = $content['signature'];
+            $uri = $content['uri'];
+            $amount = $content['amount'];
+            $hours = $content['hours'];
+            $startTimePoint = $content['startTimePoint'];
+            $creationTime = $content['creationTime'];
+            $expiryTime = $content['expiryTime'];
+        } else {
+            $signature = $request->request->get('signature');
+            $uri = $request->request->get('uri');
+            $amount = $request->request->get('amount');
+            $hours = $request->request->get('hours');
+            $startTimePoint = $request->request->get('startTimePoint');
+            $creationTime = $request->request->get('creationTime');
+            $expiryTime = $request->request->get('expiryTime');
+        }
+
+        try {
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getAddress(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime);
+            if ($broadcastResult instanceof Done) {
+                return new JsonResponse('', Response::HTTP_NO_CONTENT);
+            } else {
+                return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
+            }
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
 }

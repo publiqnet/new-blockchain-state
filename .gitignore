@@ -12,3 +12,4 @@
 ###< symfony/web-server-bundle ###
 
 /public/uploads/
+/*.sql

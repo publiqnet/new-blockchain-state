@@ -28,6 +28,7 @@ use PubliqAPI\Model\Content;
 use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
+use PubliqAPI\Model\SponsorContentUnit;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
 use PubliqAPI\Model\Transfer;
@@ -456,8 +457,35 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, true);
                             }
+                        } elseif ($transaction->getAction() instanceof SponsorContentUnit) {
+                            /**
+                             * @var SponsorContentUnit $sponsorContentUnit
+                             */
+                            $sponsorContentUnit = $transaction->getAction();
+
+                            $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
+                            $whole = $sponsorContentUnit->getAmount()->getWhole();
+                            $fraction = $sponsorContentUnit->getAmount()->getFraction();
+
+                            $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+
+                            if ($appliedReverted) {
+                                //  add transaction record without relation
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, true);
+                            }
                         } else {
-                            var_dump($transaction->getAction());exit();
+                            var_dump($transaction->getAction());
+                            exit();
                         }
                     }
                 }
@@ -778,8 +806,33 @@ class StateSyncCommand extends ContainerAwareCommand
                         //  update account balances
                         $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, true);
                     }
+                } elseif ($action->getAction() instanceof SponsorContentUnit) {
+                    /**
+                     * @var SponsorContentUnit $sponsorContentUnit
+                     */
+                    $sponsorContentUnit = $action->getAction();
+
+                    $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
+                    $whole = $sponsorContentUnit->getAmount()->getWhole();
+                    $fraction = $sponsorContentUnit->getAmount()->getFraction();
+
+                    $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+
+                    if ($appliedReverted) {
+                        //  add transaction record without relation
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
+                        $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, false);
+                    } else {
+                        //  update account balances
+                        $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                        $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, true);
+                    }
                 } else {
-                    var_dump($action->getAction());exit();
+                    var_dump($action->getAction());
+                    exit();
                 }
 
                 //  delete transaction with all data
