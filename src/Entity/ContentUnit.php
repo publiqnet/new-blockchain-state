@@ -53,8 +53,7 @@ class ContentUnit
     private $text;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\File")
-     * @JoinColumn(name="cover_id", referencedColumnName="id")
+     * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $cover;

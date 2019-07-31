@@ -72,6 +72,11 @@ class File
      */
     private $storages;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="cover")
+     */
+    private $covers;
+
 
     public function __construct()
     {
@@ -189,5 +194,13 @@ class File
     public function getStorages()
     {
         return $this->storages;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCovers()
+    {
+        return $this->covers;
     }
 }
