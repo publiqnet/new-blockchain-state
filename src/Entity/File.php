@@ -58,7 +58,7 @@ class File
     private $author;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transaction", mappedBy="file")
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file")
      */
     private $transaction;
 

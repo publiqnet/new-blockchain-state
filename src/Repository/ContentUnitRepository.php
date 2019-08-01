@@ -48,13 +48,16 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->where('cu2.author = :author')
+            ->setParameter('author', $account)
             ->groupBy('cu2.contentId');
 
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu')
+            return $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
+                ->join('cu.author', 'a')
                 ->where('t.block is not null')
                 ->andWhere('cu.author = :author')
                 ->andWhere('cu.id < :fromId')
@@ -67,8 +70,9 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu')
+            return $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
+                ->join('cu.author', 'a')
                 ->where('t.block is not null')
                 ->andWhere('cu.author = :author')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
