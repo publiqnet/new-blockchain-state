@@ -80,6 +80,13 @@ class Transaction
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"})
+     * @Groups({"transaction"})
+     */
+    private $boostedContentUnit;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"})
      * @Groups({"transaction"})
      */
@@ -259,5 +266,21 @@ class Transaction
     public function setTransfer($transfer)
     {
         $this->transfer = $transfer;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostedContentUnit()
+    {
+        return $this->boostedContentUnit;
+    }
+
+    /**
+     * @param mixed $boostedContentUnit
+     */
+    public function setBoostedContentUnit($boostedContentUnit)
+    {
+        $this->boostedContentUnit = $boostedContentUnit;
     }
 }

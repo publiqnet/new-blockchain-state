@@ -131,6 +131,12 @@ class Publication
      */
     private $articles;
 
+    /**
+     * @var boolean
+     * @Groups({"publicationSubscribed"})
+     */
+    private $subscribed;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
@@ -344,5 +350,21 @@ class Publication
     public function getArticles()
     {
         return $this->articles;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSubscribed()
+    {
+        return $this->subscribed;
+    }
+
+    /**
+     * @param bool $subscribed
+     */
+    public function setSubscribed(bool $subscribed)
+    {
+        $this->subscribed = $subscribed;
     }
 }

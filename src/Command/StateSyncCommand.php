@@ -10,6 +10,7 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\Block;
+use App\Entity\BoostedContentUnit;
 use App\Entity\IndexNumber;
 use App\Entity\PublicationArticle;
 use App\Entity\Reward;
@@ -464,14 +465,29 @@ class StateSyncCommand extends ContainerAwareCommand
                             $sponsorContentUnit = $transaction->getAction();
 
                             $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
+                            $uri = $sponsorContentUnit->getUri();
+                            $startTimePoint = $sponsorContentUnit->getStartTimePoint();
+                            $hours = $sponsorContentUnit->getHours();
                             $whole = $sponsorContentUnit->getAmount()->getWhole();
                             $fraction = $sponsorContentUnit->getAmount()->getFraction();
 
                             $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
 
                             if ($appliedReverted) {
+                                $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+
+                                $boostedContentUnitEntity = new BoostedContentUnit();
+                                $boostedContentUnitEntity->setSponsor($sponsorAddressAccount);
+                                $boostedContentUnitEntity->setContentUnit($contentUnitEntity);
+                                $boostedContentUnitEntity->setStartTimePoint($startTimePoint);
+                                $boostedContentUnitEntity->setHours($hours);
+                                $boostedContentUnitEntity->setWhole($whole);
+                                $boostedContentUnitEntity->setFraction($fraction);
+                                $this->em->persist($boostedContentUnitEntity);
+                                $this->em->flush();
+
                                 //  add transaction record without relation
-                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, $boostedContentUnitEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -813,12 +829,27 @@ class StateSyncCommand extends ContainerAwareCommand
                     $sponsorContentUnit = $action->getAction();
 
                     $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
+                    $uri = $sponsorContentUnit->getUri();
+                    $startTimePoint = $sponsorContentUnit->getStartTimePoint();
+                    $hours = $sponsorContentUnit->getHours();
                     $whole = $sponsorContentUnit->getAmount()->getWhole();
                     $fraction = $sponsorContentUnit->getAmount()->getFraction();
 
                     $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
 
                     if ($appliedReverted) {
+                        $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+
+                        $boostedContentUnitEntity = new BoostedContentUnit();
+                        $boostedContentUnitEntity->setSponsor($sponsorAddressAccount);
+                        $boostedContentUnitEntity->setContentUnit($contentUnitEntity);
+                        $boostedContentUnitEntity->setStartTimePoint($startTimePoint);
+                        $boostedContentUnitEntity->setHours($hours);
+                        $boostedContentUnitEntity->setWhole($whole);
+                        $boostedContentUnitEntity->setFraction($fraction);
+                        $this->em->persist($boostedContentUnitEntity);
+                        $this->em->flush();
+
                         //  add transaction record without relation
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
 
@@ -930,11 +961,12 @@ class StateSyncCommand extends ContainerAwareCommand
      * @param null $contentUnit
      * @param null $content
      * @param null $transfer
+     * @param null $boostedContentUnit
      * @return null
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null)
+    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
@@ -959,6 +991,9 @@ class StateSyncCommand extends ContainerAwareCommand
             }
             if ($transfer) {
                 $transaction->setTransfer($transfer);
+            }
+            if ($boostedContentUnit) {
+                $transaction->setBoostedContentUnit($boostedContentUnit);
             }
 
             $this->em->persist($transaction);

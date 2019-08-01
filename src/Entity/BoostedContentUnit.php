@@ -1,0 +1,184 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Grigor
+ * Date: 8/1/19
+ * Time: 4:52 PM
+ */
+
+namespace App\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * Class ContentUnit
+ * @package App\Entity
+ *
+ * @ORM\Table(name="boosted_content_unit")
+ * @ORM\Entity(repositoryClass="App\Repository\ContentUnitRepository")
+ */
+class BoostedContentUnit
+{
+    /**
+     * @ORM\Column(name="id", type="integer")
+     * @ORM\Id
+     * @ORM\GeneratedValue(strategy="AUTO")
+     */
+    private $id;
+
+    /**
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="boostedContentUnit")
+     */
+    private $transaction;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="boostedContentUnits")
+     */
+    private $sponsor;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="boosts")
+     */
+    private $contentUnit;
+
+    /**
+     * @ORM\Column(type="integer", nullable=false)
+     */
+    private $startTimePoint;
+
+    /**
+     * @ORM\Column(type="integer", nullable=false)
+     */
+    private $hours;
+
+    /**
+     * @ORM\Column(type="integer", nullable=false)
+     */
+    private $whole;
+
+    /**
+     * @ORM\Column(type="integer", nullable=false)
+     */
+    private $fraction;
+
+
+    /**
+     * @return mixed
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTransaction()
+    {
+        return $this->transaction;
+    }
+
+    /**
+     * @param mixed $transaction
+     */
+    public function setTransaction($transaction)
+    {
+        $this->transaction = $transaction;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSponsor()
+    {
+        return $this->sponsor;
+    }
+
+    /**
+     * @param mixed $sponsor
+     */
+    public function setSponsor($sponsor)
+    {
+        $this->sponsor = $sponsor;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContentUnit()
+    {
+        return $this->contentUnit;
+    }
+
+    /**
+     * @param mixed $contentUnit
+     */
+    public function setContentUnit($contentUnit)
+    {
+        $this->contentUnit = $contentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStartTimePoint()
+    {
+        return $this->startTimePoint;
+    }
+
+    /**
+     * @param mixed $startTimePoint
+     */
+    public function setStartTimePoint($startTimePoint)
+    {
+        $this->startTimePoint = $startTimePoint;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHours()
+    {
+        return $this->hours;
+    }
+
+    /**
+     * @param mixed $hours
+     */
+    public function setHours($hours)
+    {
+        $this->hours = $hours;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getWhole()
+    {
+        return $this->whole;
+    }
+
+    /**
+     * @param mixed $whole
+     */
+    public function setWhole($whole)
+    {
+        $this->whole = $whole;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFraction()
+    {
+        return $this->fraction;
+    }
+
+    /**
+     * @param mixed $fraction
+     */
+    public function setFraction($fraction)
+    {
+        $this->fraction = $fraction;
+    }
+}

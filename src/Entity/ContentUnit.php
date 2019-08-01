@@ -10,7 +10,6 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\Mapping\JoinColumn;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
@@ -92,15 +91,27 @@ class ContentUnit
     private $published;
 
     /**
+     * @var boolean
+     * @Groups({"contentUnit", "contentUnitFull"})
+     */
+    private $boosted;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $publication;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit")
+     */
+    private $boosts;
+
 
     public function __construct()
     {
         $this->files = new ArrayCollection();
+        $this->boosts = new ArrayCollection();
     }
 
     /**
@@ -271,7 +282,7 @@ class ContentUnit
     /**
      * @return int
      */
-    public function getPublished(): ?int
+    public function getPublished()
     {
         return $this->published;
     }
@@ -298,5 +309,29 @@ class ContentUnit
     public function setPublication($publication)
     {
         $this->publication = $publication;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoosts()
+    {
+        return $this->boosts;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBoosted()
+    {
+        return $this->boosted;
+    }
+
+    /**
+     * @param bool $boosted
+     */
+    public function setBoosted(bool $boosted)
+    {
+        $this->boosted = $boosted;
     }
 }

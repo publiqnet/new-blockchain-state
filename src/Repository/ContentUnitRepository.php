@@ -99,7 +99,8 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu')
+            return $query->select('cu, a')
+                ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
                 ->where('t.block is not null')
                 ->andWhere('cu.id < :fromId')
@@ -112,7 +113,8 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu')
+            return $query->select('cu, a')
+                ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
                 ->where('t.block is not null')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
@@ -121,5 +123,31 @@ class ContentUnitRepository extends EntityRepository
                 ->getQuery()
                 ->getResult();
         }
+    }
+
+    /**
+     * @param int $count
+     * @param $excludes
+     * @return array|null
+     */
+    public function getBoostedArticles(int $count, $excludes)
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        $query = $this->createQueryBuilder('cu');
+
+        return $query->select('cu')
+            ->join('cu.boosts', 'bcu')
+            ->where('bcu.startTimePoint <= :date')
+            ->andWhere('(bcu.startTimePoint + bcu.hours * 86400) >= :date')
+            ->andWhere('cu NOT IN (:excludes)')
+            ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
+            ->setMaxResults($count)
+            ->orderBy('RAND()')
+            ->groupBy('cu.id')
+            ->getQuery()
+            ->getResult();
     }
 }

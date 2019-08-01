@@ -104,6 +104,11 @@ class Account implements UserInterface
     private $storage = 0;
 
     /**
+     * @ORM\Column(name="list_view", type="boolean")
+     */
+    private $listView = 0;
+
+    /**
      * @var string
      * @ORM\Column(type="string", length=64, nullable=true)
      * @Groups({"account"})
@@ -208,6 +213,11 @@ class Account implements UserInterface
      */
     private $storageFiles;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="sponsor")
+     */
+    private $boostedContentUnits;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -226,6 +236,7 @@ class Account implements UserInterface
         $this->subscriptions = new ArrayCollection();
         $this->subscribers = new ArrayCollection();
         $this->storageFiles = new ArrayCollection();
+        $this->boostedContentUnits = new ArrayCollection();
     }
 
     public function __toString()
@@ -625,5 +636,29 @@ class Account implements UserInterface
     public function setMemberStatus(int $memberStatus)
     {
         $this->memberStatus = $memberStatus;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostedContentUnits()
+    {
+        return $this->boostedContentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getListView()
+    {
+        return $this->listView;
+    }
+
+    /**
+     * @param mixed $listView
+     */
+    public function setListView($listView)
+    {
+        $this->listView = $listView;
     }
 }

@@ -379,12 +379,18 @@ class PublicationApiController extends Controller
                 if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
                     $memberStatus = $publicationMember->getStatus();
                 }
-
                 $publication->setMemberStatus($memberStatus);
+
+                $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+                if ($subscription) {
+                    $publication->setSubscribed(true);
+                } else {
+                    $publication->setSubscribed(false);
+                }
             }
         }
 
-        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus']]);
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed']]);
 
         $more = false;
         if (count($publications) > $count) {
