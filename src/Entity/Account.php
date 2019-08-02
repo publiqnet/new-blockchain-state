@@ -59,6 +59,13 @@ class Account implements UserInterface
     private $lastName;
 
     /**
+     * @var string
+     * @ORM\Column(name="bio", type="text", nullable=true)
+     * @Groups({"account", "accountBase"})
+     */
+    private $bio;
+
+    /**
      * @ORM\Column(name="image", type="string", nullable=true)
      * @Assert\File(
      *     maxSize="8M",
@@ -660,5 +667,21 @@ class Account implements UserInterface
     public function setListView($listView)
     {
         $this->listView = $listView;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBio()
+    {
+        return $this->bio;
+    }
+
+    /**
+     * @param string $bio
+     */
+    public function setBio(string $bio)
+    {
+        $this->bio = $bio;
     }
 }
