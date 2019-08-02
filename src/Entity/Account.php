@@ -678,9 +678,9 @@ class Account implements UserInterface
     }
 
     /**
-     * @param string $bio
+     * @param mixed $bio
      */
-    public function setBio(string $bio)
+    public function setBio($bio)
     {
         $this->bio = $bio;
     }
