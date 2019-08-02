@@ -338,6 +338,7 @@ class AccountApiController extends Controller
             'publicKey' => $publicKey,
             'firstName' => $author->getFirstName(),
             'lastName' => $author->getLastName(),
+            'listView' => $author->getListView(),
             'image' => $author->getImage(),
         ];
 
