@@ -11,11 +11,11 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * Class ContentUnit
+ * Class BoostedContentUnit
  * @package App\Entity
  *
  * @ORM\Table(name="boosted_content_unit")
- * @ORM\Entity(repositoryClass="App\Repository\ContentUnitRepository")
+ * @ORM\Entity(repositoryClass="App\Repository\BoostedContentUnitRepository")
  */
 class BoostedContentUnit
 {

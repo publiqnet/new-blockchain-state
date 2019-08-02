@@ -141,7 +141,7 @@ class ContentUnitRepository extends EntityRepository
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.startTimePoint <= :date')
-            ->andWhere('(bcu.startTimePoint + bcu.hours * 86400) >= :date')
+            ->andWhere('(bcu.startTimePoint + bcu.hours * 3600) >= :date')
             ->andWhere('cu NOT IN (:excludes)')
             ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
             ->setMaxResults($count)

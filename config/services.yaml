@@ -46,3 +46,6 @@ services:
 
     App\Service\Oauth:
         arguments: ['%env(OAUTH_ENDPOINT)%']
+
+    App\Service\ContentUnit:
+        arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
