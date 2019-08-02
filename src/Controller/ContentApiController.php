@@ -321,8 +321,6 @@ class ContentApiController extends Controller
             $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getArticles($count + 1, $fromContentUnit);
         }
 
-        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
-
         //  get files & find storage address
         if ($contentUnits) {
             /**
@@ -411,6 +409,7 @@ class ContentApiController extends Controller
             }
         }
 
+        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             /**
              * @var \App\Entity\ContentUnit $contentUnit
@@ -518,7 +517,7 @@ class ContentApiController extends Controller
     }
 
     /**
-     * @Route("s/{publicKey}/{count}/{fromUri}", methods={"GET"})
+     * @Route("s/{publicKey}/{count}/{boostedCount}/{fromUri}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get custom user contents",
      *     consumes={"application/json"},
@@ -530,12 +529,13 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param string $publicKey
      * @param int $count
+     * @param int $boostedCount
      * @param string $fromUri
      * @param BlockChain $blockChain
      * @return JsonResponse
      * @throws Exception
      */
-    public function authorContents(string $publicKey, int $count, string $fromUri, BlockChain $blockChain)
+    public function authorContents(string $publicKey, int $count, int $boostedCount, string $fromUri, BlockChain $blockChain)
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
@@ -638,16 +638,112 @@ class ContentApiController extends Controller
                  */
                 $transaction = $contentUnit->getTransaction();
                 $contentUnit->setPublished($transaction->getTimeSigned());
+                $contentUnit->setBoosted(false);
+            }
+        }
+
+        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
+        if ($boostedContentUnits) {
+            /**
+             * @var \App\Entity\ContentUnit $contentUnit
+             */
+            foreach ($boostedContentUnits as $contentUnit) {
+                $files = $contentUnit->getFiles();
+                if ($files) {
+                    $fileStorageUrls = [];
+
+                    /**
+                     * @var File $file
+                     */
+                    foreach ($files as $file) {
+                        $storageUrl = '';
+                        $storageAddress = '';
+
+                        /**
+                         * @var Account[] $fileStorages
+                         */
+                        $fileStorages = $file->getStorages();
+                        if (count($fileStorages)) {
+                            $randomStorage = rand(0, count($fileStorages) - 1);
+                            $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                            $storageAddress = $fileStorages[$randomStorage]->getAddress();
+
+                            //  get file details
+                            if (!$file->getMimeType()) {
+                                $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                    $file->setMimeType($fileDetails->getMimeType());
+                                    $file->setSize($fileDetails->getSize());
+
+                                    $em->persist($file);
+                                    $em->flush();
+                                }
+                            }
+
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                        } elseif ($contentUnit->getContent()) {
+                            /**
+                             * @var \App\Entity\Content $content
+                             */
+                            $content = $contentUnit->getContent();
+
+                            /**
+                             * @var Account $channel
+                             */
+                            $channel = $content->getChannel();
+
+                            $storageUrl = $channel->getUrl();
+                            $storageAddress = $channel->getAddress();
+
+                            //  get file details
+                            if (!$file->getMimeType()) {
+                                $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
+                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                    $file->setMimeType($fileDetails->getMimeType());
+                                    $file->setSize($fileDetails->getSize());
+
+                                    $em->persist($file);
+                                    $em->flush();
+                                }
+                            }
+
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                        }
+
+                        $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
+                    }
+
+                    //  replace file uri to url
+                    foreach ($fileStorageUrls as $uri => $fileStorageData) {
+                        $contentUnitText = $contentUnit->getText();
+                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
+                        $contentUnit->setText($contentUnitText);
+                    }
+                }
+
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $contentUnit->getTransaction();
+                $contentUnit->setPublished($transaction->getTimeSigned());
+                $contentUnit->setBoosted(true);
             }
         }
 
         $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
         if (count($contentUnits) > $count) {
             unset($contentUnits[$count]);
             $more = true;
+        }
+
+        //  add boosted articles into random positions of main articles list
+        for ($i = 0; $i < count($boostedContentUnits); $i++) {
+            $aaa = [$boostedContentUnits[$i]];
+            array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
         }
 
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
