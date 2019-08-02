@@ -111,7 +111,7 @@ class Account implements UserInterface
     private $storage = 0;
 
     /**
-     * @ORM\Column(name="list_view", type="boolean")
+     * @ORM\Column(name="list_view", type="boolean", nullable=true)
      */
     private $listView = 0;
 
