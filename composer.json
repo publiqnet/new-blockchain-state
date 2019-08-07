@@ -3,7 +3,7 @@
     "license": "proprietary",
     "repositories": [
         {
-            "url": "git@github.com:PUBLIQNetwork/publiq-api.git",
+            "url": "git@github.com:publiqnet/publiq-api.git",
             "type": "git"
         }
     ],

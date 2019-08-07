@@ -1950,7 +1950,7 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "git@github.com:PUBLIQNetwork/publiq-api.git",
+                "url": "git@github.com:publiqnet/publiq-api.git",
                 "reference": "d727367dbe942dfd067027385c3d372c5de3d04f"
             },
             "require": {
@@ -3219,7 +3219,7 @@
                     "homepage": "https://symfony.com/contributors"
                 },
                 {
-                    "name": "Jérémy Derussé",
+                    "name": "J??r??my Deruss??",
                     "email": "jeremy@derusse.com"
                 }
             ],
@@ -3718,7 +3718,7 @@
             ],
             "authors": [
                 {
-                    "name": "Kévin Dunglas",
+                    "name": "K??vin Dunglas",
                     "email": "dunglas@gmail.com"
                 },
                 {

@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Entity\PublicationMember;
 use App\Entity\Subscription;
@@ -21,6 +22,7 @@ use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -30,6 +32,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Tooleks\Php\AvgColorPicker\Gd\AvgColorPicker;
+use App\Service\ContentUnit as CUService;
 
 /**
  * @package App\Controller
@@ -1450,5 +1453,79 @@ class PublicationApiController extends Controller
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/contents/{count}/{boostedCount}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get Publication contents",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @param int $count
+     * @param int $boostedCount
+     * @param string $fromUri
+     * @param CUService $contentUnitService
+     * @return JsonResponse
+     */
+    public function contents(string $slug, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        $fromContentUnit = null;
+        if ($fromUri) {
+            $fromContentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+        }
+
+        $contentUnits = $em->getRepository(ContentUnit::class)->getPublicationArticles($publication, $count + 1, $fromContentUnit);
+
+        //  prepare data to return
+        if ($contentUnits) {
+            try {
+                $contentUnits = $contentUnitService->prepare($contentUnits);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $boostedContentUnits = $em->getRepository(ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
+        if ($boostedContentUnits) {
+            try {
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($contentUnits) > $count) {
+            unset($contentUnits[$count]);
+            $more = true;
+        }
+
+        //  add boosted articles into random positions of main articles list
+        for ($i = 0; $i < count($boostedContentUnits); $i++) {
+            $aaa = [$boostedContentUnits[$i]];
+            array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
+        }
+
+        return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
 }
