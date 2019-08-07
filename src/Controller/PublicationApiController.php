@@ -48,6 +48,7 @@ class PublicationApiController extends Controller
      *     produces={"application/json"},
      *     @SWG\Parameter(name="title", in="formData", type="string", description="Title"),
      *     @SWG\Parameter(name="description", in="formData", type="string", description="Description"),
+     *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
      *     @SWG\Parameter(name="cover", in="formData", type="file", description="Cover"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -77,15 +78,18 @@ class PublicationApiController extends Controller
 
             $title = $content['title'];
             $description = $content['description'];
+            $listView = $content['listView'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
+            $listView = $request->request->get('listView');
         }
 
         try {
             $publication = new Publication();
             $publication->setTitle($title);
             $publication->setDescription($description);
+            $publication->setListView($listView);
 
             //  local function to move uploaded files
             $moveFile = function (UploadedFile $file, string $path) {
@@ -153,6 +157,7 @@ class PublicationApiController extends Controller
      *     produces={"application/json"},
      *     @SWG\Parameter(name="title", in="formData", type="string", description="Title"),
      *     @SWG\Parameter(name="description", in="formData", type="string", description="Description"),
+     *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
      *     @SWG\Parameter(name="deleteLogo", in="formData", type="boolean", description="Delete logo"),
      *     @SWG\Parameter(name="deleteCover", in="formData", type="boolean", description="Delete cover"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
@@ -201,11 +206,13 @@ class PublicationApiController extends Controller
 
             $title = $content['title'];
             $description = $content['description'];
+            $listView = $content['listView'];
             $deleteLogo = $content['deleteLogo'];
             $deleteCover = $content['deleteCover'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
+            $listView = $request->request->get('listView');
             $deleteLogo = $request->request->get('deleteLogo');
             $deleteCover = $request->request->get('deleteCover');
         }
@@ -213,6 +220,7 @@ class PublicationApiController extends Controller
         try {
             $publication->setTitle($title);
             $publication->setDescription($description);
+            $publication->setListView($listView);
 
             //  local function to move uploaded files
             $moveFile = function (UploadedFile $file, string $path) {

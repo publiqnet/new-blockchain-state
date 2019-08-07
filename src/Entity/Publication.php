@@ -93,6 +93,12 @@ class Publication
     private $color;
 
     /**
+     * @ORM\Column(name="list_view", type="boolean", nullable=true)
+     * @Groups({"publication"})
+     */
+    private $listView = 0;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="publication", cascade="remove")
      * @Groups({"publicationMembers"})
      */
@@ -270,6 +276,22 @@ class Publication
     public function setColor(string $color)
     {
         $this->color = $color;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getListView()
+    {
+        return $this->listView;
+    }
+
+    /**
+     * @param mixed $listView
+     */
+    public function setListView($listView)
+    {
+        $this->listView = $listView;
     }
 
     /**
