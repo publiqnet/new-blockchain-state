@@ -99,6 +99,12 @@ class Publication
     private $listView = 0;
 
     /**
+     * @ORM\Column(name="hide_cover", type="boolean", nullable=true)
+     * @Groups({"publication"})
+     */
+    private $hideCover = 0;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="publication", cascade="remove")
      * @Groups({"publicationMembers"})
      */
@@ -292,6 +298,22 @@ class Publication
     public function setListView($listView)
     {
         $this->listView = $listView;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHideCover()
+    {
+        return $this->hideCover;
+    }
+
+    /**
+     * @param mixed $hideCover
+     */
+    public function setHideCover($hideCover)
+    {
+        $this->hideCover = $hideCover;
     }
 
     /**
