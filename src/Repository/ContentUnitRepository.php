@@ -10,6 +10,7 @@ namespace App\Repository;
 
 use App\Entity\Account;
 use App\Entity\ContentUnit;
+use App\Entity\Publication;
 use Doctrine\ORM\EntityRepository;
 
 /**
@@ -77,6 +78,51 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere('cu.author = :author')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameter('author', $account)
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        }
+    }
+
+    /**
+     * @param Publication $publication
+     * @param int $count
+     * @param ContentUnit|null $fromContentUnit
+     * @return array|null
+     */
+    public function getPublicationArticles(Publication $publication, int $count = 10, ContentUnit $fromContentUnit = null)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        if ($fromContentUnit) {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu, a, t')
+                ->join('cu.transaction', 't')
+                ->join('cu.author', 'a')
+                ->where('t.block is not null')
+                ->andWhere('cu.publication = :publication')
+                ->andWhere('cu.id < :fromId')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['publication' => $publication, 'fromId' => $fromContentUnit->getId()])
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu, a, t')
+                ->join('cu.transaction', 't')
+                ->join('cu.author', 'a')
+                ->where('t.block is not null')
+                ->andWhere('cu.publication = :publication')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameter('publication', $publication)
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()

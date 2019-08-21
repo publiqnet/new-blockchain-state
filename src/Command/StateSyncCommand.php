@@ -242,8 +242,8 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $contentUnitEntity->setChannel($channelAccount);
                                 $contentUnitEntity->setTitle($contentUnitTitle);
                                 $contentUnitEntity->setText($contentUnitText);
-                                foreach ($fileUris as $uri) {
-                                    $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
+                                foreach ($fileUris as $fileUri) {
+                                    $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                                     $contentUnitEntity->addFile($fileEntity);
                                 }
                                 if ($coverUri) {
