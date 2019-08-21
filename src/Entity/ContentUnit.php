@@ -52,6 +52,12 @@ class ContentUnit
     private $text;
 
     /**
+     * @ORM\Column(name="views", type="integer", nullable=true)
+     * @Groups({"contentUnit", "contentUnitFull"})
+     */
+    private $views = 0;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
      * @Groups({"contentUnit", "contentUnitFull"})
      */
@@ -184,6 +190,38 @@ class ContentUnit
     public function setText($text)
     {
         $this->text = $text;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViews()
+    {
+        return $this->views;
+    }
+
+    /**
+     * @param mixed $views
+     */
+    public function setViews($views)
+    {
+        $this->views = $views;
+    }
+
+    /**
+     * @param integer $views
+     */
+    public function plusViews($views)
+    {
+        $this->views += $views;
+    }
+
+    /**
+     * @param integer $views
+     */
+    public function minusViews($views)
+    {
+        $this->views += $views;
     }
 
     /**

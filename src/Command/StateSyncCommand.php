@@ -22,6 +22,7 @@ use PubliqAPI\Base\NodeType;
 use PubliqAPI\Base\UpdateType;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\ContentUnit;
+use PubliqAPI\Model\ContentUnitImpactLog;
 use PubliqAPI\Model\File;
 use PubliqAPI\Model\LoggedTransaction;
 use PubliqAPI\Model\LoggedTransactions;
@@ -132,6 +133,7 @@ class StateSyncCommand extends ContainerAwareCommand
                 $size = $action->getBlockSize();
                 $transactions = $action->getTransactions();
                 $rewards = $action->getRewards();
+                $unitUriImpacts = $action->getUnitUriImpacts();
 
                 //  get authority account
                 $authorityAccount = $this->checkAccount($authority);
@@ -523,6 +525,28 @@ class StateSyncCommand extends ContainerAwareCommand
                             $this->updateAccountBalance($toAccount, $whole, $fraction, true);
                         } else {
                             $this->updateAccountBalance($toAccount, $whole, $fraction, false);
+                        }
+                    }
+                }
+
+                if (is_array($unitUriImpacts)) {
+                    /**
+                     * @var ContentUnitImpactLog $unitUriImpact
+                     */
+                    foreach ($unitUriImpacts as $unitUriImpact) {
+                        $contentUnitUri = $unitUriImpact->getContentUnitUri();
+                        $viewCount = $unitUriImpact->getViewCount();
+
+                        $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $contentUnitUri]);
+                        if ($contentUnitEntity) {
+                            if ($appliedReverted) {
+                                $contentUnitEntity->plusViews($viewCount);
+                            } else {
+                                $contentUnitEntity->minusViews($viewCount);
+                            }
+
+                            $this->em->persist($contentUnitEntity);
+                            $this->em->flush();
                         }
                     }
                 }
