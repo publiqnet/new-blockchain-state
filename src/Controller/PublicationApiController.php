@@ -818,7 +818,7 @@ class PublicationApiController extends Controller
     }
 
     /**
-     * @Route("/{slug}/invitation/{identifier}", methods={"DELETE"})
+     * @Route("/{slug}/invitation/cancel/{identifier}", methods={"DELETE"})
      * @SWG\Delete(
      *     summary="Cancel invitation to become a member of publication",
      *     consumes={"application/json"},

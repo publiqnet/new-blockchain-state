@@ -16,6 +16,7 @@ use App\Entity\PublicationArticle;
 use App\Entity\Reward;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
+use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
@@ -31,6 +32,7 @@ use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
 use PubliqAPI\Model\SponsorContentUnit;
+use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
 use PubliqAPI\Model\Transfer;
@@ -51,19 +53,26 @@ class StateSyncCommand extends ContainerAwareCommand
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;
+
+    /** @var \App\Service\Custom $customService */
+    private $customService;
+
     /** @var EntityManager $em */
     private $em;
+
     /** @var SymfonyStyle $em */
     private $io;
+
     /** @var array $balances */
     private $balances = [];
 
 
-    public function __construct(BlockChain $blockChain)
+    public function __construct(BlockChain $blockChain, Custom $custom)
     {
         parent::__construct();
 
         $this->blockChainService = $blockChain;
+        $this->customService = $custom;
     }
 
     protected function configure()
@@ -74,6 +83,7 @@ class StateSyncCommand extends ContainerAwareCommand
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         parent::initialize($input, $output);
+
         $this->em = $this->getContainer()->get('doctrine.orm.entity_manager');
         // DISABLE SQL LOGGING, CAUSE IT CAUSES MEMORY SHORTAGE on large inserts
         $this->em->getConnection()->getConfiguration()->setSQLLogger(null);
@@ -95,6 +105,56 @@ class StateSyncCommand extends ContainerAwareCommand
             $output->writeln('The command is already running in another process.');
 
             return 0;
+        }
+
+
+        //  GET FILES WITHOUT DETAILS
+        $files = $this->em->getRepository(\App\Entity\File::class)->findBy(['mimeType' => null]);
+        if ($files) {
+            /**
+             * @var \App\Entity\File $file
+             */
+            foreach ($files as $file) {
+                /**
+                 * @var Account[] $fileStorages
+                 */
+                $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
+                if (count($fileStorages)) {
+                    $randomStorage = rand(0, count($fileStorages) - 1);
+                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
+
+                    //  get file details
+                    if (!$file->getMimeType()) {
+                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
+                        if ($fileDetails instanceof StorageFileDetailsResponse) {
+                            $file->setMimeType($fileDetails->getMimeType());
+                            $file->setSize($fileDetails->getSize());
+
+                            $this->em->persist($file);
+                            $this->em->flush();
+
+                            if ($file->getMimeType() == 'text/html') {
+                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
+
+                                $fileContentUnits = $file->getContentUnits();
+                                if ($fileContentUnits) {
+                                    /**
+                                     * @var \App\Entity\ContentUnit $fileContentUnit
+                                     */
+                                    foreach ($fileContentUnits as $fileContentUnit) {
+                                        $contentUnitText = $fileContentUnit->getTextWithData();
+                                        $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
+                                        $fileContentUnit->setTextWithData($contentUnitText);
+
+                                        $this->em->persist($fileContentUnit);
+                                        $this->em->flush();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         $index = 0;
@@ -242,6 +302,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $contentUnitEntity->setChannel($channelAccount);
                                 $contentUnitEntity->setTitle($contentUnitTitle);
                                 $contentUnitEntity->setText($contentUnitText);
+                                $contentUnitEntity->setTextWithData($contentUnitText);
                                 foreach ($fileUris as $fileUri) {
                                     $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                                     $contentUnitEntity->addFile($fileEntity);
@@ -637,6 +698,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $contentUnitEntity->setChannel($channelAccount);
                         $contentUnitEntity->setTitle($contentUnitTitle);
                         $contentUnitEntity->setText($contentUnitText);
+                        $contentUnitEntity->setTextWithData($contentUnitText);
                         foreach ($fileUris as $uri) {
                             $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
                             $contentUnitEntity->addFile($fileEntity);

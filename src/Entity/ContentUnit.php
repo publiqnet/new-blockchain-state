@@ -10,13 +10,14 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class ContentUnit
  * @package App\Entity
  *
- * @ORM\Table(name="content_unit")
+ * @ORM\Table(name="content_unit", indexes={@Index(columns={"title", "text_with_data"}, flags={"fulltext"})})
  * @ORM\Entity(repositoryClass="App\Repository\ContentUnitRepository")
  */
 class ContentUnit
@@ -50,6 +51,11 @@ class ContentUnit
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $text;
+
+    /**
+     * @ORM\Column(name="text_with_data", type="text", nullable=false)
+     */
+    private $textWithData;
 
     /**
      * @ORM\Column(name="views", type="integer", nullable=true)
@@ -190,6 +196,22 @@ class ContentUnit
     public function setText($text)
     {
         $this->text = $text;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTextWithData()
+    {
+        return $this->textWithData;
+    }
+
+    /**
+     * @param mixed $textWithData
+     */
+    public function setTextWithData($textWithData)
+    {
+        $this->textWithData = $textWithData;
     }
 
     /**

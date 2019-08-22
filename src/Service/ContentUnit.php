@@ -33,11 +33,17 @@ class ContentUnit
      */
     private $blockChain;
 
-    public function __construct(EntityManagerInterface $em, string $channelAddress, BlockChain $blockChain)
+    /**
+     * @var Custom
+     */
+    private $custom;
+
+    public function __construct(EntityManagerInterface $em, string $channelAddress, BlockChain $blockChain, Custom $custom)
     {
         $this->em = $em;
         $this->channelAddress = $channelAddress;
         $this->blockChain = $blockChain;
+        $this->custom = $custom;
     }
 
     /**
@@ -68,7 +74,7 @@ class ContentUnit
                     /**
                      * @var Account[] $fileStorages
                      */
-                    $fileStorages = $file->getStorages();
+                    $fileStorages = $this->custom->getFileStoragesWithPublicAccess($file);
                     if (count($fileStorages)) {
                         $randomStorage = rand(0, count($fileStorages) - 1);
                         $storageUrl = $fileStorages[$randomStorage]->getUrl();

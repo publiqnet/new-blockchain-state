@@ -15,6 +15,7 @@ use App\Entity\PublicationArticle;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
+use App\Service\Custom;
 use Exception;
 use Psr\Log\LoggerInterface;
 use PubliqAPI\Base\UriProblemType;
@@ -442,12 +443,13 @@ class ContentApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Content")
      * @param string $uri
-     * @return JsonResponse
      * @param Blockchain $blockChain
+     * @param Custom $customService
      * @param LoggerInterface $logger
+     * @return JsonResponse
      * @throws Exception
      */
-    public function content(string $uri, BlockChain $blockChain, LoggerInterface $logger)
+    public function content(string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger)
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
@@ -473,7 +475,7 @@ class ContentApiController extends Controller
                 /**
                  * @var Account[] $fileStorages
                  */
-                $fileStorages = $file->getStorages();
+                $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
                 if (count($fileStorages)) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
