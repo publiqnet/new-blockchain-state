@@ -756,11 +756,9 @@ class PublicationApiController extends Controller
         if (is_array($invitations)) {
             $notProceeded = [];
             foreach ($invitations as $invitation) {
-                $publicKey = $invitation['publicKey'];
-                $email = $invitation['email'];
                 $asEditor = $invitation['asEditor'];
 
-                if ($publicKey) {
+                if (isset($invitation['publicKey']) && ($publicKey = $invitation['publicKey'])) {
                     /**
                      * @var Account $member
                      */
@@ -769,7 +767,7 @@ class PublicationApiController extends Controller
                         $notProceeded[] = $publicKey;
                         continue;
                     }
-                } elseif ($email) {
+                } elseif (isset($invitation['email']) && ($email = $invitation['email'])) {
                     /**
                      * @var Account $member
                      */
