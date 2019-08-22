@@ -40,6 +40,20 @@ class ContentUnitRepository extends EntityRepository
 
     /**
      * @param Account $account
+     * @return array|null
+     */
+    public function getAuthorArticlesViews(Account $account)
+    {
+        return $this->createQueryBuilder('cu')
+            ->select('SUM(cu.views)')
+            ->where('cu.author = :author')
+            ->setParameter('author', $account)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param Account $account
      * @param int $count
      * @param ContentUnit|null $fromContentUnit
      * @return array|null

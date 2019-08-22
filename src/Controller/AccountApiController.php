@@ -334,20 +334,12 @@ class AccountApiController extends Controller
         $articles = $em->getRepository(ContentUnit::class)->getAuthorArticlesCount($author);
 
         //  calculate total views
-        $views = 0;
-        if ($articles) {
-            /**
-             * @var ContentUnit $article
-             */
-            foreach ($articles as $article) {
-                $views += $article->getViews();
-            }
-        }
+        $views = $em->getRepository(ContentUnit::class)->getAuthorArticlesViews($author);
 
         $stats = [
             'subscribersCount' => count($subscribers),
             'rating' => 0,
-            'views' => $views,
+            'views' => intval($views[0][1]),
             'articlesCount' => count($articles),
             'isSubscribed' => ($subscribed ? 1: 0),
             'publicKey' => $publicKey,
