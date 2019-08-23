@@ -144,6 +144,12 @@ class Publication
     private $articles;
 
     /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Tag", inversedBy="publications")
+     * @Groups({"publication"})
+     */
+    private $tags;
+
+    /**
      * @var boolean
      * @Groups({"publicationSubscribed"})
      */
@@ -156,6 +162,7 @@ class Publication
         $this->subscribers = new ArrayCollection();
         $this->contentUnits = new ArrayCollection();
         $this->articles = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     /**
@@ -394,6 +401,24 @@ class Publication
     public function getArticles()
     {
         return $this->articles;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag)
+    {
+        $this->tags->add($tag);
+    }
+
+    public function removeTag(Tag $tag)
+    {
+        $this->tags->removeElement($tag);
     }
 
     /**

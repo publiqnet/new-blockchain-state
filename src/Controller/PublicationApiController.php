@@ -13,6 +13,7 @@ use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Entity\PublicationMember;
 use App\Entity\Subscription;
+use App\Entity\Tag;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
@@ -50,6 +51,7 @@ class PublicationApiController extends Controller
      *     @SWG\Parameter(name="description", in="formData", type="string", description="Description"),
      *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
      *     @SWG\Parameter(name="hideCover", in="formData", type="boolean", description="Hide cover"),
+     *     @SWG\Parameter(name="tags", in="formData", type="array", items={"type": "string"}, description="Tags"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
      *     @SWG\Parameter(name="cover", in="formData", type="file", description="Cover"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -81,11 +83,13 @@ class PublicationApiController extends Controller
             $description = $content['description'];
             $listView = $content['listView'];
             $hideCover = $content['hideCover'];
+            $tags = $content['tags'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
             $listView = $request->request->get('listView');
             $hideCover = $request->request->get('hideCover');
+            $tags = $request->request->get('tags');
         }
 
         try {
@@ -94,6 +98,21 @@ class PublicationApiController extends Controller
             $publication->setDescription($description);
             $publication->setListView($listView);
             $publication->setHideCover($hideCover);
+
+            //  relate with Tags
+            if (is_array($tags)) {
+                foreach ($tags as $tag) {
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
+
+                        $em->persist($tagEntity);
+                    }
+
+                    $publication->addTag($tagEntity);
+                }
+            }
 
             //  local function to move uploaded files
             $moveFile = function (UploadedFile $file, string $path) {
@@ -145,7 +164,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             //  prepare return data
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
 
             return new JsonResponse($publication);
         } catch (\Exception $e) {
