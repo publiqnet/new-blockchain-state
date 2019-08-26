@@ -101,19 +101,17 @@ class PublicationApiController extends Controller
 
             //  relate with Tags
             $tags = explode(',', $tags);
-            if (is_array($tags)) {
-                foreach ($tags as $tag) {
-                    $tag = trim($tag);
-                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
-                    if (!$tagEntity) {
-                        $tagEntity = new Tag();
-                        $tagEntity->setName($tag);
+            foreach ($tags as $tag) {
+                $tag = trim($tag);
+                $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                if (!$tagEntity) {
+                    $tagEntity = new Tag();
+                    $tagEntity->setName($tag);
 
-                        $em->persist($tagEntity);
-                    }
-
-                    $publication->addTag($tagEntity);
+                    $em->persist($tagEntity);
                 }
+
+                $publication->addTag($tagEntity);
             }
 
             //  local function to move uploaded files
@@ -184,6 +182,7 @@ class PublicationApiController extends Controller
      *     @SWG\Parameter(name="description", in="formData", type="string", description="Description"),
      *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
      *     @SWG\Parameter(name="hideCover", in="formData", type="boolean", description="Hide cover"),
+     *     @SWG\Parameter(name="tags", in="formData", type="array", items={"type": "string"}, description="Tags"),
      *     @SWG\Parameter(name="deleteLogo", in="formData", type="boolean", description="Delete logo"),
      *     @SWG\Parameter(name="deleteCover", in="formData", type="boolean", description="Delete cover"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
@@ -234,6 +233,7 @@ class PublicationApiController extends Controller
             $description = $content['description'];
             $listView = $content['listView'];
             $hideCover = $content['hideCover'];
+            $tags = $content['tags'];
             $deleteLogo = $content['deleteLogo'];
             $deleteCover = $content['deleteCover'];
         } else {
@@ -241,6 +241,7 @@ class PublicationApiController extends Controller
             $description = $request->request->get('description');
             $listView = $request->request->get('listView');
             $hideCover = $request->request->get('hideCover');
+            $tags = $request->request->get('tags');
             $deleteLogo = $request->request->get('deleteLogo');
             $deleteCover = $request->request->get('deleteCover');
         }
@@ -250,6 +251,24 @@ class PublicationApiController extends Controller
             $publication->setDescription($description);
             $publication->setListView($listView);
             $publication->setHideCover($hideCover);
+
+            //  delete tag relation
+            $publication->removeAllTags();
+
+            //  relate with Tags
+            $tags = explode(',', $tags);
+            foreach ($tags as $tag) {
+                $tag = trim($tag);
+                $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                if (!$tagEntity) {
+                    $tagEntity = new Tag();
+                    $tagEntity->setName($tag);
+
+                    $em->persist($tagEntity);
+                }
+
+                $publication->addTag($tagEntity);
+            }
 
             //  local function to move uploaded files
             $moveFile = function (UploadedFile $file, string $path) {
@@ -430,7 +449,7 @@ class PublicationApiController extends Controller
             }
         }
 
-        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed']]);
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed', 'tag']]);
 
         $more = false;
         if (count($publications) > $count) {
@@ -488,10 +507,10 @@ class PublicationApiController extends Controller
             }
         }
 
-        $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
-        $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'publicationMemberStatus']]);
-        $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
-        $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'publicationMemberStatus']]);
+        $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'tag', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
+        $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
+        $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
+        $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
 
         //  replace address field with publicKey
         for ($i=0; $i<count($owned); $i++) {
@@ -542,7 +561,7 @@ class PublicationApiController extends Controller
                         $publication->setMembers($publicationMembers);
                     }
                 }
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
 
                 //  replace address field with publicKey
                 for ($i=0; $i<count($publications); $i++) {
@@ -554,7 +573,7 @@ class PublicationApiController extends Controller
                 break;
             case 'membership':
                 $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus']]);
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
                 break;
             case 'invitations':
                 $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsInvitations($account);
@@ -569,7 +588,7 @@ class PublicationApiController extends Controller
                         }
                     }
                 }
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
 
                 //  replace address field with publicKey
                 for ($i=0; $i<count($publications); $i++) {
@@ -579,7 +598,7 @@ class PublicationApiController extends Controller
                 break;
             case 'requests':
                 $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsRequests($account);
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus']]);
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
                 break;
             default:
                 return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -649,7 +668,7 @@ class PublicationApiController extends Controller
                 $publicationRequests = $this->getDoctrine()->getRepository(Account::class)->getPublicationRequests($publication);
                 $publicationRequests = $this->get('serializer')->normalize($publicationRequests, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
-                $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+                $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
                 $publication['memberStatus'] = $memberStatus;
 
                 $publication['owner'] = $publicationOwner;

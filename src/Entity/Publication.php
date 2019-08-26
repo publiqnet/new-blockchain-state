@@ -421,6 +421,11 @@ class Publication
         $this->tags->removeElement($tag);
     }
 
+    public function removeAllTags()
+    {
+        $this->tags->clear();
+    }
+
     /**
      * @return bool
      */
