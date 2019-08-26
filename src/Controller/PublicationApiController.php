@@ -100,18 +100,20 @@ class PublicationApiController extends Controller
             $publication->setHideCover($hideCover);
 
             //  relate with Tags
-            $tags = explode(',', $tags);
-            foreach ($tags as $tag) {
-                $tag = trim($tag);
-                $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
-                if (!$tagEntity) {
-                    $tagEntity = new Tag();
-                    $tagEntity->setName($tag);
+            if ($tags) {
+                $tags = explode(',', $tags);
+                foreach ($tags as $tag) {
+                    $tag = trim($tag);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
 
-                    $em->persist($tagEntity);
+                        $em->persist($tagEntity);
+                    }
+
+                    $publication->addTag($tagEntity);
                 }
-
-                $publication->addTag($tagEntity);
             }
 
             //  local function to move uploaded files
@@ -256,18 +258,20 @@ class PublicationApiController extends Controller
             $publication->removeAllTags();
 
             //  relate with Tags
-            $tags = explode(',', $tags);
-            foreach ($tags as $tag) {
-                $tag = trim($tag);
-                $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
-                if (!$tagEntity) {
-                    $tagEntity = new Tag();
-                    $tagEntity->setName($tag);
+            if ($tags) {
+                $tags = explode(',', $tags);
+                foreach ($tags as $tag) {
+                    $tag = trim($tag);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
 
-                    $em->persist($tagEntity);
+                        $em->persist($tagEntity);
+                    }
+
+                    $publication->addTag($tagEntity);
                 }
-
-                $publication->addTag($tagEntity);
             }
 
             //  local function to move uploaded files
