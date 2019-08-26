@@ -119,11 +119,17 @@ class ContentUnit
      */
     private $boosts;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
+     */
+    private $tags;
+
 
     public function __construct()
     {
         $this->files = new ArrayCollection();
         $this->boosts = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     /**
@@ -393,5 +399,13 @@ class ContentUnit
     public function setBoosted(bool $boosted)
     {
         $this->boosted = $boosted;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTags()
+    {
+        return $this->tags;
     }
 }

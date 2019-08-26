@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
+use App\Entity\ContentUnitTag;
 use App\Entity\IndexNumber;
 use App\Entity\PublicationArticle;
 use App\Entity\Reward;
@@ -321,6 +322,17 @@ class StateSyncCommand extends ContainerAwareCommand
 
                                 $this->em->persist($contentUnitEntity);
                                 $this->em->flush();
+
+                                //  check for related tags
+                                $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                                if ($contentUnitTags) {
+                                    foreach ($contentUnitTags as $contentUnitTag) {
+                                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                                        $this->em->persist($contentUnitTag);
+                                    }
+
+                                    $this->em->flush();
+                                }
 
                                 //  add transaction record with relation to content unit
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);

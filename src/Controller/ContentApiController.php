@@ -9,9 +9,11 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\ContentUnitTag;
 use App\Entity\File;
 use App\Entity\Publication;
 use App\Entity\PublicationArticle;
+use App\Entity\Tag;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
@@ -214,7 +216,8 @@ class ContentApiController extends Controller
      *             type="object",
      *             @SWG\Property(property="uri", type="string"),
      *             @SWG\Property(property="contentId", type="string"),
-     *             @SWG\Property(property="publicationSlug", type="string")
+     *             @SWG\Property(property="publicationSlug", type="string"),
+     *             @SWG\Property(property="tags", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -248,10 +251,12 @@ class ContentApiController extends Controller
             if (isset($content['publicationSlug'])) {
                 $publicationSlug = $content['publicationSlug'];
             }
+            $tags = $content['tags'];
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
             $publicationSlug = $request->request->get('publicationSlug');
+            $tags = $request->request->get('tags');
         }
 
         try {
@@ -259,6 +264,27 @@ class ContentApiController extends Controller
             $content->setContentId($contentId);
             $content->setChannelAddress($this->getParameter('channel_address'));
             $content->addContentUnitUris($uri);
+
+            //  relate with tags
+            if ($tags) {
+                $tags = explode(',', $tags);
+                foreach ($tags as $tag) {
+                    $tag = trim($tag);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
+
+                        $em->persist($tagEntity);
+                    }
+
+                    $contentUnitTag = new ContentUnitTag();
+                    $contentUnitTag->setTag($tagEntity);
+                    $contentUnitTag->setContentUnitUri($uri);
+                    $em->persist($contentUnitTag);
+                    $em->flush();
+                }
+            }
 
             //  if publication selected, add temporary record
             if ($publicationSlug) {

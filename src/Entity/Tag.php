@@ -39,9 +39,15 @@ class Tag
      */
     private $publications;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="tag")
+     */
+    private $contentUnits;
+
     public function __construct()
     {
         $this->publications = new ArrayCollection();
+        $this->contentUnits = new ArrayCollection();
     }
 
     /**
@@ -74,5 +80,13 @@ class Tag
     public function getPublications()
     {
         return $this->publications;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContentUnits()
+    {
+        return $this->contentUnits;
     }
 }
