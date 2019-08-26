@@ -121,6 +121,7 @@ class ContentUnit
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
+     * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $tags;
 

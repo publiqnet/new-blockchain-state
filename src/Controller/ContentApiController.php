@@ -365,8 +365,8 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -438,8 +438,8 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -573,7 +573,7 @@ class ContentApiController extends Controller
         $transaction = $contentUnit->getTransaction();
         $contentUnit->setPublished($transaction->getTimeSigned());
 
-        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
 
         return new JsonResponse($contentUnit);
     }
