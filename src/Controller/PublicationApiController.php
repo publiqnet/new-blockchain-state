@@ -100,8 +100,10 @@ class PublicationApiController extends Controller
             $publication->setHideCover($hideCover);
 
             //  relate with Tags
+            $tags = explode(',', $tags);
             if (is_array($tags)) {
                 foreach ($tags as $tag) {
+                    $tag = trim($tag);
                     $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
                     if (!$tagEntity) {
                         $tagEntity = new Tag();
