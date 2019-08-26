@@ -335,7 +335,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             //  prepare return data
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
 
             return new JsonResponse($publication);
         } catch (\Exception $e) {
