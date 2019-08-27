@@ -717,7 +717,7 @@ class PublicationApiController extends Controller
 
                 $publication['subscribersCount'] = count($subscribers);
                 $publication['membersCount'] = count($publicationEditors) + count($publicationContributors);
-                $publication['views'] = $totalViews[0][1];
+                $publication['views'] = intval($totalViews[0][1]);
 
                 return new JsonResponse($publication);
             } elseif ($publicationMember) {
@@ -744,7 +744,7 @@ class PublicationApiController extends Controller
         $publication['memberStatus'] = $memberStatus;
         $publication['subscribersCount'] = count($subscribers);
         $publication['membersCount'] = count($publicationMembers);
-        $publication['views'] = $totalViews[0][1];
+        $publication['views'] = intval($totalViews[0][1]);
 
         return new JsonResponse($publication);
     }
