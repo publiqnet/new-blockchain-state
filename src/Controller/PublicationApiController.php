@@ -716,6 +716,7 @@ class PublicationApiController extends Controller
                 }
 
                 $publication['subscribersCount'] = count($subscribers);
+                $publication['membersCount'] = count($publicationEditors) + count($publicationContributors);
                 $publication['views'] = $totalViews[0][1];
 
                 return new JsonResponse($publication);
