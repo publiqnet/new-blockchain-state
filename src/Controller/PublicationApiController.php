@@ -646,7 +646,10 @@ class PublicationApiController extends Controller
         }
 
         //  get subscribers
-        $subscribers = $em->getRepository(Subscription::class)->findBy(['publication' => $publication]);
+        $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
+
+        //  get articles total views
+        $totalViews = $em->getRepository(ContentUnit::class)->getPublicationArticlesTotalViews($publication);
 
         //  if authorized user check if user is owner of Publication
         $memberStatus = 0;
@@ -672,6 +675,8 @@ class PublicationApiController extends Controller
                 $publicationRequests = $this->getDoctrine()->getRepository(Account::class)->getPublicationRequests($publication);
                 $publicationRequests = $this->get('serializer')->normalize($publicationRequests, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
+                $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase']]);
+
                 $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
                 $publication['memberStatus'] = $memberStatus;
 
@@ -680,6 +685,7 @@ class PublicationApiController extends Controller
                 $publication['contributors'] = $publicationContributors;
                 $publication['invitations'] = $publicationInvitations;
                 $publication['requests'] = $publicationRequests;
+                $publication['subscribers'] = $subscribers;
 
                 //  replace address field with publicKey
                 $publication['owner']['publicKey'] = $publication['owner']['address'];
@@ -709,13 +715,16 @@ class PublicationApiController extends Controller
                     unset($publication['requests'][$i]['address']);
                 }
 
-                $publication['subscribers'] = count($subscribers);
+                $publication['subscribersCount'] = count($subscribers);
+                $publication['views'] = $totalViews[0][1];
 
                 return new JsonResponse($publication);
             } elseif ($publicationMember) {
                 $memberStatus = $publicationMember->getStatus();
             }
         }
+
+        $publicationMembers = $this->getDoctrine()->getRepository(Account::class)->getPublicationMembers($publication);
 
         if ($memberStatus === PublicationMember::TYPES['invited_editor'] || $memberStatus === PublicationMember::TYPES['invited_contributor']) {
             $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
@@ -732,7 +741,9 @@ class PublicationApiController extends Controller
         }
 
         $publication['memberStatus'] = $memberStatus;
-        $publication['subscribers'] = count($subscribers);
+        $publication['subscribersCount'] = count($subscribers);
+        $publication['membersCount'] = count($publicationMembers);
+        $publication['views'] = $totalViews[0][1];
 
         return new JsonResponse($publication);
     }

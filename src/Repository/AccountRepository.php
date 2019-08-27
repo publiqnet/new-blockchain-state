@@ -144,4 +144,15 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getPublicationSubscribers(Publication $publication)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a')
+            ->join('a.subscriptions', 's')
+            ->where('s.publication = :publication')
+            ->setParameters(['publication' => $publication])
+            ->getQuery()
+            ->getResult();
+    }
 }

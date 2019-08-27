@@ -145,6 +145,20 @@ class ContentUnitRepository extends EntityRepository
     }
 
     /**
+     * @param Publication $publication
+     * @return array|null
+     */
+    public function getPublicationArticlesTotalViews(Publication $publication)
+    {
+        return $this->createQueryBuilder('cu')
+            ->select('SUM(cu.views)')
+            ->where('cu.publication = :publication')
+            ->setParameter('publication', $publication)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @param int $count
      * @param ContentUnit|null $fromContentUnit
      * @return array|null
