@@ -341,7 +341,7 @@ class AccountApiController extends Controller
             'rating' => 0,
             'views' => intval($views[0][1]),
             'articlesCount' => count($articles),
-            'isSubscribed' => ($subscribed ? 1: 0),
+            'subscribed' => ($subscribed ? 1: 0),
             'publicKey' => $publicKey,
             'firstName' => $author->getFirstName(),
             'lastName' => $author->getLastName(),
