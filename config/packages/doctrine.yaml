@@ -33,3 +33,6 @@ doctrine:
         dql:
             numeric_functions:
                 rand: DoctrineExtensions\Query\Mysql\Rand
+            string_functions:
+                # Match against should have the path to the MatchAgainst class created in the previous step
+                MATCH_AGAINST: App\Extensions\Doctrine\MatchAgainst

@@ -224,4 +224,25 @@ class ContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function fulltextSearch($searchWord)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        $query = $this->createQueryBuilder('cu');
+
+        return $query->select('cu, a')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->andWhere('t.block is not null')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameter('searchWord', $searchWord)
+            ->orderBy('cu.id', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
 }

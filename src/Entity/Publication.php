@@ -11,11 +11,12 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Table(name="publication")
+ * @ORM\Table(name="publication", indexes={@Index(columns={"title", "description"}, flags={"fulltext"})})
  * @ORM\Entity(repositoryClass="App\Repository\PublicationRepository")
  * @HasLifecycleCallbacks
  */

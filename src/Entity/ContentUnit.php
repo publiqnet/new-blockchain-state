@@ -31,7 +31,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
      */
     private $uri;
 
@@ -42,7 +42,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="title", type="string", length=256, nullable=false)
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
      */
     private $title;
 
@@ -59,7 +59,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="views", type="integer", nullable=true)
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
      */
     private $views = 0;
 
@@ -71,7 +71,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
-     * @Groups({"contentUnitFull"})
+     * @Groups({"contentUnitFull", "contentUnitSearch"})
      */
     private $author;
 
@@ -98,7 +98,7 @@ class ContentUnit
 
     /**
      * @var integer
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
      */
     private $published;
 
@@ -110,7 +110,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
      */
     private $publication;
 
@@ -121,7 +121,7 @@ class ContentUnit
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
      */
     private $tags;
 

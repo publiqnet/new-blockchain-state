@@ -101,4 +101,17 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function fulltextSearch($searchWord)
+    {
+//        $searchWord = explode(' ', $searchWord);
+//        $searchWord = '+'.implode(' +', $searchWord);
+
+        return $this->createQueryBuilder('p')
+            ->select("p")
+            ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->setParameter('searchWord', $searchWord)
+            ->getQuery()
+            ->getResult();
+    }
 }
