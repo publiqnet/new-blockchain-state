@@ -89,6 +89,24 @@ class SearchController extends Controller
         }
         $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitSearch', 'tag', 'accountBase', 'publication']]);
 
-        return new JsonResponse(['publication' => $publications, 'article' => $articles]);
+        //  SEARCH IN AUTHORS
+        $authors = $em->getRepository(Account::class)->fulltextSearch($word);
+        if ($account && $authors) {
+            /**
+             * @var Account $author
+             */
+            foreach ($authors as $author) {
+                //  check if user subscribed to author
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                if ($subscribed) {
+                    $author->setSubscribed(true);
+                } else {
+                    $author->setSubscribed(false);
+                }
+            }
+        }
+        $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'authors' => $authors]);
     }
 }

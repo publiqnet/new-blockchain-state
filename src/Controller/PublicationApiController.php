@@ -664,10 +664,38 @@ class PublicationApiController extends Controller
                 $publicationOwner = $this->get('serializer')->normalize($publicationOwner, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
                 $publicationEditors = $this->getDoctrine()->getRepository(Account::class)->getPublicationEditors($publication);
-                $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
+                if ($publicationEditors) {
+                    /**
+                     * @var Account $publicationEditor
+                     */
+                    foreach ($publicationEditors as $publicationEditor) {
+                        //  check if user subscribed to author
+                        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationEditor]);
+                        if ($subscribed) {
+                            $publicationEditor->setSubscribed(true);
+                        } else {
+                            $publicationEditor->setSubscribed(false);
+                        }
+                    }
+                }
+                $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
                 $publicationContributors = $this->getDoctrine()->getRepository(Account::class)->getPublicationContributors($publication);
-                $publicationContributors = $this->get('serializer')->normalize($publicationContributors, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
+                if ($publicationContributors) {
+                    /**
+                     * @var Account $publicationContributor
+                     */
+                    foreach ($publicationContributors as $publicationContributor) {
+                        //  check if user subscribed to author
+                        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationContributor]);
+                        if ($subscribed) {
+                            $publicationContributor->setSubscribed(true);
+                        } else {
+                            $publicationContributor->setSubscribed(false);
+                        }
+                    }
+                }
+                $publicationContributors = $this->get('serializer')->normalize($publicationContributors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
                 $publicationInvitations = $this->getDoctrine()->getRepository(Account::class)->getPublicationInvitations($publication);
                 $publicationInvitations = $this->get('serializer')->normalize($publicationInvitations, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountEmail']]);
