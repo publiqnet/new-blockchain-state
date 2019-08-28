@@ -1034,10 +1034,10 @@ class StateSyncCommand extends ContainerAwareCommand
      */
     private function checkAccount(string $address)
     {
-        $account = $this->em->getRepository(Account::class)->findOneBy(['address' => $address]);
+        $account = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $address]);
         if (!$account) {
             $account = new Account();
-            $account->setAddress($address);
+            $account->setPublicKey($address);
             $account->setWhole(0);
             $account->setFraction(0);
 
@@ -1129,10 +1129,10 @@ class StateSyncCommand extends ContainerAwareCommand
 
     private function updateAccountBalance(Account $account, int $whole, int $fraction, bool $add)
     {
-        $address = $account->getAddress();
+        $address = $account->getPublicKey();
         $sign = $add ? 1 : -1;
 
-        if (!array_key_exists($account->getAddress(), $this->balances)) {
+        if (!array_key_exists($account->getPublicKey(), $this->balances)) {
             $this->balances[$address]['whole'] = $account->getWhole();
             $this->balances[$address]['fraction'] = $account->getFraction();
         }

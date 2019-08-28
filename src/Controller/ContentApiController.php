@@ -161,11 +161,11 @@ class ContentApiController extends Controller
         }
 
         //  get public key
-        $publicKey = $account->getAddress();
+        $publicKey = $account->getPublicKey();
 
         try {
             $action = new ContentUnit();
-            $action->addAuthorAddresses($account->getAddress());
+            $action->addAuthorAddresses($account->getPublicKey());
             $action->setUri($uri);
             $action->setContentId($contentId);
             $action->setChannelAddress($this->getParameter('channel_address'));
@@ -409,7 +409,7 @@ class ContentApiController extends Controller
         /**
          * @var Account $account
          */
-        $account = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$account) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -505,7 +505,7 @@ class ContentApiController extends Controller
                 if (count($fileStorages)) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                    $storageAddress = $fileStorages[$randomStorage]->getAddress();
+                    $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
 
                     //  get file details
                     if (!$file->getMimeType()) {
@@ -532,7 +532,7 @@ class ContentApiController extends Controller
                     $channel = $content->getChannel();
 
                     $storageUrl = $channel->getUrl();
-                    $storageAddress = $channel->getAddress();
+                    $storageAddress = $channel->getPublicKey();
 
                     //  get file details
                     if (!$file->getMimeType()) {
@@ -644,7 +644,7 @@ class ContentApiController extends Controller
         }
 
         try {
-            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getAddress(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime);
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {

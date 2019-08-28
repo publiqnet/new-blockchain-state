@@ -213,11 +213,6 @@ class NotificationApiController extends Controller
                 $notification[$key] = $notificationExtra;
             }
 
-            if ($notification['performer']) {
-                $notification['performer']['publicKey'] = $notification['performer']['address'];
-                unset($notification['performer']['address']);
-            }
-
             $notificationsRewrited[] = $notification;
         }
 

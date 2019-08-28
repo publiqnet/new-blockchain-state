@@ -65,11 +65,11 @@ class AccountApiController extends Controller
             $email = $checkResponse['data']['email'];
 
             //  check if account exist
-            $account = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+            $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
             if (!$account) {
                 $account = new Account();
 
-                $account->setAddress($publicKey);
+                $account->setPublicKey($publicKey);
                 $account->setEmail($email);
                 $account->setWhole(0);
                 $account->setFraction(0);
@@ -83,9 +83,6 @@ class AccountApiController extends Controller
             $em->flush();
 
             $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
-
-            $account['publicKey'] = $account['address'];
-            unset($account['address']);
 
             $account['token'] = $account['apiKey'];
             unset($account['apiKey']);
@@ -117,8 +114,6 @@ class AccountApiController extends Controller
         $account = $this->getUser();
 
         $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
-        $account['publicKey'] = $account['address'];
-        unset($account['address']);
         unset($account['apiKey']);
 
         return new JsonResponse($account);
@@ -240,8 +235,6 @@ class AccountApiController extends Controller
             $em->flush();
 
             $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
-            $account['publicKey'] = $account['address'];
-            unset($account['address']);
             unset($account['apiKey']);
 
             return new JsonResponse($account);
@@ -281,8 +274,6 @@ class AccountApiController extends Controller
             $em->flush();
 
             $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
-            $account['publicKey'] = $account['address'];
-            unset($account['address']);
             unset($account['apiKey']);
 
             return new JsonResponse($account);
@@ -319,7 +310,7 @@ class AccountApiController extends Controller
         /**
          * @var Account $author
          */
-        $author = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$author) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -378,12 +369,6 @@ class AccountApiController extends Controller
 
         $users = $em->getRepository(Account::class)->searchUsers($searchWord, $account);
         $users = $this->get('serializer')->normalize($users, null, ['groups' => ['accountBase']]);
-
-        //  replace address field with publicKey
-        for ($i=0; $i<count($users); $i++) {
-            $users[$i]['publicKey'] = $users[$i]['address'];
-            unset($users[$i]['address']);
-        }
 
         return new JsonResponse($users);
     }
@@ -446,7 +431,7 @@ class AccountApiController extends Controller
         /**
          * @var Account $author
          */
-        $author = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$author) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -491,7 +476,7 @@ class AccountApiController extends Controller
         /**
          * @var Account $author
          */
-        $author = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$author) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }

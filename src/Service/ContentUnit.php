@@ -78,7 +78,7 @@ class ContentUnit
                     if (count($fileStorages)) {
                         $randomStorage = rand(0, count($fileStorages) - 1);
                         $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                        $storageAddress = $fileStorages[$randomStorage]->getAddress();
+                        $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
 
                         //  get file details
                         if (!$file->getMimeType()) {
@@ -105,7 +105,7 @@ class ContentUnit
                         $channel = $content->getChannel();
 
                         $storageUrl = $channel->getUrl();
-                        $storageAddress = $channel->getAddress();
+                        $storageAddress = $channel->getPublicKey();
 
                         //  get file details
                         if (!$file->getMimeType()) {

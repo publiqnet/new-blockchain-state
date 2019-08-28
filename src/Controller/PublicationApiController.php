@@ -516,19 +516,6 @@ class PublicationApiController extends Controller
         $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
         $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
 
-        //  replace address field with publicKey
-        for ($i=0; $i<count($owned); $i++) {
-            for ($j=0; $j<count($owned[$i]['members']); $j++) {
-                $owned[$i]['members'][$j]['publicKey'] = $owned[$i]['members'][$j]['address'];
-                unset($owned[$i]['members'][$j]['address']);
-            }
-        }
-
-        for ($i=0; $i<count($invitations); $i++) {
-            $invitations[$i]['inviter']['publicKey'] = $invitations[$i]['inviter']['address'];
-            unset($invitations[$i]['inviter']['address']);
-        }
-
         return new JsonResponse(['owned' => $owned, 'membership' => $membership, 'invitations' => $invitations, 'requests' => $requests]);
     }
 
@@ -566,14 +553,6 @@ class PublicationApiController extends Controller
                     }
                 }
                 $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
-
-                //  replace address field with publicKey
-                for ($i=0; $i<count($publications); $i++) {
-                    for ($j=0; $j<count($publications[$i]['members']); $j++) {
-                        $publications[$i]['members'][$j]['publicKey'] = $publications[$i]['members'][$j]['address'];
-                        unset($publications[$i]['members'][$j]['address']);
-                    }
-                }
                 break;
             case 'membership':
                 $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
@@ -593,12 +572,6 @@ class PublicationApiController extends Controller
                     }
                 }
                 $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
-
-                //  replace address field with publicKey
-                for ($i=0; $i<count($publications); $i++) {
-                    $publications[$i]['inviter']['publicKey'] = $publications[$i]['inviter']['address'];
-                    unset($publications[$i]['inviter']['address']);
-                }
                 break;
             case 'requests':
                 $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsRequests($account);
@@ -723,35 +696,6 @@ class PublicationApiController extends Controller
                 $publication['invitations'] = $publicationInvitations;
                 $publication['requests'] = $publicationRequests;
                 $publication['subscribers'] = $subscribers;
-
-                //  replace address field with publicKey
-                $publication['owner']['publicKey'] = $publication['owner']['address'];
-                unset($publication['owner']['address']);
-
-                for ($i=0; $i<count($publication['editors']); $i++) {
-                    $publication['editors'][$i]['publicKey'] = $publication['editors'][$i]['address'];
-                    unset($publication['editors'][$i]['address']);
-                }
-
-                for ($i=0; $i<count($publication['contributors']); $i++) {
-                    $publication['contributors'][$i]['publicKey'] = $publication['contributors'][$i]['address'];
-                    unset($publication['contributors'][$i]['address']);
-                }
-
-                for ($i=0; $i<count($publication['invitations']); $i++) {
-                    $publication['invitations'][$i]['publicKey'] = $publication['invitations'][$i]['address'];
-                    unset($publication['invitations'][$i]['address']);
-
-                    if ($publication['invitations'][$i]['publicKey']) {
-                        unset($publication['invitations'][$i]['email']);
-                    }
-                }
-
-                for ($i=0; $i<count($publication['requests']); $i++) {
-                    $publication['requests'][$i]['publicKey'] = $publication['requests'][$i]['address'];
-                    unset($publication['requests'][$i]['address']);
-                }
-
                 $publication['subscribersCount'] = count($subscribers);
                 $publication['membersCount'] = count($publicationEditors) + count($publicationContributors);
                 $publication['views'] = intval($totalViews[0][1]);
@@ -771,9 +715,6 @@ class PublicationApiController extends Controller
             }
 
             $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationMemberInviter', 'accountBase']]);
-
-            $publication['inviter']['publicKey'] = $publication['inviter']['address'];
-            unset($publication['inviter']['address']);
         } else {
             $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
         }
@@ -855,7 +796,7 @@ class PublicationApiController extends Controller
                     /**
                      * @var Account $member
                      */
-                    $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+                    $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
                     if (!$member) {
                         $notProceeded[] = $publicKey;
                         continue;
@@ -946,7 +887,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $identifier]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $identifier]);
         if (!$member) {
             $member = $em->getRepository(Account::class)->findOneBy(['email' => $identifier]);
         }
@@ -1225,7 +1166,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1292,7 +1233,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1388,7 +1329,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1448,7 +1389,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }

@@ -123,7 +123,7 @@ class FileApiController extends Controller
         }
 
         //  get public key
-        $publicKey = $account->getAddress();
+        $publicKey = $account->getPublicKey();
 
         try {
             if (is_array($files)) {
@@ -149,7 +149,7 @@ class FileApiController extends Controller
                                  * @var Account $fileEntityAuthor
                                  */
                                 $fileEntityAuthor = $fileEntity->getAuthor();
-                                $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getAddress(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
+                                $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getPublicKey(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
                             } else {
                                 $duplicateFiles[$file['uri']] = '';
                             }

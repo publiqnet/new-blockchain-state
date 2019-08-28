@@ -33,10 +33,10 @@ class Account implements UserInterface
 
     /**
      * @var string
-     * @ORM\Column(name="address", type="string", length=128, nullable=true)
+     * @ORM\Column(name="public_key", type="string", length=128, nullable=true)
      * @Groups({"account", "accountBase"})
      */
-    private $address;
+    private $publicKey;
 
     /**
      * @var string
@@ -255,7 +255,7 @@ class Account implements UserInterface
 
     public function __toString()
     {
-        return $this->address;
+        return $this->publicKey;
     }
 
     /**
@@ -269,17 +269,17 @@ class Account implements UserInterface
     /**
      * @return mixed
      */
-    public function getAddress()
+    public function getPublicKey()
     {
-        return $this->address;
+        return $this->publicKey;
     }
 
     /**
-     * @param mixed $address
+     * @param mixed $publicKey
      */
-    public function setAddress($address)
+    public function setPublicKey($publicKey)
     {
-        $this->address = $address;
+        $this->publicKey = $publicKey;
     }
 
     /**
