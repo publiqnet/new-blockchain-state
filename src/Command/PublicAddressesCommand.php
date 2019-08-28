@@ -90,7 +90,7 @@ class PublicAddressesCommand extends ContainerAwareCommand
 
                 $nodeAddress = $publicAddress->getNodeAddress();
 
-                $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['address' => $nodeAddress]);
+                $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
                 if ($nodeEntity) {
                     $sslIpAddress = $publicAddress->getSslIpAddress()->getLocal()->getAddress();
                     $sslPort = $publicAddress->getSslIpAddress()->getLocal()->getPort();
