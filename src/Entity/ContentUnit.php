@@ -31,7 +31,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $uri;
 
@@ -42,7 +42,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="title", type="string", length=256, nullable=false)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $title;
 
@@ -59,19 +59,19 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="views", type="integer", nullable=true)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $views = 0;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $cover;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
-     * @Groups({"contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnitFull", "contentUnitList"})
      */
     private $author;
 
@@ -98,7 +98,7 @@ class ContentUnit
 
     /**
      * @var integer
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $published;
 
@@ -110,7 +110,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $publication;
 
@@ -121,7 +121,7 @@ class ContentUnit
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitSearch"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $tags;
 

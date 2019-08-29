@@ -478,8 +478,8 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -551,8 +551,8 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -716,8 +716,8 @@ class ContentApiController extends Controller
         }
 
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
-        $previousVersions = $this->get('serializer')->normalize($previousVersions, null, ['groups' => ['contentUnitSearch', 'tag', 'accountBase', 'publication']]);
-        $nextVersions = $this->get('serializer')->normalize($nextVersions, null, ['groups' => ['contentUnitSearch', 'tag', 'accountBase', 'publication']]);
+        $previousVersions = $this->get('serializer')->normalize($previousVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $nextVersions = $this->get('serializer')->normalize($nextVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         $contentUnit['previousVersions'] = $previousVersions;
         $contentUnit['nextVersions'] = $nextVersions;

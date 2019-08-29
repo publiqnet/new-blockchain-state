@@ -178,7 +178,7 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a')
+            return $query->select('cu, a, t')
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
                 ->where('t.block is not null')
@@ -193,7 +193,7 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a')
+            return $query->select('cu, a, t')
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
                 ->where('t.block is not null')

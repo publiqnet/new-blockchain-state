@@ -87,7 +87,7 @@ class SearchController extends Controller
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
-        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitSearch', 'tag', 'accountBase', 'publication']]);
+        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  SEARCH IN AUTHORS
         $authors = $em->getRepository(Account::class)->fulltextSearch($word);
