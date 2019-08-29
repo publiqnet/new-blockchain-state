@@ -13,6 +13,7 @@ use App\Entity\ContentUnitTag;
 use App\Entity\File;
 use App\Entity\Publication;
 use App\Entity\PublicationArticle;
+use App\Entity\PublicationMember;
 use App\Entity\Tag;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -310,11 +311,15 @@ class ContentApiController extends Controller
             if ($publicationSlug) {
                 $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
                 if ($publication) {
-                    $publicationArticle = new PublicationArticle();
-                    $publicationArticle->setPublication($publication);
-                    $publicationArticle->setUri($uri);
-                    $em->persist($publicationArticle);
-                    $em->flush();
+                    //  check if Author is a member of Publication
+                    $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                    if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                        $publicationArticle = new PublicationArticle();
+                        $publicationArticle->setPublication($publication);
+                        $publicationArticle->setUri($uri);
+                        $em->persist($publicationArticle);
+                        $em->flush();
+                    }
                 }
             }
 
@@ -324,6 +329,94 @@ class ContentApiController extends Controller
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("/publication", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Change content Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="uri", type="string"),
+     *             @SWG\Property(property="publicationSlug", type="string")
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function changeContentPublication(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_UNAUTHORIZED);
+        }
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $uri = $content['uri'];
+            $publicationSlug = $content['publicationSlug'];
+        } else {
+            $uri = $request->request->get('uri');
+            $publicationSlug = $request->request->get('publicationSlug');
+        }
+
+        try {
+            $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+            if (!$contentUnit) {
+                return new JsonResponse('', Response::HTTP_NOT_FOUND);
+            }
+
+            if ($contentUnit->getAuthor() !== $account) {
+                return new JsonResponse('', Response::HTTP_FORBIDDEN);
+            }
+
+            if ($publicationSlug) {
+                $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
+                if (!$publication) {
+                    return new JsonResponse('', Response::HTTP_NOT_FOUND);
+                }
+
+                //  check if Author is a member of Publication
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                    $contentUnit->setPublication($publication);
+                    $em->persist($contentUnit);
+                    $em->flush();
+                } else {
+                    return new JsonResponse('', Response::HTTP_FORBIDDEN);
+                }
+            } else {
+                $contentUnit->setPublication(null);
+                $em->persist($contentUnit);
+                $em->flush();
+            }
+
+            return new JsonResponse('', Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
         }
