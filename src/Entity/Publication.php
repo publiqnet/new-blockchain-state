@@ -285,9 +285,9 @@ class Publication
     }
 
     /**
-     * @param string $color
+     * @param mixed $color
      */
-    public function setColor(string $color)
+    public function setColor($color)
     {
         $this->color = $color;
     }
