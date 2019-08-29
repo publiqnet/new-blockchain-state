@@ -95,10 +95,10 @@ class ContentApiController extends Controller
         $channel = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelAddress]);
 
         //  check if generated content ID is unique within channel
-        $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
+        $contentUnit = $em->getRepository(\App\Entity\Content::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
         while ($contentUnit) {
             $contentId = rand(1, 999999999);
-            $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
+            $contentUnit = $em->getRepository(\App\Entity\Content::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
         }
 
         $uploadResult = $blockChain->uploadFile($content, 'text/html');
