@@ -234,11 +234,15 @@ class ContentApiController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $publicationSlug = '';
+        $tags = '';
 
         /**
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_UNAUTHORIZED);
+        }
 
         //  get data from submitted data
         $contentType = $request->getContentType();
@@ -251,7 +255,9 @@ class ContentApiController extends Controller
             if (isset($content['publicationSlug'])) {
                 $publicationSlug = $content['publicationSlug'];
             }
-            $tags = $content['tags'];
+            if (isset($content['tags'])) {
+                $tags = $content['tags'];
+            }
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
