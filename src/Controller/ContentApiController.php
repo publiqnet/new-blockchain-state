@@ -686,7 +686,41 @@ class ContentApiController extends Controller
         $transaction = $contentUnit->getTransaction();
         $contentUnit->setPublished($transaction->getTimeSigned());
 
+        //  get article next & previous versions
+        $previousVersions = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
+        if ($previousVersions) {
+            /**
+             * @var \App\Entity\ContentUnit $previousVersion
+             */
+            foreach ($previousVersions as $previousVersion) {
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $previousVersion->getTransaction();
+                $previousVersion->setPublished($transaction->getTimeSigned());
+            }
+        }
+
+        $nextVersions = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, false);
+        if ($nextVersions) {
+            /**
+             * @var \App\Entity\ContentUnit $nextVersion
+             */
+            foreach ($nextVersions as $nextVersion) {
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $nextVersion->getTransaction();
+                $nextVersion->setPublished($transaction->getTimeSigned());
+            }
+        }
+
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $previousVersions = $this->get('serializer')->normalize($previousVersions, null, ['groups' => ['contentUnitSearch', 'tag', 'accountBase', 'publication']]);
+        $nextVersions = $this->get('serializer')->normalize($nextVersions, null, ['groups' => ['contentUnitSearch', 'tag', 'accountBase', 'publication']]);
+
+        $contentUnit['previousVersions'] = $previousVersions;
+        $contentUnit['nextVersions'] = $nextVersions;
 
         return new JsonResponse($contentUnit);
     }

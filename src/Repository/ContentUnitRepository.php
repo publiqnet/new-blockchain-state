@@ -31,6 +31,7 @@ class ContentUnitRepository extends EntityRepository
             ->select('COUNT(cu)')
             ->join('cu.transaction', 't')
             ->where('t.block is not null')
+            ->andWhere('cu.content is not null')
             ->andWhere('cu.author = :author')
             ->setParameter('author', $account)
             ->groupBy('cu.contentId')
@@ -74,6 +75,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
                 ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
                 ->andWhere('cu.author = :author')
                 ->andWhere('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
@@ -89,6 +91,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
                 ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
                 ->andWhere('cu.author = :author')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameter('author', $account)
@@ -119,6 +122,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
                 ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
                 ->andWhere('cu.publication = :publication')
                 ->andWhere('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
@@ -134,6 +138,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
                 ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
                 ->andWhere('cu.publication = :publication')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameter('publication', $publication)
@@ -177,6 +182,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
                 ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
                 ->andWhere('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['fromId' => $fromContentUnit->getId()])
@@ -191,6 +197,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
                 ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
@@ -239,9 +246,39 @@ class ContentUnitRepository extends EntityRepository
             ->join('cu.transaction', 't')
             ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
             ->andWhere('t.block is not null')
+            ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameter('searchWord', $searchWord)
             ->orderBy('cu.id', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getArticleHistory(ContentUnit $article, $previous = false)
+    {
+        $query = $this->createQueryBuilder('cu')
+            ->select('cu, a')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('t.block is not null')
+            ->andWhere('cu.content is not null')
+            ->andWhere('cu.contentId = :contentId')
+            ->andWhere('cu.channel = :channel');
+
+        if ($previous) {
+            $query
+                ->andWhere('cu.id < :id')
+                ->orderBy('cu.id', 'desc')
+            ;
+        } else {
+            $query
+                ->andWhere('cu.id > :id')
+                ->orderBy('cu.id', 'asc')
+            ;
+        }
+
+        return $query
+            ->setParameters(['id' => $article->getId(), 'contentId' => $article->getContentId(), 'channel' => $article->getChannel()])
             ->getQuery()
             ->getResult();
     }
