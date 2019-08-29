@@ -72,6 +72,9 @@ class ContentApiController extends Controller
      */
     public function uploadContentUnit(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+        $channelAddress = $this->getParameter('channel_address');
+
         //  get data from submitted data
         $contentType = $request->getContentType();
         if ($contentType == 'application/json' || $contentType == 'json') {
@@ -87,12 +90,23 @@ class ContentApiController extends Controller
             return new JsonResponse(['message' => 'Empty content'], Response::HTTP_CONFLICT);
         }
 
+        //  generate unique random number for content ID
+        $contentId = rand(1, 999999999);
+        $channel = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelAddress]);
+
+        //  check if generated content ID is unique within channel
+        $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
+        while ($contentUnit) {
+            $contentId = rand(1, 999999999);
+            $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
+        }
+
         $uploadResult = $blockChain->uploadFile($content, 'text/html');
         if ($uploadResult instanceof StorageFileAddress) {
-            return new JsonResponse(['uri' => $uploadResult->getUri(), 'channelAddress' => $this->getParameter('channel_address')]);
+            return new JsonResponse(['uri' => $uploadResult->getUri(), 'channelAddress' => $channelAddress, 'contentId' => $contentId]);
         } elseif ($uploadResult instanceof UriError) {
             if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                return new JsonResponse(['uri' => $uploadResult->getUri(), 'channelAddress' => $this->getParameter('channel_address')]);
+                return new JsonResponse(['uri' => $uploadResult->getUri(), 'channelAddress' => $channelAddress, 'contentId' => $contentId]);
             } else {
                 return new JsonResponse(['ContentUnit upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
             }
