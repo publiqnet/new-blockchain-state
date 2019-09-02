@@ -114,4 +114,16 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getPopularPublications($count = 5)
+    {
+        return $this->createQueryBuilder('p')
+            ->select("p, SUM(cu.views) as totalViews")
+            ->leftJoin('p.contentUnits', 'cu')
+            ->setMaxResults($count)
+            ->groupBy('p')
+            ->orderBy('totalViews', 'DESC')
+            ->getQuery()
+            ->getResult('AGGREGATES_HYDRATOR');
+    }
 }

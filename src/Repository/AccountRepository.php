@@ -165,4 +165,29 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getPopularAuthors($count = 5, Account $exception = null)
+    {
+        if ($exception) {
+            return $this->createQueryBuilder('a')
+                ->select("a, SUM(cu.views) as totalViews")
+                ->leftJoin('a.authorContentUnits', 'cu')
+                ->where('a != :exception')
+                ->setParameter('exception', $exception)
+                ->setMaxResults($count)
+                ->groupBy('a')
+                ->orderBy('totalViews', 'DESC')
+                ->getQuery()
+                ->getResult('AGGREGATES_HYDRATOR');
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select("a, SUM(cu.views) as totalViews")
+                ->leftJoin('a.authorContentUnits', 'cu')
+                ->setMaxResults($count)
+                ->groupBy('a')
+                ->orderBy('totalViews', 'DESC')
+                ->getQuery()
+                ->getResult('AGGREGATES_HYDRATOR');
+        }
+    }
 }

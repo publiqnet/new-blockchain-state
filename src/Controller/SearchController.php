@@ -30,6 +30,74 @@ use Symfony\Component\Routing\Annotation\Route;
 class SearchController extends Controller
 {
     /**
+     * @Route("", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Default data for search (Publication / Author)",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Search")
+     * @return Response
+     */
+    public function default()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        //  GET POPULAR PUBLICATIONS
+        $publications = $em->getRepository(Publication::class)->getPopularPublications();
+        if ($account && $publications) {
+            /**
+             * @var Publication $publication
+             */
+            foreach ($publications as $publication) {
+                $memberStatus = 0;
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
+
+                //  if User is a Publication member return Publication info with members
+                if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                    $memberStatus = $publicationMember->getStatus();
+                }
+                $publication->setMemberStatus($memberStatus);
+
+                $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+                if ($subscription) {
+                    $publication->setSubscribed(true);
+                } else {
+                    $publication->setSubscribed(false);
+                }
+            }
+        }
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationSubscribed']]);
+
+        //  SEARCH IN AUTHORS
+        $authors = $em->getRepository(Account::class)->getPopularAuthors(5, $account);
+        if ($account && $authors) {
+            /**
+             * @var Account $author
+             */
+            foreach ($authors as $author) {
+                //  check if user subscribed to author
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                if ($subscribed) {
+                    $author->setSubscribed(true);
+                } else {
+                    $author->setSubscribed(false);
+                }
+            }
+        }
+        $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+        return new JsonResponse(['publication' => $publications, 'authors' => $authors]);
+    }
+
+    /**
      * @Route("/{word}", methods={"POST"})
      * @SWG\Post(
      *     summary="Search for Publication / Article / Author",
