@@ -42,14 +42,14 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
     public function getUserPublicationsOwner(Account $account)
     {
         return $this->createQueryBuilder('p')
-            ->select('p')
+            ->select('p, pm.status as memberStatus')
             ->innerJoin('p.members', 'pm')
             ->where('pm.member = :member')
             ->andWhere('pm.status = :status')
             ->setParameters(['member' => $account, 'status' => PublicationMember::TYPES['owner']])
             ->orderBy('p.id', 'DESC')
             ->getQuery()
-            ->getResult();
+            ->getResult('AGGREGATES_HYDRATOR');
     }
 
     public function getUserPublicationsMember(Account $account)

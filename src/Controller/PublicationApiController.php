@@ -511,7 +511,7 @@ class PublicationApiController extends Controller
             }
         }
 
-        $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'tag', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
+        $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
         $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
         $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
         $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
