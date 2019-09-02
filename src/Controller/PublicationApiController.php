@@ -552,7 +552,7 @@ class PublicationApiController extends Controller
                         $publication->setMembers($publicationMembers);
                     }
                 }
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
                 break;
             case 'membership':
                 $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
