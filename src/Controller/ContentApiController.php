@@ -576,6 +576,7 @@ class ContentApiController extends Controller
      *     summary="Get content by uri",
      *     consumes={"application/json"},
      *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="User not found")
@@ -592,6 +593,11 @@ class ContentApiController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
@@ -715,7 +721,11 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        if ($account && $contentUnit->getAuthor() == $account) {
+            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication']]);
+        } else {
+            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        }
         $previousVersions = $this->get('serializer')->normalize($previousVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $nextVersions = $this->get('serializer')->normalize($nextVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 

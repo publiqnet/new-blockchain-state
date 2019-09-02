@@ -37,6 +37,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="blockchain_content_id", type="string", length=64)
+     * @Groups({"contentUnitContentId"})
      */
     private $contentId;
 
