@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\BoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\File;
 use App\Entity\Publication;
@@ -736,7 +737,7 @@ class ContentApiController extends Controller
     }
 
     /**
-     * @Route("/boost", methods={"POST"})
+     * @Route("-boost", methods={"POST"})
      * @SWG\Post(
      *     summary="Boost content",
      *     consumes={"application/json"},
@@ -810,5 +811,55 @@ class ContentApiController extends Controller
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
         }
+    }
+
+    /**
+     * @Route("-boost", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get author boosted articles",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function getBoosts()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
+        }
+
+        $boostedContentUnits = $em->getRepository(BoostedContentUnit::class)->getAuthorBoostedArticles($account);
+        if ($boostedContentUnits) {
+            /**
+             * @var BoostedContentUnit $boostedContentUnit
+             */
+            foreach ($boostedContentUnits as $boostedContentUnit) {
+                /**
+                 * @var \App\Entity\ContentUnit $contentUnit
+                 */
+                $contentUnit = $boostedContentUnit->getContentUnit();
+
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $contentUnit->getTransaction();
+
+                $contentUnit->setPublished($transaction->getTimeSigned());
+            }
+        }
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['boostedContentUnit', 'contentUnitList', 'tag', 'accountBase', 'publication']]);
+
+        return new JsonResponse($boostedContentUnits);
     }
 }

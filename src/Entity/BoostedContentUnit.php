@@ -9,6 +9,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class BoostedContentUnit
@@ -33,21 +34,25 @@ class BoostedContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="boostedContentUnits")
+     * @Groups({"boostedContentUnit"})
      */
     private $sponsor;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="boosts")
+     * @Groups({"boostedContentUnit"})
      */
     private $contentUnit;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"boostedContentUnit"})
      */
     private $startTimePoint;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"boostedContentUnit"})
      */
     private $hours;
 
