@@ -29,6 +29,7 @@ class BoostedContentUnit
 
     /**
      * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="boostedContentUnit")
+     * @Groups({"boostedContentUnit"})
      */
     private $transaction;
 

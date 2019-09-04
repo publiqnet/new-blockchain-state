@@ -13,6 +13,7 @@ use PubliqAPI\Base\PublicAddressType;
 use PubliqAPI\Base\Rtt;
 use PubliqAPI\Model\Authority;
 use PubliqAPI\Model\Broadcast;
+use PubliqAPI\Model\CancelSponsorContentUnit;
 use PubliqAPI\Model\Coin;
 use PubliqAPI\Model\Content;
 use PubliqAPI\Model\LoggedTransactionsRequest;
@@ -422,6 +423,63 @@ class BlockChain
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
             throw new \Exception('Issue with boosting');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
+    }
+
+    /**
+     * @param string $signature
+     * @param string $uri
+     * @param string $sponsorAddress
+     * @param $transactionHash
+     * @param $creationTime
+     * @param $expiryTime
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function cancelBoostContent($signature, $uri, $sponsorAddress, $transactionHash, $creationTime, $expiryTime)
+    {
+        $cancelSponsorContentUnit = new CancelSponsorContentUnit();
+        $cancelSponsorContentUnit->setUri($uri);
+        $cancelSponsorContentUnit->setSponsorAddress($sponsorAddress);
+        $cancelSponsorContentUnit->setTransactionHash($transactionHash);
+
+        $coin = new Coin();
+        $coin->setFraction(0);
+        $coin->setWhole(0);
+
+        $transaction = new Transaction();
+        $transaction->setAction($cancelSponsorContentUnit);
+        $transaction->setFee($coin);
+        $transaction->setCreation($creationTime);
+        $transaction->setExpiry($expiryTime);
+
+        $authority = new Authority();
+        $authority->setAddress($sponsorAddress);
+        $authority->setSignature($signature);
+
+        $signedTransaction = new SignedTransaction();
+        $signedTransaction->setTransactionDetails($transaction);
+        $signedTransaction->addAuthorizations($authority);
+
+        $broadcast = new Broadcast();
+        $broadcast->setPackage($signedTransaction);
+        $broadcast->setEchoes(2);
+
+        $data = $broadcast->convertToJson();
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        $body = $this->callJsonRPC($this->stateEndpoint, $header, $data);
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with boosting cancellation');
         }
 
         $validateRes = Rtt::validate($body['data']);

@@ -814,6 +814,77 @@ class ContentApiController extends Controller
     }
 
     /**
+     * @Route("-boost", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Cancel boosted content",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="signature", type="string"),
+     *             @SWG\Property(property="uri", type="string"),
+     *             @SWG\Property(property="transactionHash", type="string"),
+     *             @SWG\Property(property="creationTime", type="integer"),
+     *             @SWG\Property(property="expiryTime", type="integer")
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param Request $request
+     * @param Blockchain $blockChain
+     * @return JsonResponse
+     */
+    public function cancelBoostContent(Request $request, BlockChain $blockChain)
+    {
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
+        }
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $signature = $content['signature'];
+            $uri = $content['uri'];
+            $transactionHash = $content['transactionHash'];
+            $creationTime = $content['creationTime'];
+            $expiryTime = $content['expiryTime'];
+        } else {
+            $signature = $request->request->get('signature');
+            $uri = $request->request->get('uri');
+            $transactionHash = $request->request->get('transactionHash');
+            $creationTime = $request->request->get('creationTime');
+            $expiryTime = $request->request->get('expiryTime');
+        }
+
+        try {
+            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime);
+            if ($broadcastResult instanceof Done) {
+                return new JsonResponse('', Response::HTTP_NO_CONTENT);
+            } else {
+                return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
+            }
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
      * @Route("-boost", methods={"GET"})
      * @SWG\Get(
      *     summary="Get author boosted articles",
@@ -858,7 +929,7 @@ class ContentApiController extends Controller
                 $contentUnit->setPublished($transaction->getTimeSigned());
             }
         }
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['boostedContentUnit', 'contentUnitList', 'tag', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['boostedContentUnit', 'contentUnitList', 'tag', 'accountBase', 'publication', 'transactionLight']]);
 
         return new JsonResponse($boostedContentUnits);
     }

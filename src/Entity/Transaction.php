@@ -48,19 +48,19 @@ class Transaction
 
     /**
      * @ORM\Column(name="transaction_hash", type="string", length=64, nullable=true, unique=true)
-     * @Groups({"transaction", "block"})
+     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $transactionHash;
 
     /**
      * @ORM\Column(name="transaction_size", type="integer")
-     * @Groups({"transaction", "block"})
+     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $transactionSize;
 
     /**
      * @ORM\Column(name="time_signed", type="integer")
-     * @Groups({"transaction", "block"})
+     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $timeSigned;
 
