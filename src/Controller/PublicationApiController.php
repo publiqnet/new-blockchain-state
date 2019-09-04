@@ -431,7 +431,7 @@ class PublicationApiController extends Controller
          */
         $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
 
-        $publications = $this->getDoctrine()->getRepository(Publication::class)->getPublications($count + 1, $publication);
+        $publications = $em->getRepository(Publication::class)->getPublications($count + 1, $publication);
 
         if ($account && $publications) {
             foreach ($publications as $publication) {
@@ -479,23 +479,41 @@ class PublicationApiController extends Controller
      */
     public function getRelatedPublications()
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
         $account = $this->getUser();
 
-        $owned = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsOwner($account);
-        $membership = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
-        $invitations = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsInvitations($account);
-        $requests = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsRequests($account);
+        $owned = $em->getRepository(Publication::class)->getUserPublicationsOwner($account);
+        $membership = $em->getRepository(Publication::class)->getUserPublicationsMember($account);
+        $invitations = $em->getRepository(Publication::class)->getUserPublicationsInvitations($account);
+        $requests = $em->getRepository(Publication::class)->getUserPublicationsRequests($account);
 
         if ($owned) {
             /**
              * @var Publication $publication
              */
             foreach ($owned as $publication) {
-                $publicationMembers = $this->getDoctrine()->getRepository(Account::class)->getPublicationMembers($publication);
+                $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
                 $publication->setMembers($publicationMembers);
+
+                $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                $publication->setStoriesCount(intval($storiesCount[0][1]));
+            }
+        }
+
+        if ($membership) {
+            /**
+             * @var Publication $publication
+             */
+            foreach ($membership as $publication) {
+                $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
+                $publication->setMembers($publicationMembers);
+
+                $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                $publication->setStoriesCount(intval($storiesCount[0][1]));
             }
         }
 
@@ -504,7 +522,7 @@ class PublicationApiController extends Controller
              * @var Publication $publication
              */
             foreach ($invitations as $publication) {
-                $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
                 if ($publicationMember && $publicationMember->getInviter()) {
                     $publication->setInviter($publicationMember->getInviter());
                 }
@@ -512,7 +530,7 @@ class PublicationApiController extends Controller
         }
 
         $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
-        $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
+        $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
         $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
         $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
 
@@ -535,6 +553,8 @@ class PublicationApiController extends Controller
      */
     public function getRelatedPublicationsByType(string $type)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -542,30 +562,45 @@ class PublicationApiController extends Controller
 
         switch ($type) {
             case 'owned';
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsOwner($account);
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsOwner($account);
                 if ($publications) {
                     /**
                      * @var Publication $publication
                      */
                     foreach ($publications as $publication) {
-                        $publicationMembers = $this->getDoctrine()->getRepository(Account::class)->getPublicationMembers($publication);
+                        $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
                         $publication->setMembers($publicationMembers);
+
+                        $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                        $publication->setStoriesCount(intval($storiesCount[0][1]));
                     }
                 }
                 $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
                 break;
             case 'membership':
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
-                break;
-            case 'invitations':
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsInvitations($account);
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsMember($account);
                 if ($publications) {
                     /**
                      * @var Publication $publication
                      */
                     foreach ($publications as $publication) {
-                        $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                        $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
+                        $publication->setMembers($publicationMembers);
+
+                        $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                        $publication->setStoriesCount(intval($storiesCount[0][1]));
+                    }
+                }
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
+                break;
+            case 'invitations':
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsInvitations($account);
+                if ($publications) {
+                    /**
+                     * @var Publication $publication
+                     */
+                    foreach ($publications as $publication) {
+                        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
                         if ($publicationMember && $publicationMember->getInviter()) {
                             $publication->setInviter($publicationMember->getInviter());
                         }
@@ -574,7 +609,7 @@ class PublicationApiController extends Controller
                 $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
                 break;
             case 'requests':
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsRequests($account);
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsRequests($account);
                 $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
                 break;
             default:
@@ -624,6 +659,10 @@ class PublicationApiController extends Controller
         //  get articles total views
         $totalViews = $em->getRepository(ContentUnit::class)->getPublicationArticlesTotalViews($publication);
 
+        //  get articles count
+        $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+        $publication->setStoriesCount(intval($storiesCount[0][1]));
+
         //  if authorized user check if user is owner of Publication
         $memberStatus = 0;
         if ($account) {
@@ -633,7 +672,7 @@ class PublicationApiController extends Controller
             if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
                 $memberStatus = $publicationMember->getStatus();
 
-                $publicationOwner = $this->getDoctrine()->getRepository(Account::class)->getPublicationOwner($publication);
+                $publicationOwner = $em->getRepository(Account::class)->getPublicationOwner($publication);
                 if ($publicationOwner) {
                     //  check if user subscribed to author
                     $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationOwner]);
@@ -645,7 +684,7 @@ class PublicationApiController extends Controller
                 }
                 $publicationOwner = $this->get('serializer')->normalize($publicationOwner, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
-                $publicationEditors = $this->getDoctrine()->getRepository(Account::class)->getPublicationEditors($publication);
+                $publicationEditors = $em->getRepository(Account::class)->getPublicationEditors($publication);
                 if ($publicationEditors) {
                     /**
                      * @var Account $publicationEditor
@@ -662,7 +701,7 @@ class PublicationApiController extends Controller
                 }
                 $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
-                $publicationContributors = $this->getDoctrine()->getRepository(Account::class)->getPublicationContributors($publication);
+                $publicationContributors = $em->getRepository(Account::class)->getPublicationContributors($publication);
                 if ($publicationContributors) {
                     /**
                      * @var Account $publicationContributor
@@ -679,10 +718,10 @@ class PublicationApiController extends Controller
                 }
                 $publicationContributors = $this->get('serializer')->normalize($publicationContributors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
-                $publicationInvitations = $this->getDoctrine()->getRepository(Account::class)->getPublicationInvitations($publication);
+                $publicationInvitations = $em->getRepository(Account::class)->getPublicationInvitations($publication);
                 $publicationInvitations = $this->get('serializer')->normalize($publicationInvitations, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountEmail']]);
 
-                $publicationRequests = $this->getDoctrine()->getRepository(Account::class)->getPublicationRequests($publication);
+                $publicationRequests = $em->getRepository(Account::class)->getPublicationRequests($publication);
                 $publicationRequests = $this->get('serializer')->normalize($publicationRequests, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
                 if ($subscribers) {
@@ -720,10 +759,10 @@ class PublicationApiController extends Controller
             }
         }
 
-        $publicationMembers = $this->getDoctrine()->getRepository(Account::class)->getPublicationMembers($publication);
+        $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
 
         if ($memberStatus === PublicationMember::TYPES['invited_editor'] || $memberStatus === PublicationMember::TYPES['invited_contributor']) {
-            $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+            $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
             if ($publicationMember && $publicationMember->getInviter()) {
                 $publication->setInviter($publicationMember->getInviter());
             }

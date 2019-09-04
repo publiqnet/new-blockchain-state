@@ -153,6 +153,31 @@ class ContentUnitRepository extends EntityRepository
      * @param Publication $publication
      * @return array|null
      */
+    public function getPublicationArticlesCount(Publication $publication)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        $query = $this->createQueryBuilder('cu');
+
+        return $query->select('COUNT(cu.id)')
+            ->join('cu.transaction', 't')
+            ->join('cu.author', 'a')
+            ->where('t.block is not null')
+            ->andWhere('cu.content is not null')
+            ->andWhere('cu.publication = :publication')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameter('publication', $publication)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param Publication $publication
+     * @return array|null
+     */
     public function getPublicationArticlesTotalViews(Publication $publication)
     {
         return $this->createQueryBuilder('cu')

@@ -129,6 +129,12 @@ class Publication
     private $memberStatus;
 
     /**
+     * @var integer
+     * @Groups({"publication"})
+     */
+    private $storiesCount;
+
+    /**
      * @var mixed
      * @Groups({"publicationMemberInviter"})
      */
@@ -370,6 +376,22 @@ class Publication
     public function setMemberStatus(int $memberStatus)
     {
         $this->memberStatus = $memberStatus;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStoriesCount()
+    {
+        return $this->storiesCount;
+    }
+
+    /**
+     * @param int $storiesCount
+     */
+    public function setStoriesCount(int $storiesCount)
+    {
+        $this->storiesCount = $storiesCount;
     }
 
     /**
