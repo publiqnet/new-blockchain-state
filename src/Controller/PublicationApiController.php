@@ -685,7 +685,21 @@ class PublicationApiController extends Controller
                 $publicationRequests = $this->getDoctrine()->getRepository(Account::class)->getPublicationRequests($publication);
                 $publicationRequests = $this->get('serializer')->normalize($publicationRequests, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
-                $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase']]);
+                if ($subscribers) {
+                    /**
+                     * @var Account $subscriber
+                     */
+                    foreach ($subscribers as $subscriber) {
+                        //  check if user subscribed to author
+                        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $subscriber]);
+                        if ($subscribed) {
+                            $subscriber->setSubscribed(true);
+                        } else {
+                            $subscriber->setSubscribed(false);
+                        }
+                    }
+                }
+                $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
                 $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
                 $publication['memberStatus'] = $memberStatus;
