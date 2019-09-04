@@ -10,10 +10,17 @@ namespace App\DataFixtures;
 
 use App\Entity\NotificationType;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\Persistence\ObjectManager;
 
-class NotificationTypeFixture extends Fixture
+class NotificationTypeFixture extends Fixture implements FixtureGroupInterface
 {
+
+    public static function getGroups(): array
+    {
+        return ['notificationType'];
+    }
+
     /**
      * Load data fixtures with the passed EntityManager
      *
