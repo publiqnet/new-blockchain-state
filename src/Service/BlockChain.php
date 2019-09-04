@@ -29,15 +29,16 @@ use PubliqAPI\Model\TransactionBroadcastRequest;
 class BlockChain
 {
     private $stateEndpoint;
-
     private $channelEndpoint;
     private $channelStorageEndpoint;
+    private $detectLanguageEndpoint;
 
-    function __construct($stateEndpoint, $channelEndpoint, $channelStorageEndpoint)
+    function __construct($stateEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint)
     {
         $this->stateEndpoint = $stateEndpoint;
         $this->channelEndpoint = $channelEndpoint;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
+        $this->detectLanguageEndpoint = $detectLanguageEndpoint;
     }
 
     /**
@@ -69,6 +70,28 @@ class BlockChain
         $retArr = ['status_code' => $headerStatusCode, 'data' => $body];
 
         return $retArr;
+    }
+
+    /**
+     * @param $text
+     * @return int
+     * @throws \Exception
+     */
+    public function detectContentLanguage($text)
+    {
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($text)];
+
+        $body = $this->callJsonRPC($this->detectLanguageEndpoint, $header, $text);
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200) {
+            throw new \Exception('Issue with detecting content language');
+        }
+
+        return $data;
     }
 
     /**

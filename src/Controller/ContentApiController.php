@@ -424,6 +424,49 @@ class ContentApiController extends Controller
     }
 
     /**
+     * @Route("/detect-language", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Detect content language",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="text", type="string")
+     *         )
+     *     )
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param Request $request
+     * @param BlockChain $blockChainService
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function detectContentLanguage(Request $request, BlockChain $blockChainService)
+    {
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $text = $content['text'];
+        } else {
+            $text = $request->request->get('text');
+        }
+
+        $detectResult = $blockChainService->detectContentLanguage($text);
+
+        return new JsonResponse($detectResult);
+    }
+
+    /**
      * @Route("s/{count}/{boostedCount}/{fromUri}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get (user) contents",
