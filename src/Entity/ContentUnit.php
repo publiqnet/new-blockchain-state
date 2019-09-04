@@ -111,6 +111,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
+     * @ORM\JoinColumn(name="publication_id", referencedColumnName="id", onDelete="SET NULL")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $publication;

@@ -100,7 +100,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $performer = $event->getPerformer();
             $user = $event->getUser();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_new']['key'], $performer, ($user->getAddress() ? $user->getAddress() : $user->getEmail()), $publication);
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_new']['key'], $performer, ($user->getPublicKey() ? $user->getPublicKey() : $user->getEmail()), $publication);
             $this->userNotificationService->notify($user, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
@@ -117,7 +117,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $performer = $event->getPerformer();
             $user = $event->getUser();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_cancelled']['key'], $performer, ($user->getAddress() ? $user->getAddress() : $user->getEmail()), $publication);
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_cancelled']['key'], $performer, ($user->getPublicKey() ? $user->getPublicKey() : $user->getEmail()), $publication);
             $this->userNotificationService->notify($user, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
