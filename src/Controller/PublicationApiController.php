@@ -666,6 +666,13 @@ class PublicationApiController extends Controller
         //  if authorized user check if user is owner of Publication
         $memberStatus = 0;
         if ($account) {
+            $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+            if ($subscription) {
+                $publication->setSubscribed(true);
+            } else {
+                $publication->setSubscribed(false);
+            }
+
             $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
 
             //  if User is a Publication member return Publication info with members
@@ -740,7 +747,7 @@ class PublicationApiController extends Controller
                 }
                 $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-                $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
+                $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationSubscribed', 'tag']]);
                 $publication['memberStatus'] = $memberStatus;
 
                 $publication['owner'] = $publicationOwner;
@@ -767,9 +774,9 @@ class PublicationApiController extends Controller
                 $publication->setInviter($publicationMember->getInviter());
             }
 
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationMemberInviter', 'accountBase']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationSubscribed', 'publicationMemberInviter', 'accountBase']]);
         } else {
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationSubscribed']]);
         }
 
         $publication['memberStatus'] = $memberStatus;
