@@ -14,6 +14,7 @@ use App\Entity\File;
 use App\Entity\Transaction;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ContentUnit
 {
@@ -37,21 +38,27 @@ class ContentUnit
      */
     private $custom;
 
-    public function __construct(EntityManagerInterface $em, string $channelAddress, BlockChain $blockChain, Custom $custom)
+    /**
+     * @var SerializerInterface
+     */
+    private $serializer;
+
+    public function __construct(EntityManagerInterface $em, string $channelAddress, BlockChain $blockChain, Custom $custom, SerializerInterface $serializer)
     {
         $this->em = $em;
         $this->channelAddress = $channelAddress;
         $this->blockChain = $blockChain;
         $this->custom = $custom;
+        $this->serializer = $serializer;
     }
 
     /**
      * @param $contentUnits
      * @param null $boosted
+     * @param Account|null $author
      * @return mixed
-     * @throws \Exception
      */
-    public function prepare($contentUnits, $boosted = null)
+    public function prepare($contentUnits, $boosted = null, Account $author = null)
     {
         /**
          * @var \App\Entity\ContentUnit $contentUnit
@@ -100,6 +107,27 @@ class ContentUnit
                 $contentUnit->setBoosted($isBoosted);
             } else {
                 $contentUnit->setBoosted($boosted);
+            }
+
+            if ($author) {
+                //  get article next & previous versions
+                $previousVersions = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
+                if ($previousVersions) {
+                    /**
+                     * @var \App\Entity\ContentUnit $previousVersion
+                     */
+                    foreach ($previousVersions as $previousVersion) {
+                        /**
+                         * @var Transaction $transaction
+                         */
+                        $transaction = $previousVersion->getTransaction();
+                        $previousVersion->setPublished($transaction->getTimeSigned());
+                    }
+                }
+                $previousVersions = $this->serializer->serialize($previousVersions, 'json', ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+                $previousVersions = json_decode($previousVersions, true);
+
+                $contentUnit->setPreviousVersions($previousVersions);
             }
         }
 

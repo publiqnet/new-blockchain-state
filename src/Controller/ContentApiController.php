@@ -466,9 +466,9 @@ class ContentApiController extends Controller
             foreach ($detectResult as $language => $possibility) {
                 return new JsonResponse($language);
             }
-        } else {
-            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
     /**
@@ -512,7 +512,7 @@ class ContentApiController extends Controller
         //  prepare data to return
         if ($contentUnits) {
             try {
-                $contentUnits = $contentUnitService->prepare($contentUnits);
+                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
@@ -527,7 +527,12 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        if ($account) {
+            $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
+        } else {
+            $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        }
+
         $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
@@ -770,16 +775,21 @@ class ContentApiController extends Controller
             }
         }
 
-        if ($account && $contentUnit->getAuthor() == $account) {
-            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication']]);
-        } else {
-            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
-        }
         $previousVersions = $this->get('serializer')->normalize($previousVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $nextVersions = $this->get('serializer')->normalize($nextVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
-        $contentUnit['previousVersions'] = $previousVersions;
-        $contentUnit['nextVersions'] = $nextVersions;
+        $contentUnit->setPreviousVersions($previousVersions);
+        $contentUnit->setNextVersions($nextVersions);
+
+        //  check if article boosted
+        $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
+        $contentUnit->setBoosted($isBoosted);
+
+        if ($account && $contentUnit->getAuthor() == $account) {
+            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions']]);
+        } else {
+            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions']]);
+        }
 
         return new JsonResponse($contentUnit);
     }

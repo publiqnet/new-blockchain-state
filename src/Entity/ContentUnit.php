@@ -110,6 +110,18 @@ class ContentUnit
     private $boosted;
 
     /**
+     * @var mixed
+     * @Groups({"previousVersions"})
+     */
+    private $previousVersions;
+
+    /**
+     * @var mixed
+     * @Groups({"nextVersions"})
+     */
+    private $nextVersions;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
      * @ORM\JoinColumn(name="publication_id", referencedColumnName="id", onDelete="SET NULL")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
@@ -402,6 +414,38 @@ class ContentUnit
     public function setBoosted(bool $boosted)
     {
         $this->boosted = $boosted;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPreviousVersions()
+    {
+        return $this->previousVersions;
+    }
+
+    /**
+     * @param mixed $previousVersions
+     */
+    public function setPreviousVersions($previousVersions)
+    {
+        $this->previousVersions = $previousVersions;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getNextVersions()
+    {
+        return $this->nextVersions;
+    }
+
+    /**
+     * @param mixed $nextVersions
+     */
+    public function setNextVersions($nextVersions)
+    {
+        $this->nextVersions = $nextVersions;
     }
 
     /**
