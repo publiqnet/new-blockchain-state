@@ -45,6 +45,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
      *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="tags", type="array", items={"type": "object"}),
      *             @SWG\Property(property="publication", type="string"),
      *         )
      *     ),
@@ -89,30 +90,22 @@ class DraftApiController extends Controller
             if (isset($contentArr['contentUris'])) {
                 $contentUris = $contentArr['contentUris'];
             }
+            if (isset($contentArr['tags'])) {
+                $tags = $contentArr['tags'];
+            }
             if (isset($contentArr['publication'])) {
                 $publication = $contentArr['publication'];
             }
         } else {
             $title = $request->request->get('title');
             $content = $request->request->get('content');
-            if ($request->request->get('headline')) {
-                $headline = $request->request->get('headline');
-            }
-            if ($request->request->get('forAdults')) {
-                $forAdults = $request->request->get('forAdults');
-            }
-            if ($request->request->get('reference')) {
-                $reference = $request->request->get('reference');
-            }
-            if ($request->request->get('sourceOfMaterial')) {
-                $sourceOfMaterial = $request->request->get('sourceOfMaterial');
-            }
-            if ($request->request->get('contentUris')) {
-                $contentUris = $request->request->get('contentUris');
-            }
-            if ($request->request->get('publication')) {
-                $publication = $request->request->get('publication');
-            }
+            $headline = $request->request->get('headline');
+            $forAdults = $request->request->get('forAdults');
+            $reference = $request->request->get('reference');
+            $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            $contentUris = $request->request->get('contentUris');
+            $tags = $request->request->get('tags');
+            $publication = $request->request->get('publication');
         }
 
         $draft = new Draft();
@@ -135,6 +128,9 @@ class DraftApiController extends Controller
             }
             if (isset($contentUris)) {
                 $draft->setContentUris($contentUris);
+            }
+            if (isset($tags)) {
+                $draft->setTags($tags);
             }
             if (isset($publication)) {
                 $draft->setPublication($publication);
@@ -171,6 +167,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
      *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="tags", type="array", items={"type": "object"}),
      *             @SWG\Property(property="publication", type="string"),
      *         )
      *     ),
@@ -228,30 +225,22 @@ class DraftApiController extends Controller
             if (isset($contentArr['contentUris'])) {
                 $contentUris = $contentArr['contentUris'];
             }
+            if (isset($contentArr['tags'])) {
+                $tags = $contentArr['tags'];
+            }
             if (isset($contentArr['publication'])) {
                 $publication = $contentArr['publication'];
             }
         } else {
             $title = $request->request->get('title');
             $content = $request->request->get('content');
-            if ($request->request->get('headline')) {
-                $headline = $request->request->get('headline');
-            }
-            if ($request->request->get('forAdults')) {
-                $forAdults = $request->request->get('forAdults');
-            }
-            if ($request->request->get('reference')) {
-                $reference = $request->request->get('reference');
-            }
-            if ($request->request->get('sourceOfMaterial')) {
-                $sourceOfMaterial = $request->request->get('sourceOfMaterial');
-            }
-            if ($request->request->get('contentUris')) {
-                $contentUris = $request->request->get('contentUris');
-            }
-            if ($request->request->get('publication')) {
-                $publication = $request->request->get('publication');
-            }
+            $headline = $request->request->get('headline');
+            $forAdults = $request->request->get('forAdults');
+            $reference = $request->request->get('reference');
+            $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            $contentUris = $request->request->get('contentUris');
+            $tags = $request->request->get('tags');
+            $publication = $request->request->get('publication');
         }
 
         try {
@@ -271,6 +260,9 @@ class DraftApiController extends Controller
             }
             if (isset($contentUris)) {
                 $draft->setContentUris($contentUris);
+            }
+            if (isset($tags)) {
+                $draft->setTags($tags);
             }
             if (isset($publication)) {
                 $draft->setPublication($publication);

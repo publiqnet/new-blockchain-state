@@ -101,6 +101,13 @@ class Draft
     private $contentUris = [];
 
     /**
+     * @var array
+     * @ORM\Column(name="tags", type="array", nullable=true)
+     * @Groups({"draft"})
+     */
+    private $tags = [];
+
+    /**
      * @var string
      * @ORM\Column(name="publication", type="string", length=256, nullable=true)
      * @Groups({"draft"})
@@ -275,6 +282,22 @@ class Draft
     public function setContentUris(array $contentUris)
     {
         $this->contentUris = $contentUris;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @param array $tags
+     */
+    public function setTags(array $tags)
+    {
+        $this->tags = $tags;
     }
 
     /**
