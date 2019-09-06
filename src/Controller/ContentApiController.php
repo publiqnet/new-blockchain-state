@@ -629,7 +629,7 @@ class ContentApiController extends Controller
     }
 
     /**
-     * @Route("/{uri}", methods={"GET"})
+     * @Route("/{uri}", methods={"GET"}, name="get_content_by_uri")
      * @SWG\Get(
      *     summary="Get content by uri",
      *     consumes={"application/json"},

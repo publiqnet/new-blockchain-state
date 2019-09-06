@@ -75,6 +75,13 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception)
     {
+        $route = $request->get('_route');
+        if (in_array($route, [
+            'get_content_by_uri',
+        ])) {
+            return null;
+        }
+
         $data = array(
             'message' => strtr($exception->getMessageKey(), $exception->getMessageData())
 
