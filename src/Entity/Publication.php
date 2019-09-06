@@ -57,7 +57,7 @@ class Publication
     /**
      * @ORM\Column(type="string", nullable=true)
      * @Assert\Image(
-     *     maxSize="2M",
+     *     maxSize="5M",
      *     maxSizeMessage="max upload size: {{ limit }}{{ suffix }}",
      *     mimeTypesMessage="The mime type of the file is invalid ({{ type }}). Allowed mime types are {{ types }}.",
      *     mimeTypes = {
@@ -73,7 +73,7 @@ class Publication
     /**
      * @ORM\Column(type="string", nullable=true)
      * @Assert\File(
-     *     maxSize="2M",
+     *     maxSize="5M",
      *     maxSizeMessage="max upload size: {{ limit }}{{ suffix }}",
      *     mimeTypesMessage="The mime type of the file is invalid ({{ type }}). Allowed mime types are {{ types }}.",
      *     mimeTypes = {

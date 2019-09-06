@@ -119,16 +119,7 @@ class TagApiController extends Controller
             array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
         }
 
-        for ($i=0; $i<count($contentUnits); $i++) {
-            if ($contentUnits[$i]['tags']) {
-                $cuTagsArr = [];
-                $cuTags = $contentUnits[$i]['tags'];
-                for ($j=0; $j<count($cuTags); $j++) {
-                    $cuTagsArr[] = $cuTags[$j]['tag'];
-                }
-                $contentUnits[$i]['tags'] = $cuTagsArr;
-            }
-        }
+        $contentUnits = $contentUnitService->prepareTags($contentUnits);
 
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }

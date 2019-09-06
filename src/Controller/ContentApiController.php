@@ -548,6 +548,8 @@ class ContentApiController extends Controller
             array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
         }
 
+        $contentUnits = $contentUnitService->prepareTags($contentUnits);
+
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
 
@@ -621,6 +623,8 @@ class ContentApiController extends Controller
             array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
         }
 
+        $contentUnits = $contentUnitService->prepareTags($contentUnits);
+
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
 
@@ -643,7 +647,7 @@ class ContentApiController extends Controller
      * @return JsonResponse
      * @throws Exception
      */
-    public function content(string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger)
+    public function content(string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
@@ -790,6 +794,8 @@ class ContentApiController extends Controller
         } else {
             $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions']]);
         }
+
+        $contentUnit = $contentUnitService->prepareTags($contentUnit, false);
 
         return new JsonResponse($contentUnit);
     }
