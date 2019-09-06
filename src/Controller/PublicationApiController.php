@@ -221,7 +221,7 @@ class PublicationApiController extends Controller
 
         //  check if user has permission - only owner has
         $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
-        if (!$publicationMember || $publicationMember->getStatus() !== PublicationMember::TYPES['owner']) {
+        if (!$publicationMember || !in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor']])) {
             return new JsonResponse(null, Response::HTTP_FORBIDDEN);
         }
 

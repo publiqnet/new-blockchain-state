@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="tag")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\TagRepository")
  */
 class Tag
 {

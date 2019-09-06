@@ -11,6 +11,7 @@ namespace App\Repository;
 use App\Entity\Account;
 use App\Entity\ContentUnit;
 use App\Entity\Publication;
+use App\Entity\Tag;
 use Doctrine\ORM\EntityRepository;
 
 /**
@@ -224,6 +225,56 @@ class ContentUnitRepository extends EntityRepository
                 ->where('t.block is not null')
                 ->andWhere('cu.content is not null')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        }
+    }
+
+    /**
+     * @param Tag $tag
+     * @param int $count
+     * @param ContentUnit|null $fromContentUnit
+     * @return array|null
+     */
+    public function getArticlesByTag(Tag $tag, int $count = 10, ContentUnit $fromContentUnit = null)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        if ($fromContentUnit) {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu, a, t')
+                ->join('cu.author', 'a')
+                ->join('cu.transaction', 't')
+                ->join('cu.tags', 'tg')
+                ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
+                ->andWhere('cu.id < :fromId')
+                ->andWhere('tg = :tag')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['fromId' => $fromContentUnit->getId(), 'tag' => $tag])
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu, a, t')
+                ->join('cu.author', 'a')
+                ->join('cu.transaction', 't')
+                ->join('cu.tags', 'cut')
+                ->join('cut.tag', 'tg')
+                ->where('t.block is not null')
+                ->andWhere('cu.content is not null')
+                ->andWhere('tg = :tag')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['tag' => $tag])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()

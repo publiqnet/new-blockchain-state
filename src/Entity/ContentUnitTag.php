@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Table(name="content_unit_tag")
@@ -30,6 +31,7 @@ class ContentUnitTag
      * @var Tag
      * @ORM\ManyToOne(targetEntity="App\Entity\Tag", inversedBy="contentUnits")
      * @ORM\JoinColumn(name="tag_id", referencedColumnName="id", nullable=false)
+     * @Groups({"tag"})
      */
     private $tag;
 
