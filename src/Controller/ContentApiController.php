@@ -17,6 +17,7 @@ use App\Entity\PublicationArticle;
 use App\Entity\PublicationMember;
 use App\Entity\Tag;
 use App\Entity\Transaction;
+use App\Event\UserPreferenceEvent;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
 use App\Service\Custom;
@@ -28,7 +29,6 @@ use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\Done;
 use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\StorageFileAddress;
-use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\TransactionDone;
 use PubliqAPI\Model\UriError;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -644,6 +644,7 @@ class ContentApiController extends Controller
      * @param Blockchain $blockChain
      * @param Custom $customService
      * @param LoggerInterface $logger
+     * @param CUService $contentUnitService
      * @return JsonResponse
      * @throws Exception
      */
@@ -684,18 +685,6 @@ class ContentApiController extends Controller
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
                     $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
 
-                    //  get file details
-                    if (!$file->getMimeType()) {
-                        $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-
-                            $em->persist($file);
-                            $em->flush();
-                        }
-                    }
-
                     $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                 } elseif ($contentUnit->getContent()) {
                     /**
@@ -710,18 +699,6 @@ class ContentApiController extends Controller
 
                     $storageUrl = $channel->getUrl();
                     $storageAddress = $channel->getPublicKey();
-
-                    //  get file details
-                    if (!$file->getMimeType()) {
-                        $fileDetails = $blockChain->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-
-                            $em->persist($file);
-                            $em->flush();
-                        }
-                    }
 
                     $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
                 }
@@ -788,6 +765,14 @@ class ContentApiController extends Controller
         //  check if article boosted
         $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
         $contentUnit->setBoosted($isBoosted);
+
+        // update user preference
+        if ($account && $contentUnit->getAuthor() != $account) {
+            $this->container->get('event_dispatcher')->dispatch(
+                UserPreferenceEvent::NAME,
+                new UserPreferenceEvent($account, $contentUnit)
+            );
+        }
 
         if ($account && $contentUnit->getAuthor() == $account) {
             $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions']]);
@@ -878,8 +863,8 @@ class ContentApiController extends Controller
     }
 
     /**
-     * @Route("-boost", methods={"DELETE"})
-     * @SWG\Delete(
+     * @Route("-boost-cancel", methods={"POST"})
+     * @SWG\Post(
      *     summary="Cancel boosted content",
      *     consumes={"application/json"},
      *     @SWG\Parameter(

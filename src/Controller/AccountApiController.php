@@ -13,6 +13,8 @@ use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Entity\Subscription;
 use App\Service\Oauth;
+use App\Service\ContentUnit as CUService;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -489,5 +491,57 @@ class AccountApiController extends Controller
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/preferences", methods={"GET"}, name="get_user_preferences")
+     * @SWG\Get(
+     *     summary="Get user preferred articles",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Parameter(name="X-API-TOKEN", in="header", type="string")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=404, description="Not found")
+     * @SWG\Tag(name="User")
+     * @param CUService $contentUnitService
+     * @return JsonResponse
+     */
+    public function getPreferences(CUService $contentUnitService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account);
+        //  prepare data to return
+        if ($preferredAuthorsArticles) {
+            try {
+                $preferredAuthorsArticles = $contentUnitService->prepare($preferredAuthorsArticles);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        $preferredAuthorsArticles = $this->get('serializer')->normalize($preferredAuthorsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+
+        $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account);
+        //  prepare data to return
+        if ($preferredTagsArticles) {
+            try {
+                $preferredTagsArticles = $contentUnitService->prepare($preferredTagsArticles);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        $preferredTagsArticles = $this->get('serializer')->normalize($preferredTagsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+
+        $preferredAuthorsArticles = $contentUnitService->prepareTags($preferredAuthorsArticles);
+        $preferredTagsArticles = $contentUnitService->prepareTags($preferredTagsArticles);
+
+        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles]);
     }
 }

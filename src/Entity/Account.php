@@ -201,6 +201,11 @@ class Account implements UserInterface
     private $notifications;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\UserPreference", mappedBy="account")
+     */
+    private $preferences;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="subscriber")
      */
     private $subscriptions;
@@ -247,6 +252,7 @@ class Account implements UserInterface
         $this->publicationInvitees = new ArrayCollection();
         $this->performedNotifications = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->preferences = new ArrayCollection();
         $this->subscriptions = new ArrayCollection();
         $this->subscribers = new ArrayCollection();
         $this->storageFiles = new ArrayCollection();
@@ -600,6 +606,14 @@ class Account implements UserInterface
     public function getNotifications()
     {
         return $this->notifications;
+    }
+
+    /**
+     * Get preferences
+     */
+    public function getPreferences()
+    {
+        return $this->preferences;
     }
 
     /**

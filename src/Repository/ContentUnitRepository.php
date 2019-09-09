@@ -358,4 +358,77 @@ class ContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @param Account $user
+     * @param int $count
+     * @return array|null
+     */
+    public function getUserPreferredAuthorsArticles(Account $user, int $count = 3)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        $preferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select a2 
+                from App:Account a2 
+                join App:UserPreference up with a2 = up.author
+                where up.account = :user and up.author is not null
+            ");
+
+        $query = $this->createQueryBuilder('cu');
+
+        return $query->select('cu, a, t')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('t.block is not null')
+            ->andWhere('cu.content is not null')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->andWhere($query->expr()->in('cu.author', $preferenceQuery->getDQL()))
+            ->setParameter('user', $user)
+            ->setMaxResults($count)
+            ->orderBy('cu.id', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param Account $user
+     * @param int $count
+     * @return array|null
+     */
+    public function getUserPreferredTagsArticles(Account $user, int $count = 3)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        $preferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select cu3
+                from App:ContentUnit cu3 
+                join App:ContentUnitTag cut with cut.contentUnit = cu3
+                where cut.tag in (select tg from App:Tag tg join App:UserPreference up with up.tag = tg where up.account = :user and up.tag is not null) 
+                group by cu3
+            ");
+
+        $query = $this->createQueryBuilder('cu');
+
+        return $query->select('cu, a, t')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('t.block is not null')
+            ->andWhere('cu.content is not null')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->andWhere($query->expr()->in('cu', $preferenceQuery->getDQL()))
+            ->setParameter('user', $user)
+            ->setMaxResults($count)
+            ->orderBy('cu.id', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
 }
