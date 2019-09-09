@@ -29,13 +29,13 @@ class BoostedContentUnit
 
     /**
      * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="boostedContentUnit")
-     * @Groups({"boostedContentUnit"})
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $transaction;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="boostedContentUnits")
-     * @Groups({"boostedContentUnit"})
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $sponsor;
 
@@ -47,13 +47,13 @@ class BoostedContentUnit
 
     /**
      * @ORM\Column(type="integer", nullable=false)
-     * @Groups({"boostedContentUnit"})
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $startTimePoint;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
-     * @Groups({"boostedContentUnit"})
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $hours;
 

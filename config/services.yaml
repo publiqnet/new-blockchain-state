@@ -10,6 +10,7 @@ parameters:
     locale: 'en'
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
+    json_path: '../public/jsons/'
 
 services:
     # default configuration for services in *this* file
@@ -49,3 +50,16 @@ services:
 
     App\Service\ContentUnit:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
+
+    json:
+        class: App\Service\Json
+        arguments: ['@doctrine.orm.entity_manager', '%json_path%']
+        public: true
+
+    # SONATA ADMIN
+    admin.dictionary:
+        class: App\Admin\DictionaryAdmin
+        arguments: [~, App\Entity\Dictionary, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Dictionary, group: Settings }
+        public: true

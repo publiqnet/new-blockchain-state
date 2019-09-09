@@ -105,7 +105,7 @@ class ContentUnit
 
     /**
      * @var boolean
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $boosted;
 
@@ -130,6 +130,7 @@ class ContentUnit
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit")
+     * @Groups({"boost"})
      */
     private $boosts;
 
