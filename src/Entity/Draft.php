@@ -52,7 +52,7 @@ class Draft
     /**
      * @var string
      * @ORM\Column(name="content", type="text", nullable=false)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $content;
 
@@ -81,7 +81,7 @@ class Draft
      * @var \DateTime $created
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $created;
 
@@ -89,7 +89,7 @@ class Draft
      * @var \DateTime $updated
      * @Gedmo\Timestampable(on="update")
      * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $updated;
 
@@ -103,14 +103,14 @@ class Draft
     /**
      * @var array
      * @ORM\Column(name="tags", type="array", nullable=true)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $tags = [];
 
     /**
      * @var string
      * @ORM\Column(name="publication", type="string", length=256, nullable=true)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $publication;
 
