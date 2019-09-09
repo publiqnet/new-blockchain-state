@@ -766,16 +766,6 @@ class StateSyncCommand extends ContainerAwareCommand
                         //  update account balances
                         $this->updateAccountBalance($channelAccount, $feeWhole, $feeFraction, false);
                     } else {
-                        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                        $contentUnits = $this->em->getRepository(\App\Entity\ContentUnit::class)->findBy(['content' => $transaction->getContent()]);
-                        if ($contentUnits) {
-                            foreach ($contentUnits as $contentUnit) {
-                                $contentUnit->setContent(null);
-                                $this->em->persist($contentUnit);
-                            }
-                            $this->em->flush();
-                        }
-
                         //  update account balances
                         $this->updateAccountBalance($channelAccount, $feeWhole, $feeFraction, true);
                     }

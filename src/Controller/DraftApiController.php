@@ -384,6 +384,18 @@ class DraftApiController extends Controller
             return new JsonResponse(['message' => 'no_such_draft_associated_with_user'], Response::HTTP_CONFLICT);
         }
 
+        /**
+         * @var \DateTime $created
+         */
+        $created = $draft->getCreated();
+        $draft->setCreated($created->getTimestamp());
+
+        /**
+         * @var \DateTime $updated
+         */
+        $updated = $draft->getUpdated();
+        $draft->setUpdated($updated->getTimestamp());
+
         $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
         return new JsonResponse($draft);
@@ -412,6 +424,24 @@ class DraftApiController extends Controller
         $account = $this->getUser();
 
         $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account], ['id' => 'DESC']);
+        if ($drafts) {
+            /**
+             * @var Draft $draft
+             */
+            foreach ($drafts as $draft) {
+                /**
+                 * @var \DateTime $created
+                 */
+                $created = $draft->getCreated();
+                $draft->setCreated($created->getTimestamp());
+
+                /**
+                 * @var \DateTime $updated
+                 */
+                $updated = $draft->getUpdated();
+                $draft->setUpdated($updated->getTimestamp());
+            }
+        }
         $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList', 'tag', 'accountBase', 'publication']]);
 
         return new JsonResponse($drafts);
