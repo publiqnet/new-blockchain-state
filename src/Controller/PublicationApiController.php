@@ -1478,6 +1478,57 @@ class PublicationApiController extends Controller
     }
 
     /**
+     * @Route("/{slug}/leave", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Leave Publication",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=403, description="Permission denied")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function leave(string $slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user can leave Publication - only editors & contributors
+        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+        if (!$publicationMember || !in_array($publicationMember->getStatus(), [PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+            return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+        }
+
+        $em->remove($publicationMember);
+        $em->flush();
+
+        // notify member
+        $this->container->get('event_dispatcher')->dispatch(
+            PublicationMembershipCancelEvent::NAME,
+            new PublicationMembershipCancelEvent($publication, $account)
+        );
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
      * @Route("/{slug}/subscribe", methods={"POST"})
      * @SWG\Post(
      *     summary="Subscribe to Publication",

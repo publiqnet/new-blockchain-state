@@ -17,6 +17,7 @@ use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
 use App\Event\PublicationInvitationRequestEvent;
 use App\Event\PublicationMembershipCancelEvent;
+use App\Event\PublicationMembershipLeaveEvent;
 use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
@@ -78,6 +79,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             PublicationMembershipRequestAcceptEvent::NAME => 'onPublicationMembershipRequestAcceptEvent',
             PublicationMembershipRequestRejectEvent::NAME => 'onPublicationMembershipRequestRejectEvent',
             PublicationMembershipCancelEvent::NAME => 'onPublicationMembershipCancelEvent',
+            PublicationMembershipLeaveEvent::NAME => 'onPublicationMembershipLeaveEvent',
             UserPreferenceEvent::NAME => 'onUserPreferenceEvent',
         ];
     }
@@ -262,6 +264,24 @@ class GeneralEventSubscriber implements EventSubscriberInterface
 
             $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_membership_cancelled']['key'], $performer, 'Membership cancelled', $publication);
             $this->userNotificationService->notify($user, $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param PublicationMembershipLeaveEvent $event
+     */
+    public function onPublicationMembershipLeaveEvent(PublicationMembershipLeaveEvent $event)
+    {
+        try {
+            $publication = $event->getPublication();
+            $performer = $event->getPerformer();
+
+            $publicationOwner = $this->em->getRepository(Account::class)->getPublicationOwner($publication);
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_membership_cancelled_by_user']['key'], $performer, 'Membership cancelled by User', $publication);
+            $this->userNotificationService->notify($publicationOwner, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }

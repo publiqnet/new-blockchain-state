@@ -15,6 +15,7 @@ use App\Entity\File;
 use App\Entity\Publication;
 use App\Entity\PublicationArticle;
 use App\Entity\PublicationMember;
+use App\Entity\Subscription;
 use App\Entity\Tag;
 use App\Entity\Transaction;
 use App\Event\UserPreferenceEvent;
@@ -774,10 +775,20 @@ class ContentApiController extends Controller
             );
         }
 
+        //  check if user subscribed to author
+        if ($account) {
+            /**
+             * @var Account $author
+             */
+            $author = $contentUnit->getAuthor();
+            $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+            $author->setSubscribed($subscribed ? true: false);
+        }
+
         if ($account && $contentUnit->getAuthor() == $account) {
-            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions']]);
+            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions', 'accountSubscribed']]);
         } else {
-            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions']]);
+            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions', 'accountSubscribed']]);
         }
 
         $contentUnit = $contentUnitService->prepareTags($contentUnit, false);
