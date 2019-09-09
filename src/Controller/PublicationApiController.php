@@ -19,6 +19,7 @@ use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
 use App\Event\PublicationInvitationRequestEvent;
 use App\Event\PublicationMembershipCancelEvent;
+use App\Event\PublicationMembershipLeaveEvent;
 use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
@@ -1521,8 +1522,8 @@ class PublicationApiController extends Controller
 
         // notify member
         $this->container->get('event_dispatcher')->dispatch(
-            PublicationMembershipCancelEvent::NAME,
-            new PublicationMembershipCancelEvent($publication, $account)
+            PublicationMembershipLeaveEvent::NAME,
+            new PublicationMembershipLeaveEvent($publication, $account)
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

@@ -35,6 +35,7 @@ class BoostedContentUnitRepository extends EntityRepository
             ->where('bcu.startTimePoint <= :date')
             ->andWhere('(bcu.startTimePoint + bcu.hours * 3600) >= :date')
             ->andWhere('bcu.contentUnit = :contentUnit')
+            ->andWhere('bcu.cancelled = 0')
             ->setParameters(['date' => $date->getTimestamp(), 'contentUnit' => $contentUnit])
             ->getQuery()
             ->getResult();
@@ -54,6 +55,7 @@ class BoostedContentUnitRepository extends EntityRepository
             ->join('bcu.sponsor', 'a')
             ->where('bcu.sponsor = :author')
             ->orWhere('cu.author = :author')
+            ->andWhere('bcu.cancelled = 0')
             ->setParameters(['author' => $author])
             ->getQuery()
             ->getResult();

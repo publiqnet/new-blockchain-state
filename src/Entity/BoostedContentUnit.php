@@ -58,6 +58,11 @@ class BoostedContentUnit
     private $hours;
 
     /**
+     * @ORM\Column(type="boolean", nullable=true)
+     */
+    private $cancelled;
+
+    /**
      * @ORM\Column(type="integer", nullable=false)
      */
     private $whole;
@@ -154,6 +159,22 @@ class BoostedContentUnit
     public function setHours($hours)
     {
         $this->hours = $hours;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isCancelled()
+    {
+        return $this->cancelled;
+    }
+
+    /**
+     * @param boolean $cancelled
+     */
+    public function setCancelled($cancelled)
+    {
+        $this->cancelled = $cancelled;
     }
 
     /**

@@ -23,6 +23,7 @@ use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
 use PubliqAPI\Base\UpdateType;
 use PubliqAPI\Model\BlockLog;
+use PubliqAPI\Model\CancelSponsorContentUnit;
 use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\ContentUnitImpactLog;
 use PubliqAPI\Model\File;
@@ -222,6 +223,12 @@ class StateSyncCommand extends ContainerAwareCommand
                         $timeSigned = $transaction->getTimeSigned();
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
+
+                        //  check if transaction exist
+                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transactionEntity) {
+                            continue;
+                        }
 
                         if ($transaction->getAction() instanceof File) {
                             /**
@@ -573,6 +580,49 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof CancelSponsorContentUnit) {
+                            /**
+                             * @var CancelSponsorContentUnit $cancelSponsorContentUnit
+                             */
+                            $cancelSponsorContentUnit = $transaction->getAction();
+
+                            $boostTransactionHash = $cancelSponsorContentUnit->getTransactionHash();
+                            $sponsorAddress = $cancelSponsorContentUnit->getSponsorAddress();
+
+                            $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+
+                            if ($appliedReverted) {
+                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
+
+                                /**
+                                 * @var BoostedContentUnit $boostedContentUnitEntity
+                                 */
+                                $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+                                $boostedContentUnitEntity->setCancelled(true);
+                                $this->em->persist($boostedContentUnitEntity);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
+
+                                /**
+                                 * @var BoostedContentUnit $boostedContentUnitEntity
+                                 */
+                                $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+                                $boostedContentUnitEntity->setCancelled(false);
+                                $this->em->persist($boostedContentUnitEntity);
+                                $this->em->flush();
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
                             }
                         } else {
                             var_dump($transaction->getAction());
@@ -948,6 +998,47 @@ class StateSyncCommand extends ContainerAwareCommand
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
                         $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, true);
+                    }
+                } elseif ($action->getAction() instanceof CancelSponsorContentUnit) {
+                    /**
+                     * @var CancelSponsorContentUnit $cancelSponsorContentUnit
+                     */
+                    $cancelSponsorContentUnit = $action->getAction();
+
+                    $boostTransactionHash = $cancelSponsorContentUnit->getTransactionHash();
+                    $sponsorAddress = $cancelSponsorContentUnit->getSponsorAddress();
+
+                    $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+
+                    if ($appliedReverted) {
+                        $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
+
+                        /**
+                         * @var BoostedContentUnit $boostedContentUnitEntity
+                         */
+                        $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+                        $boostedContentUnitEntity->setCancelled(true);
+                        $this->em->persist($boostedContentUnitEntity);
+                        $this->em->flush();
+
+                        //  add transaction record without relation
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
+                    } else {
+                        $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
+
+                        /**
+                         * @var BoostedContentUnit $boostedContentUnitEntity
+                         */
+                        $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+                        $boostedContentUnitEntity->setCancelled(false);
+                        $this->em->persist($boostedContentUnitEntity);
+                        $this->em->flush();
+
+                        //  update account balances
+                        $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
                     }
                 } else {
                     var_dump($action->getAction());
