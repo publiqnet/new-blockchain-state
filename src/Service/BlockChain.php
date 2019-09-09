@@ -29,13 +29,15 @@ use PubliqAPI\Model\TransactionBroadcastRequest;
 class BlockChain
 {
     private $stateEndpoint;
+    private $broadcastEndpoint;
     private $channelEndpoint;
     private $channelStorageEndpoint;
     private $detectLanguageEndpoint;
 
-    function __construct($stateEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint)
+    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint)
     {
         $this->stateEndpoint = $stateEndpoint;
+        $this->broadcastEndpoint = $broadcastEndpoint;
         $this->channelEndpoint = $channelEndpoint;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->detectLanguageEndpoint = $detectLanguageEndpoint;
@@ -243,7 +245,7 @@ class BlockChain
         $data = $broadcast->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
 
-        $body = $this->callJsonRPC($this->stateEndpoint, $header, $data);
+        $body = $this->callJsonRPC($this->broadcastEndpoint, $header, $data);
 
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);
