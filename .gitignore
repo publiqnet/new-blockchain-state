@@ -13,3 +13,6 @@
 
 /public/uploads/
 /*.sql
+
+/public/jsons/*
+!/public/jsons/.gitkeep

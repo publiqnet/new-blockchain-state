@@ -22,12 +22,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * Class SearchController
+ * Class SearchApiController
  * @package AppBundle\Controller
  *
  * @Route("/api/search")
  */
-class SearchController extends Controller
+class SearchApiController extends Controller
 {
     /**
      * @Route("", methods={"GET"})
