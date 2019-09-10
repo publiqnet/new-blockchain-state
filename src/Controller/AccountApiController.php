@@ -494,9 +494,9 @@ class AccountApiController extends Controller
     }
 
     /**
-     * @Route("/preferences", methods={"GET"}, name="get_user_preferences")
+     * @Route("/recommendations/{publicationsCount}/{fromPublicationSlug}", methods={"GET"}, name="get_user_recommendations")
      * @SWG\Get(
-     *     summary="Get user preferred articles",
+     *     summary="Get user recommendations",
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
@@ -506,9 +506,11 @@ class AccountApiController extends Controller
      * @SWG\Response(response=404, description="Not found")
      * @SWG\Tag(name="User")
      * @param CUService $contentUnitService
+     * @param int $publicationsCount
+     * @param string|null $fromPublicationSlug
      * @return JsonResponse
      */
-    public function getPreferences(CUService $contentUnitService)
+    public function getPreferences(CUService $contentUnitService, int $publicationsCount, string $fromPublicationSlug = null)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -542,6 +544,33 @@ class AccountApiController extends Controller
         $preferredAuthorsArticles = $contentUnitService->prepareTags($preferredAuthorsArticles);
         $preferredTagsArticles = $contentUnitService->prepareTags($preferredTagsArticles);
 
-        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles]);
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $fromPublicationSlug]);
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $fromPublicationSlug]);
+
+        $publications = $em->getRepository(Publication::class)->getUserRecommendedPublications($account,$publicationsCount + 1, $publication);
+        if ($publications) {
+            foreach ($publications as $publication) {
+                $publication->setMemberStatus(0);
+                $publication->setSubscribed(false);
+            }
+        }
+
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed', 'tag']]);
+
+        $more = false;
+        if (count($publications) > $publicationsCount) {
+            $more = true;
+            unset($publications[$publicationsCount]);
+        }
+
+        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more]);
     }
 }

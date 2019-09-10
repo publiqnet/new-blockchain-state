@@ -9,6 +9,7 @@
 namespace App\Command;
 
 use App\Entity\Account;
+use App\Entity\Dictionary;
 use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
 use PubliqAPI\Model\PublicAddressesInfo;
@@ -74,6 +75,21 @@ class PublicAddressesCommand extends ContainerAwareCommand
 
             return 0;
         }
+
+        $dictionaries = $this->em->getRepository(Dictionary::class)->findAll();
+        /**
+         * @var Dictionary $dictionary
+         */
+        foreach ($dictionaries as $dictionary) {
+            $dictionary->setLocale('en');
+            if (!$dictionary->getValue()) {
+                $dictionary->setValue($dictionary->getWordKey());
+
+                $this->em->persist($dictionary);
+                $this->em->flush();
+            }
+        }
+        exit();
 
         /**
          * @var PublicAddressesInfo $publicAddresses

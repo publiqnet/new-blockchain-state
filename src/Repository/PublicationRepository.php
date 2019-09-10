@@ -126,4 +126,46 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
     }
+
+    public function getUserRecommendedPublications(Account $user, $count = 5, Publication $publication = null)
+    {
+        $subscriptionQuery = $this->getEntityManager()
+            ->createQuery("
+                select p1
+                from App:Publication p1 
+                join App:Subscription s with s.publication = p1
+                where s.subscriber = :user
+            ");
+
+        $memberQuery = $this->getEntityManager()
+            ->createQuery("
+                select p2
+                from App:Publication p2 
+                join App:PublicationMember m with m.publication = p2
+                where m.member = :user
+            ");
+
+        if ($publication) {
+            $query = $this->createQueryBuilder('p');
+            return $query->select("p")
+                ->where($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
+                ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
+                ->andWhere('p.id < :id')
+                ->setParameters(['id' => $publication->getId(), 'user' => $user])
+                ->setMaxResults($count)
+                ->orderBy('p.id', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $query = $this->createQueryBuilder('p');
+            return $query->select("p")
+                ->where($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
+                ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
+                ->setParameter('user', $user)
+                ->setMaxResults($count)
+                ->orderBy('p.id', 'DESC')
+                ->getQuery()
+                ->getResult();
+        }
+    }
 }
