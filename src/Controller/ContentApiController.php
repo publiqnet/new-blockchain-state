@@ -29,6 +29,7 @@ use PubliqAPI\Model\Content;
 use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\Done;
 use PubliqAPI\Model\InvalidSignature;
+use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
 use PubliqAPI\Model\TransactionDone;
 use PubliqAPI\Model\UriError;
@@ -882,6 +883,8 @@ class ContentApiController extends Controller
             $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
+            } elseif ($broadcastResult instanceof NotEnoughBalance) {
+                return new JsonResponse(['type' => 'not_enough_balance'], Response::HTTP_CONFLICT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
