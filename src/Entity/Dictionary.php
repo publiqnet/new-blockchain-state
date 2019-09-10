@@ -35,7 +35,7 @@ class Dictionary implements TranslatableInterface
 
     /**
      * @var string
-     * @ORM\Column(type="string")
+     * @ORM\Column(type="string", nullable=true)
      * @Gedmo\Translatable
      */
     private $value;
