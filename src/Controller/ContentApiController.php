@@ -763,6 +763,9 @@ class ContentApiController extends Controller
         $previousVersions = $this->get('serializer')->normalize($previousVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $nextVersions = $this->get('serializer')->normalize($nextVersions, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
+        $previousVersions = $contentUnitService->prepareTags($previousVersions);
+        $nextVersions = $contentUnitService->prepareTags($nextVersions);
+
         $contentUnit->setPreviousVersions($previousVersions);
         $contentUnit->setNextVersions($nextVersions);
 
