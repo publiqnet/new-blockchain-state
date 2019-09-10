@@ -989,7 +989,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->flush();
 
                         //  add transaction record without relation
-                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, $boostedContentUnitEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
