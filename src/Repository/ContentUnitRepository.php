@@ -58,9 +58,10 @@ class ContentUnitRepository extends EntityRepository
      * @param Account $account
      * @param int $count
      * @param ContentUnit|null $fromContentUnit
+     * @param bool $self
      * @return array|null
      */
-    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null)
+    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null, $self = false)
     {
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
@@ -72,15 +73,19 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
+            $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
-                ->where('t.block is not null')
-                ->andWhere('cu.content is not null')
+                ->where('cu.content is not null')
                 ->andWhere('cu.author = :author')
                 ->andWhere('cu.id < :fromId')
-                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-                ->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()));
+
+            if (!$self) {
+                $query->andWhere('t.block is not null');
+            }
+
+            return $query->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()
@@ -88,14 +93,23 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
+            $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
-                ->where('t.block is not null')
-                ->andWhere('cu.content is not null')
+                ->where('cu.content is not null')
                 ->andWhere('cu.author = :author')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameter('author', $account)
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+
+            if (!$self) {
+                $query->andWhere('t.block is not null');
+            }
+
+            return $query->setParameter('author', $account)
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()

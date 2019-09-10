@@ -111,6 +111,12 @@ class ContentUnit
     private $boosted;
 
     /**
+     * @var string
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $status;
+
+    /**
      * @var mixed
      * @Groups({"previousVersions"})
      */
@@ -416,6 +422,22 @@ class ContentUnit
     public function setBoosted(bool $boosted)
     {
         $this->boosted = $boosted;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param string $status
+     */
+    public function setStatus(string $status)
+    {
+        $this->status = $status;
     }
 
     /**

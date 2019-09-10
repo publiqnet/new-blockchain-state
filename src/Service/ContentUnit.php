@@ -129,6 +129,14 @@ class ContentUnit
 
                 $contentUnit->setPreviousVersions($previousVersions);
             }
+
+            //  check if transaction confirmed
+            $block = $contentUnit->getTransaction()->getBlock();
+            if ($block) {
+                $contentUnit->setStatus('confirmed');
+            } else {
+                $contentUnit->setStatus('pending');
+            }
         }
 
         return $contentUnits;
