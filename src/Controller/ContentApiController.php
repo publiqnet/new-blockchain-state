@@ -763,6 +763,22 @@ class ContentApiController extends Controller
         $contentUnit->setPreviousVersions($previousVersions);
         $contentUnit->setNextVersions($nextVersions);
 
+        //  get related articles
+        $relatedArticles = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleRelatedArticles($contentUnit, 10);
+        if ($relatedArticles) {
+            /**
+             * @var \App\Entity\ContentUnit $relatedArticle
+             */
+            foreach ($relatedArticles as $relatedArticle) {
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $relatedArticle->getTransaction();
+                $relatedArticle->setPublished($transaction->getTimeSigned());
+            }
+        }
+        $relatedArticles = $this->get('serializer')->normalize($relatedArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+
         //  check if article boosted
         $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
         $contentUnit->setBoosted($isBoosted);
@@ -792,6 +808,7 @@ class ContentApiController extends Controller
         }
 
         $contentUnit = $contentUnitService->prepareTags($contentUnit, false);
+        $contentUnit['related'] = $relatedArticles;
 
         return new JsonResponse($contentUnit);
     }

@@ -431,4 +431,41 @@ class ContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @param ContentUnit $article
+     * @param int $count
+     * @return array|null
+     */
+    public function getArticleRelatedArticles(ContentUnit $article, int $count = 3)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->groupBy('cu2.contentId');
+
+        $preferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select cu3
+                from App:ContentUnit cu3 
+                left join App:ContentUnitTag cut with cut.contentUnit = cu3
+                where cu3.author = :user or cut.tag in (select tg from App:Tag tg join App:ContentUnitTag cut1 with cut1.tag = tg where cut1.contentUnit = :article) 
+                group by cu3
+            ");
+
+        $query = $this->createQueryBuilder('cu');
+
+        return $query->select('cu, a, t')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('t.block is not null')
+            ->andWhere('cu.content is not null')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->andWhere($query->expr()->in('cu', $preferenceQuery->getDQL()))
+            ->setParameters(['user' => $article->getAuthor(), 'article' => $article])
+            ->setMaxResults($count)
+            ->orderBy('cu.id', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
 }
