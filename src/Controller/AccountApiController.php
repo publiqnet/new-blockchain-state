@@ -518,6 +518,9 @@ class AccountApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account);
         //  prepare data to return
@@ -544,11 +547,6 @@ class AccountApiController extends Controller
         $preferredAuthorsArticles = $contentUnitService->prepareTags($preferredAuthorsArticles);
         $preferredTagsArticles = $contentUnitService->prepareTags($preferredTagsArticles);
 
-
-        /**
-         * @var Publication $publication
-         */
-        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $fromPublicationSlug]);
 
         /**
          * @var Publication $publication
