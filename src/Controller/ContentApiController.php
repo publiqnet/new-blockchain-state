@@ -781,6 +781,7 @@ class ContentApiController extends Controller
             }
         }
         $relatedArticles = $this->get('serializer')->normalize($relatedArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $relatedArticles = $contentUnitService->prepareTags($relatedArticles);
 
         //  check if article boosted
         $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
