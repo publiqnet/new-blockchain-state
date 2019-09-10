@@ -29,7 +29,7 @@ class DictionaryAdmin extends AbstractAdmin
     protected function configureFormFields(FormMapper $formMapper)
     {
         $formMapper
-            ->add('wordKey', null, ['label' => 'Key', 'disabled' => true])
+            ->add('wordKey', null, ['label' => 'Key'])
             ->add('value');
     }
 
