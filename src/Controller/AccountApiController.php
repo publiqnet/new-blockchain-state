@@ -562,6 +562,10 @@ class AccountApiController extends Controller
                 //  get subscribers
                 $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
                 $publication->setSubscribersCount(count($subscribers));
+
+                //  get articles count
+                $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                $publication->setStoriesCount(intval($storiesCount[0][1]));
             }
         }
 

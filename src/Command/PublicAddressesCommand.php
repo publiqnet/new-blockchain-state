@@ -34,9 +34,6 @@ class PublicAddressesCommand extends ContainerAwareCommand
     /** @var SymfonyStyle $em */
     private $io;
 
-    /** @var array $balances */
-    private $balances = [];
-
 
     public function __construct(BlockChain $blockChain)
     {
