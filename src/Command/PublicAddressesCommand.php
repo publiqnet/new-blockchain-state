@@ -9,7 +9,6 @@
 namespace App\Command;
 
 use App\Entity\Account;
-use App\Entity\Dictionary;
 use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
 use PubliqAPI\Model\PublicAddressesInfo;
@@ -22,19 +21,19 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class PublicAddressesCommand extends ContainerAwareCommand
 {
-    const BATCH = 100;
-    const ACTION_COUNT = 5000;
-
     use LockableTrait;
 
     protected static $defaultName = 'state:public-addresses';
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;
+
     /** @var EntityManager $em */
     private $em;
+
     /** @var SymfonyStyle $em */
     private $io;
+
     /** @var array $balances */
     private $balances = [];
 
@@ -55,6 +54,7 @@ class PublicAddressesCommand extends ContainerAwareCommand
     {
         parent::initialize($input, $output);
         $this->em = $this->getContainer()->get('doctrine.orm.entity_manager');
+
         // DISABLE SQL LOGGING, CAUSE IT CAUSES MEMORY SHORTAGE on large inserts
         $this->em->getConnection()->getConfiguration()->setSQLLogger(null);
         $this->io = new SymfonyStyle($input, $output);
@@ -75,21 +75,6 @@ class PublicAddressesCommand extends ContainerAwareCommand
 
             return 0;
         }
-
-        $dictionaries = $this->em->getRepository(Dictionary::class)->findAll();
-        /**
-         * @var Dictionary $dictionary
-         */
-        foreach ($dictionaries as $dictionary) {
-            $dictionary->setLocale('en');
-            if (!$dictionary->getValue()) {
-                $dictionary->setValue($dictionary->getWordKey());
-
-                $this->em->persist($dictionary);
-                $this->em->flush();
-            }
-        }
-        exit();
 
         /**
          * @var PublicAddressesInfo $publicAddresses
