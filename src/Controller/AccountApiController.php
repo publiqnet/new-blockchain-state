@@ -558,6 +558,10 @@ class AccountApiController extends Controller
             foreach ($publications as $publication) {
                 $publication->setMemberStatus(0);
                 $publication->setSubscribed(false);
+
+                //  get subscribers
+                $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
+                $publication->setSubscribersCount(count($subscribers));
             }
         }
 
