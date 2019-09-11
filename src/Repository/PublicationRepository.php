@@ -109,8 +109,10 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
 
         return $this->createQueryBuilder('p')
             ->select("p")
+            ->leftJoin('p.tags', 't')
             ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
-            ->setParameter('searchWord', $searchWord)
+            ->orWhere('t.name like :tagSearchWord')
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
             ->getQuery()
             ->getResult();
     }

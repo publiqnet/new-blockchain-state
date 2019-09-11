@@ -329,16 +329,26 @@ class ContentUnitRepository extends EntityRepository
             ->select('max(cu2.id)')
             ->groupBy('cu2.contentId');
 
+        $preferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select cu3
+                from App:ContentUnit cu3 
+                join App:ContentUnitTag cut with cut.contentUnit = cu3
+                where cut.tag in (select tg from App:Tag tg where tg.name like :tagSearchWord) 
+                group by cu3
+            ");
+
         $query = $this->createQueryBuilder('cu');
 
         return $query->select('cu, a')
             ->join('cu.author', 'a')
             ->join('cu.transaction', 't')
             ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
             ->andWhere('t.block is not null')
             ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-            ->setParameter('searchWord', $searchWord)
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
             ->orderBy('cu.id', 'desc')
             ->getQuery()
             ->getResult();

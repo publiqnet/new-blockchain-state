@@ -156,6 +156,7 @@ class SearchApiController extends Controller
             }
         }
         $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $articles = $contentUnitService->prepareTags($articles);
 
         //  SEARCH IN AUTHORS
         $authors = $em->getRepository(Account::class)->fulltextSearch($word);
