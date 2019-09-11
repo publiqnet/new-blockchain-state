@@ -74,17 +74,17 @@ class ContentUnitTag
     }
 
     /**
-     * @return ContentUnit
+     * @return mixed
      */
-    public function getContentUnit(): ?ContentUnit
+    public function getContentUnit()
     {
         return $this->contentUnit;
     }
 
     /**
-     * @param ContentUnit $contentUnit
+     * @param mixed $contentUnit
      */
-    public function setContentUnit(ContentUnit $contentUnit)
+    public function setContentUnit($contentUnit)
     {
         $this->contentUnit = $contentUnit;
     }
@@ -92,7 +92,7 @@ class ContentUnitTag
     /**
      * @return string
      */
-    public function getContentUnitUri(): ?string
+    public function getContentUnitUri()
     {
         return $this->contentUnitUri;
     }
