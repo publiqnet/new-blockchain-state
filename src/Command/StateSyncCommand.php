@@ -769,8 +769,27 @@ class StateSyncCommand extends ContainerAwareCommand
                             $coverFileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $coverUri]);
                             $contentUnitEntity->setCover($coverFileEntity);
                         }
+
+                        //  check for related Publication
+                        $publicationArticle = $this->em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
+                        if ($publicationArticle) {
+                            $contentUnitEntity->setPublication($publicationArticle->getPublication());
+                            $this->em->remove($publicationArticle);
+                        }
+
                         $this->em->persist($contentUnitEntity);
                         $this->em->flush();
+
+                        //  check for related tags
+                        $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                        if ($contentUnitTags) {
+                            foreach ($contentUnitTags as $contentUnitTag) {
+                                $contentUnitTag->setContentUnit($contentUnitEntity);
+                                $this->em->persist($contentUnitTag);
+                            }
+
+                            $this->em->flush();
+                        }
 
                         //  add transaction record with relation to content unit
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
@@ -778,6 +797,17 @@ class StateSyncCommand extends ContainerAwareCommand
                         //  update account balances
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                     } else {
+                        //  check for related tags
+                        $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                        if ($contentUnitTags) {
+                            foreach ($contentUnitTags as $contentUnitTag) {
+                                $contentUnitTag->setContentUnit(null);
+                                $this->em->persist($contentUnitTag);
+                            }
+
+                            $this->em->flush();
+                        }
+
                         //  update account balances
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
                     }
