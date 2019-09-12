@@ -51,6 +51,9 @@ services:
     App\Service\ContentUnit:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
 
+    App\Service\Custom:
+        arguments: ['%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%']
+
     json:
         class: App\Service\Json
         arguments: ['@doctrine.orm.entity_manager', '%json_path%']

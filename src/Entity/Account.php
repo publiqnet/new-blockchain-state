@@ -40,6 +40,12 @@ class Account implements UserInterface
 
     /**
      * @var string
+     * @ORM\Column(name="old_public_key", type="string", length=128, nullable=true)
+     */
+    private $oldPublicKey;
+
+    /**
+     * @var string
      * @ORM\Column(name="email", type="string", length=128, nullable=true)
      * @Groups({"account", "accountEmail"})
      */
@@ -286,6 +292,22 @@ class Account implements UserInterface
     public function setPublicKey($publicKey)
     {
         $this->publicKey = $publicKey;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOldPublicKey()
+    {
+        return $this->oldPublicKey;
+    }
+
+    /**
+     * @param mixed $oldPublicKey
+     */
+    public function setOldPublicKey($oldPublicKey)
+    {
+        $this->oldPublicKey = $oldPublicKey;
     }
 
     /**

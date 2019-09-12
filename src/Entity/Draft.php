@@ -115,6 +115,18 @@ class Draft
     private $publication;
 
     /**
+     * @var string
+     * @ORM\Column(name="ds_id", type="string", length=64, nullable=true)
+     */
+    private $dsId;
+
+    /**
+     * @var string
+     * @ORM\Column(name="public_key", type="string", length=64, nullable=true)
+     */
+    private $publicKey;
+
+    /**
      * @return int
      */
     public function getId()
@@ -314,5 +326,41 @@ class Draft
     public function setPublication($publication)
     {
         $this->publication = $publication;
+    }
+
+    /**
+     * Get dsId
+     *
+     * @return string
+     */
+    public function getDsId()
+    {
+        return $this->dsId;
+    }
+
+    /**
+     * @param string $dsId
+     */
+    public function setDsId($dsId)
+    {
+        $this->dsId = $dsId;
+    }
+
+    /**
+     * Get publicKey
+     *
+     * @return string
+     */
+    public function getPublicKey()
+    {
+        return $this->publicKey;
+    }
+
+    /**
+     * @param string $publicKey
+     */
+    public function setPublicKey($publicKey)
+    {
+        $this->publicKey = $publicKey;
     }
 }

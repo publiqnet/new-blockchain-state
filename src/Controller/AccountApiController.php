@@ -10,9 +10,11 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\ContentUnit;
+use App\Entity\Draft;
 use App\Entity\Publication;
 use App\Entity\Subscription;
 use App\Service\Oauth;
+use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -44,10 +46,10 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param Request $request
      * @param Oauth $oauth
+     * @param Custom $customService
      * @return JsonResponse
-     * @throws \Exception
      */
-    public function authenticateUser(Request $request, Oauth $oauth)
+    public function authenticateUser(Request $request, Oauth $oauth, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -67,6 +69,9 @@ class AccountApiController extends Controller
             $email = $checkResponse['data']['email'];
 
             //  check if account exist
+            /**
+             * @var Account $account
+             */
             $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
             if (!$account) {
                 $account = new Account();
@@ -88,6 +93,27 @@ class AccountApiController extends Controller
 
             $account['token'] = $account['apiKey'];
             unset($account['apiKey']);
+
+            if (!$account->getOldPublicKey()) {
+                $oldPublicKey = $customService->getOldPublicKey($email);
+                if ($oldPublicKey) {
+                    $account->setOldPublicKey($oldPublicKey);
+                    $em->persist($account);
+                    $em->flush();
+
+                    /**
+                     * @var Draft[] $drafts
+                     */
+                    $drafts = $em->getRepository(Draft::class)->findBy(['publicKey' => $oldPublicKey]);
+                    if ($drafts) {
+                        foreach ($drafts as $draft) {
+                            $draft->setAccount($account);
+                            $em->persist($draft);
+                        }
+                        $em->flush();
+                    }
+                }
+            }
 
             return new JsonResponse($account);
         } catch (\Exception $e) {
