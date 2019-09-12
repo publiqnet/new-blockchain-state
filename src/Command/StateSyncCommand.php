@@ -789,13 +789,6 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitEntity->setCover($coverFileEntity);
                         }
 
-                        //  check for related Publication
-                        $publicationArticle = $this->em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
-                        if ($publicationArticle) {
-                            $contentUnitEntity->setPublication($publicationArticle->getPublication());
-                            $this->em->remove($publicationArticle);
-                        }
-
                         $this->em->persist($contentUnitEntity);
                         $this->em->flush();
 
