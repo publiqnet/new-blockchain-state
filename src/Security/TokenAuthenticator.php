@@ -78,6 +78,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
         $route = $request->get('_route');
         if (in_array($route, [
             'get_content_by_uri',
+            'get_author_data',
         ])) {
             return null;
         }

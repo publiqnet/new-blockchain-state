@@ -382,7 +382,7 @@ class BlockChain
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with getting file details');
+            throw new \Exception('Issue with getting file details: ' . ($storageUrl ? $storageUrl: $this->channelStorageEndpoint));
         }
 
         $validateRes = Rtt::validate($body['data']);

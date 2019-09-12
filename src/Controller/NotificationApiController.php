@@ -13,7 +13,6 @@ use App\Entity\Notification;
 use App\Entity\UserNotification;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Swagger\Annotations as SWG;
@@ -46,6 +45,9 @@ class NotificationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $em->getRepository(UserNotification::class)->markAllAsRead($account);
 
@@ -76,6 +78,9 @@ class NotificationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         /**
          * @var UserNotification $userNotification
@@ -117,6 +122,9 @@ class NotificationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         /**
          * @var UserNotification $userNotification
@@ -158,6 +166,9 @@ class NotificationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         /**
          * @var UserNotification $userNotification
@@ -198,6 +209,9 @@ class NotificationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $unreadNotifications = $em->getRepository(UserNotification::class)->getUserUnreadNotifications($account, $count, $fromId);
 
