@@ -375,6 +375,25 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
                                     $contentUnitEntity->setContent($contentEntity);
                                     $this->em->persist($contentUnitEntity);
+
+                                    $contentUnitEntityFiles = $contentUnitEntity->getFiles();
+                                    if ($contentUnitEntityFiles && $channelAccount->getUrl()) {
+                                        /**
+                                         * @var \App\Entity\File $contentUnitEntityFile
+                                         */
+                                        foreach ($contentUnitEntityFiles as $contentUnitEntityFile) {
+                                            //  get file details
+                                            if (!$contentUnitEntityFile->getMimeType()) {
+                                                $fileDetails = $this->blockChainService->getFileDetails($contentUnitEntityFile->getUri(), $channelAccount->getUrl());
+                                                if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                                    $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
+                                                    $contentUnitEntityFile->setSize($fileDetails->getSize());
+
+                                                    $this->em->persist($contentUnitEntityFile);
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 $this->em->persist($contentEntity);
                                 $this->em->flush();
@@ -837,6 +856,25 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
                             $contentUnitEntity->setContent($contentEntity);
                             $this->em->persist($contentUnitEntity);
+
+                            $contentUnitEntityFiles = $contentUnitEntity->getFiles();
+                            if ($contentUnitEntityFiles && $channelAccount->getUrl()) {
+                                /**
+                                 * @var \App\Entity\File $contentUnitEntityFile
+                                 */
+                                foreach ($contentUnitEntityFiles as $contentUnitEntityFile) {
+                                    //  get file details
+                                    if (!$contentUnitEntityFile->getMimeType()) {
+                                        $fileDetails = $this->blockChainService->getFileDetails($contentUnitEntityFile->getUri(), $channelAccount->getUrl());
+                                        if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                            $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
+                                            $contentUnitEntityFile->setSize($fileDetails->getSize());
+
+                                            $this->em->persist($contentUnitEntityFile);
+                                        }
+                                    }
+                                }
+                            }
                         }
                         $this->em->flush();
 
