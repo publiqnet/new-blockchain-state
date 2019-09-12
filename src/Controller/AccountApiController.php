@@ -89,11 +89,6 @@ class AccountApiController extends Controller
             $em->persist($account);
             $em->flush();
 
-            $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
-
-            $account['token'] = $account['apiKey'];
-            unset($account['apiKey']);
-
             if (!$account->getOldPublicKey()) {
                 $oldPublicKey = $customService->getOldPublicKey($email);
                 if ($oldPublicKey) {
@@ -114,6 +109,11 @@ class AccountApiController extends Controller
                     }
                 }
             }
+
+            $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
+
+            $account['token'] = $account['apiKey'];
+            unset($account['apiKey']);
 
             return new JsonResponse($account);
         } catch (\Exception $e) {
