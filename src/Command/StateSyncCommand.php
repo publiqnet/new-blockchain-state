@@ -159,6 +159,8 @@ class StateSyncCommand extends ContainerAwareCommand
             }
         }
 
+        $this->em->beginTransaction();
+
         $index = 0;
         /**
          * get the last index number - if not exist set default as 0
@@ -223,12 +225,6 @@ class StateSyncCommand extends ContainerAwareCommand
                         $timeSigned = $transaction->getTimeSigned();
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
-
-                        //  check if transaction exist
-                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                        if ($transactionEntity) {
-                            continue;
-                        }
 
                         if ($transaction->getAction() instanceof File) {
                             /**
@@ -1157,8 +1153,9 @@ class StateSyncCommand extends ContainerAwareCommand
         }
         $indexNumber->setId($index);
         $this->em->persist($indexNumber);
-
         $this->em->flush();
+
+        $this->em->commit();
 
         $this->io->writeln(sprintf('Finished at with index=%s: %s', $index, date('Y-m-d H:i:s')));
         $this->io->success('BlockChain is synced now!');
