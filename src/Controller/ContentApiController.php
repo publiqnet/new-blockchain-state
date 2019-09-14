@@ -783,6 +783,14 @@ class ContentApiController extends Controller
                 $relatedArticle->setPublished($transaction->getTimeSigned());
             }
         }
+        //  prepare data to return
+        if ($relatedArticles) {
+            try {
+                $relatedArticles = $contentUnitService->prepare($relatedArticles);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
         $relatedArticles = $this->get('serializer')->normalize($relatedArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $relatedArticles = $contentUnitService->prepareTags($relatedArticles);
 
