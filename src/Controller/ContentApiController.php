@@ -138,6 +138,8 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="creationTime", type="integer"),
      *             @SWG\Property(property="expiryTime", type="integer"),
      *             @SWG\Property(property="fileUris", type="array", items={"type": "string"}),
+     *             @SWG\Property(property="publicationSlug", type="string"),
+     *             @SWG\Property(property="tags", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -152,6 +154,10 @@ class ContentApiController extends Controller
      */
     public function signContentUnit(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+        $publicationSlug = '';
+        $tags = '';
+
         /**
          * @var Account $account
          */
@@ -169,6 +175,12 @@ class ContentApiController extends Controller
             $creationTime = $content['creationTime'];
             $expiryTime = $content['expiryTime'];
             $fileUris = $content['fileUris'];
+            if (isset($content['publicationSlug'])) {
+                $publicationSlug = $content['publicationSlug'];
+            }
+            if (isset($content['tags'])) {
+                $tags = $content['tags'];
+            }
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
@@ -176,6 +188,8 @@ class ContentApiController extends Controller
             $creationTime = $request->request->get('creationTime');
             $expiryTime = $request->request->get('expiryTime');
             $fileUris = $request->request->get('fileUris');
+            $publicationSlug = $request->request->get('publicationSlug');
+            $tags = $request->request->get('tags');
         }
 
         //  get public key
@@ -206,90 +220,6 @@ class ContentApiController extends Controller
                     throw new Exception('Invalid file URI: ' . $uriError->getUri() . '(' . $uriError->getUriProblemType() . ')');
                 }
             }
-
-            //  Broadcast
-            $broadcastResult = $blockChain->broadcast($signatureResult['transaction'], $publicKey, $signedContentUnit);
-            if ($broadcastResult instanceof UriError && $broadcastResult->getUriProblemType() == UriProblemType::duplicate) {
-                return new JsonResponse(['type' => 'duplicate_uri'], Response::HTTP_CONFLICT);
-            } elseif (!($broadcastResult instanceof Done)) {
-                throw new Exception('Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult));
-            }
-
-            return new JsonResponse('', Response::HTTP_NO_CONTENT);
-        } catch (\Exception $e) {
-            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
-        }
-    }
-
-    /**
-     * @Route("/publish", methods={"POST"})
-     * @SWG\Post(
-     *     summary="Publish content",
-     *     consumes={"application/json"},
-     *     @SWG\Parameter(
-     *         name="body",
-     *         in="body",
-     *         description="JSON Payload",
-     *         required=true,
-     *         format="application/json",
-     *         @SWG\Schema(
-     *             type="object",
-     *             @SWG\Property(property="uri", type="string"),
-     *             @SWG\Property(property="contentId", type="string"),
-     *             @SWG\Property(property="publicationSlug", type="string"),
-     *             @SWG\Property(property="tags", type="string")
-     *         )
-     *     ),
-     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
-     * )
-     * @SWG\Response(response=200, description="Success")
-     * @SWG\Response(response=404, description="User not found")
-     * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Content")
-     * @param Request $request
-     * @param Blockchain $blockChain
-     * @return JsonResponse
-     */
-    public function publishContent(Request $request, BlockChain $blockChain)
-    {
-        $em = $this->getDoctrine()->getManager();
-        $publicationSlug = '';
-        $tags = '';
-
-        /**
-         * @var Account $account
-         */
-        $account = $this->getUser();
-        if (!$account) {
-            return new JsonResponse('', Response::HTTP_UNAUTHORIZED);
-        }
-
-        //  get data from submitted data
-        $contentType = $request->getContentType();
-        if ($contentType == 'application/json' || $contentType == 'json') {
-            $content = $request->getContent();
-            $content = json_decode($content, true);
-
-            $uri = $content['uri'];
-            $contentId = $content['contentId'];
-            if (isset($content['publicationSlug'])) {
-                $publicationSlug = $content['publicationSlug'];
-            }
-            if (isset($content['tags'])) {
-                $tags = $content['tags'];
-            }
-        } else {
-            $uri = $request->request->get('uri');
-            $contentId = $request->request->get('contentId');
-            $publicationSlug = $request->request->get('publicationSlug');
-            $tags = $request->request->get('tags');
-        }
-
-        try {
-            $content = new Content();
-            $content->setContentId($contentId);
-            $content->setChannelAddress($this->getParameter('channel_address'));
-            $content->addContentUnitUris($uri);
 
             //  relate with tags
             if ($tags) {
@@ -327,6 +257,76 @@ class ContentApiController extends Controller
                     }
                 }
             }
+
+            //  Broadcast
+            $broadcastResult = $blockChain->broadcast($signatureResult['transaction'], $publicKey, $signedContentUnit);
+            if ($broadcastResult instanceof UriError && $broadcastResult->getUriProblemType() == UriProblemType::duplicate) {
+                return new JsonResponse(['type' => 'duplicate_uri'], Response::HTTP_CONFLICT);
+            } elseif (!($broadcastResult instanceof Done)) {
+                throw new Exception('Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult));
+            }
+
+            return new JsonResponse('', Response::HTTP_NO_CONTENT);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("/publish", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Publish content",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="uri", type="string"),
+     *             @SWG\Property(property="contentId", type="string")
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param Request $request
+     * @param Blockchain $blockChain
+     * @return JsonResponse
+     */
+    public function publishContent(Request $request, BlockChain $blockChain)
+    {
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_UNAUTHORIZED);
+        }
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $uri = $content['uri'];
+            $contentId = $content['contentId'];
+        } else {
+            $uri = $request->request->get('uri');
+            $contentId = $request->request->get('contentId');
+        }
+
+        try {
+            $content = new Content();
+            $content->setContentId($contentId);
+            $content->setChannelAddress($this->getParameter('channel_address'));
+            $content->addContentUnitUris($uri);
 
             $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'));
             if ($broadcastResult instanceof TransactionDone) {
