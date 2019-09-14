@@ -466,6 +466,8 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->where('cu2.contentId != :contentId')
+            ->setParameter('contentId', $article->getContentId())
             ->groupBy('cu2.contentId');
 
         $preferenceQuery = $this->getEntityManager()
