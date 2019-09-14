@@ -467,7 +467,6 @@ class ContentUnitRepository extends EntityRepository
         $subQuery
             ->select('max(cu2.id)')
             ->where('cu2.contentId != :contentId')
-            ->setParameter('contentId', $article->getContentId())
             ->groupBy('cu2.contentId');
 
         $preferenceQuery = $this->getEntityManager()
@@ -488,7 +487,7 @@ class ContentUnitRepository extends EntityRepository
             ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->andWhere($query->expr()->in('cu', $preferenceQuery->getDQL()))
-            ->setParameters(['user' => $article->getAuthor(), 'article' => $article])
+            ->setParameters(['user' => $article->getAuthor(), 'article' => $article, 'contentId' => $article->getContentId()])
             ->setMaxResults($count)
             ->orderBy('cu.id', 'desc')
             ->getQuery()
