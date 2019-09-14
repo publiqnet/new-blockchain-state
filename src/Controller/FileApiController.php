@@ -134,7 +134,7 @@ class FileApiController extends Controller
                     $action->addAuthorAddresses($publicKey);
 
                     //  Verify signature
-                    $signatureResult = $blockChain->verifySignature($publicKey, $file['signedFile'], $action, $file['creationTime'], $file['expiryTime']);
+                    $signatureResult = $blockChain->verifySignature($publicKey, $file['signedFile'], $action, $file['creationTime'], $file['expiryTime'], 0, 10000000);
                     if (!($signatureResult['signatureResult'] instanceof Done)) {
                         throw new Exception('Invalid signature for file: ' . $file['uri'] . '; Error type: ' . get_class($signatureResult['signatureResult']));
                     }

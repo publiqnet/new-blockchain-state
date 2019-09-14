@@ -138,6 +138,8 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="creationTime", type="integer"),
      *             @SWG\Property(property="expiryTime", type="integer"),
      *             @SWG\Property(property="fileUris", type="array", items={"type": "string"}),
+     *             @SWG\Property(property="publicationSlug", type="string"),
+     *             @SWG\Property(property="tags", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -152,6 +154,10 @@ class ContentApiController extends Controller
      */
     public function signContentUnit(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+        $publicationSlug = '';
+        $tags = '';
+
         /**
          * @var Account $account
          */
@@ -169,6 +175,12 @@ class ContentApiController extends Controller
             $creationTime = $content['creationTime'];
             $expiryTime = $content['expiryTime'];
             $fileUris = $content['fileUris'];
+            if (isset($content['publicationSlug'])) {
+                $publicationSlug = $content['publicationSlug'];
+            }
+            if (isset($content['tags'])) {
+                $tags = $content['tags'];
+            }
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
@@ -176,6 +188,8 @@ class ContentApiController extends Controller
             $creationTime = $request->request->get('creationTime');
             $expiryTime = $request->request->get('expiryTime');
             $fileUris = $request->request->get('fileUris');
+            $publicationSlug = $request->request->get('publicationSlug');
+            $tags = $request->request->get('tags');
         }
 
         //  get public key
@@ -194,7 +208,7 @@ class ContentApiController extends Controller
             }
 
             //  Verify signature
-            $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime);
+            $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime, 0, 10000000);
             if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
                 throw new Exception('Invalid signature');
             } elseif ($signatureResult['signatureResult'] instanceof UriError) {
@@ -204,6 +218,66 @@ class ContentApiController extends Controller
                 $uriError = $signatureResult['signatureResult'];
                 if ($uriError->getUriProblemType() !== UriProblemType::duplicate) {
                     throw new Exception('Invalid file URI: ' . $uriError->getUri() . '(' . $uriError->getUriProblemType() . ')');
+                }
+            }
+
+            //  relate with tags
+            $contentUnitEntity = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+            if ($contentUnitEntity) {
+                $contentUnitEntity->setPublication(null);
+                $em->persist($contentUnitEntity);
+
+                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnit' => $contentUnitEntity]);
+                if ($contentUnitTags) {
+                    foreach ($contentUnitTags as $contentUnitTag) {
+                        $em->remove($contentUnitTag);
+                    }
+                }
+
+                $em->flush();
+            }
+
+            if ($tags) {
+                $tags = explode(',', $tags);
+                foreach ($tags as $tag) {
+                    $tag = trim($tag);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
+
+                        $em->persist($tagEntity);
+                    }
+
+                    $contentUnitTag = new ContentUnitTag();
+                    $contentUnitTag->setTag($tagEntity);
+                    $contentUnitTag->setContentUnitUri($uri);
+                    if ($contentUnitEntity) {
+                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                    }
+                    $em->persist($contentUnitTag);
+                    $em->flush();
+                }
+            }
+
+            //  if publication selected, add temporary record
+            if ($publicationSlug) {
+                $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
+                if ($publication) {
+                    //  check if Author is a member of Publication
+                    $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                    if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                        if ($contentUnitEntity) {
+                            $contentUnitEntity->setPublication($publication);
+                            $em->persist($contentUnitEntity);
+                        } else {
+                            $publicationArticle = new PublicationArticle();
+                            $publicationArticle->setPublication($publication);
+                            $publicationArticle->setUri($uri);
+                            $em->persist($publicationArticle);
+                        }
+                        $em->flush();
+                    }
                 }
             }
 
@@ -235,9 +309,7 @@ class ContentApiController extends Controller
      *         @SWG\Schema(
      *             type="object",
      *             @SWG\Property(property="uri", type="string"),
-     *             @SWG\Property(property="contentId", type="string"),
-     *             @SWG\Property(property="publicationSlug", type="string"),
-     *             @SWG\Property(property="tags", type="string")
+     *             @SWG\Property(property="contentId", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -252,10 +324,6 @@ class ContentApiController extends Controller
      */
     public function publishContent(Request $request, BlockChain $blockChain)
     {
-        $em = $this->getDoctrine()->getManager();
-        $publicationSlug = '';
-        $tags = '';
-
         /**
          * @var Account $account
          */
@@ -272,17 +340,9 @@ class ContentApiController extends Controller
 
             $uri = $content['uri'];
             $contentId = $content['contentId'];
-            if (isset($content['publicationSlug'])) {
-                $publicationSlug = $content['publicationSlug'];
-            }
-            if (isset($content['tags'])) {
-                $tags = $content['tags'];
-            }
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
-            $publicationSlug = $request->request->get('publicationSlug');
-            $tags = $request->request->get('tags');
         }
 
         try {
@@ -290,43 +350,6 @@ class ContentApiController extends Controller
             $content->setContentId($contentId);
             $content->setChannelAddress($this->getParameter('channel_address'));
             $content->addContentUnitUris($uri);
-
-            //  relate with tags
-            if ($tags) {
-                $tags = explode(',', $tags);
-                foreach ($tags as $tag) {
-                    $tag = trim($tag);
-                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
-                    if (!$tagEntity) {
-                        $tagEntity = new Tag();
-                        $tagEntity->setName($tag);
-
-                        $em->persist($tagEntity);
-                    }
-
-                    $contentUnitTag = new ContentUnitTag();
-                    $contentUnitTag->setTag($tagEntity);
-                    $contentUnitTag->setContentUnitUri($uri);
-                    $em->persist($contentUnitTag);
-                    $em->flush();
-                }
-            }
-
-            //  if publication selected, add temporary record
-            if ($publicationSlug) {
-                $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
-                if ($publication) {
-                    //  check if Author is a member of Publication
-                    $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
-                    if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
-                        $publicationArticle = new PublicationArticle();
-                        $publicationArticle->setPublication($publication);
-                        $publicationArticle->setUri($uri);
-                        $em->persist($publicationArticle);
-                        $em->flush();
-                    }
-                }
-            }
 
             $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'));
             if ($broadcastResult instanceof TransactionDone) {
@@ -783,6 +806,14 @@ class ContentApiController extends Controller
                 $relatedArticle->setPublished($transaction->getTimeSigned());
             }
         }
+        //  prepare data to return
+        if ($relatedArticles) {
+            try {
+                $relatedArticles = $contentUnitService->prepare($relatedArticles);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
         $relatedArticles = $this->get('serializer')->normalize($relatedArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $relatedArticles = $contentUnitService->prepareTags($relatedArticles);
 
@@ -886,7 +917,7 @@ class ContentApiController extends Controller
         }
 
         try {
-            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime);
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, 0, 10000000);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
@@ -959,7 +990,7 @@ class ContentApiController extends Controller
         }
 
         try {
-            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime);
+            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, 0, 10000000);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
