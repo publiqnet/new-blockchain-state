@@ -194,7 +194,7 @@ class ContentApiController extends Controller
             }
 
             //  Verify signature
-            $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime);
+            $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime, 0, 10000000);
             if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
                 throw new Exception('Invalid signature');
             } elseif ($signatureResult['signatureResult'] instanceof UriError) {
@@ -328,7 +328,7 @@ class ContentApiController extends Controller
                 }
             }
 
-            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'), 0, 10000000);
+            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'));
             if ($broadcastResult instanceof TransactionDone) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
