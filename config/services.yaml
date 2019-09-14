@@ -43,7 +43,7 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Service\BlockChain:
-        arguments: ['%env(STATE_ENDPOINT)%', '%env(BROADCAST_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(DETECT_LANGUAGE_ENDPOINT)%']
+        arguments: ['%env(STATE_ENDPOINT)%', '%env(BROADCAST_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(DETECT_LANGUAGE_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT_POST)%']
 
     App\Service\Oauth:
         arguments: ['%env(OAUTH_ENDPOINT)%']
