@@ -894,7 +894,7 @@ class ContentApiController extends Controller
         }
 
         try {
-            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime);
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, 0, 10000000);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
@@ -967,7 +967,7 @@ class ContentApiController extends Controller
         }
 
         try {
-            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime);
+            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, 0, 10000000);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
