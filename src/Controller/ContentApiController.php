@@ -222,6 +222,7 @@ class ContentApiController extends Controller
             }
 
             //  relate with tags
+            $contentUnitEntity = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
             if ($tags) {
                 $tags = explode(',', $tags);
                 foreach ($tags as $tag) {
@@ -237,6 +238,9 @@ class ContentApiController extends Controller
                     $contentUnitTag = new ContentUnitTag();
                     $contentUnitTag->setTag($tagEntity);
                     $contentUnitTag->setContentUnitUri($uri);
+                    if ($contentUnitEntity) {
+                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                    }
                     $em->persist($contentUnitTag);
                     $em->flush();
                 }
@@ -249,10 +253,15 @@ class ContentApiController extends Controller
                     //  check if Author is a member of Publication
                     $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
                     if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
-                        $publicationArticle = new PublicationArticle();
-                        $publicationArticle->setPublication($publication);
-                        $publicationArticle->setUri($uri);
-                        $em->persist($publicationArticle);
+                        if ($contentUnitEntity) {
+                            $contentUnitEntity->setPublication($publication);
+                            $em->persist($contentUnitEntity);
+                        } else {
+                            $publicationArticle = new PublicationArticle();
+                            $publicationArticle->setPublication($publication);
+                            $publicationArticle->setUri($uri);
+                            $em->persist($publicationArticle);
+                        }
                         $em->flush();
                     }
                 }
