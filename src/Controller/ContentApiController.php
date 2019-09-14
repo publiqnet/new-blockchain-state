@@ -223,6 +223,20 @@ class ContentApiController extends Controller
 
             //  relate with tags
             $contentUnitEntity = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+            if ($contentUnitEntity) {
+                $contentUnitEntity->setPublication(null);
+                $em->persist($contentUnitEntity);
+
+                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnit' => $contentUnitEntity]);
+                if ($contentUnitTags) {
+                    foreach ($contentUnitTags as $contentUnitTag) {
+                        $em->remove($contentUnitTag);
+                    }
+                }
+
+                $em->flush();
+            }
+
             if ($tags) {
                 $tags = explode(',', $tags);
                 foreach ($tags as $tag) {
