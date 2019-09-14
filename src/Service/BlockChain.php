@@ -183,14 +183,16 @@ class BlockChain
      * @param $action
      * @param $creationTime
      * @param $expiryTime
+     * @param int $feeWhole
+     * @param int $feeFraction
      * @return mixed
      * @throws \Exception
      */
-    public function verifySignature($publicKey, $signedString, $action, $creationTime, $expiryTime)
+    public function verifySignature($publicKey, $signedString, $action, $creationTime, $expiryTime, $feeWhole = 0, $feeFraction = 0)
     {
         $coin = new Coin();
-        $coin->setFraction(0);
-        $coin->setWhole(0);
+        $coin->setFraction($feeFraction);
+        $coin->setWhole($feeWhole);
 
         $transaction = new Transaction();
         $transaction->setCreation($creationTime);
@@ -263,14 +265,16 @@ class BlockChain
     /**
      * @param Content $content
      * @param string $channelPrivateKey
+     * @param int $feeWhole
+     * @param int $feeFraction
      * @return bool|string
      * @throws \Exception
      */
-    public function signContent(Content $content, string $channelPrivateKey)
+    public function signContent(Content $content, string $channelPrivateKey, $feeWhole = 0, $feeFraction = 0)
     {
         $coin = new Coin();
-        $coin->setFraction(0);
-        $coin->setWhole(0);
+        $coin->setFraction($feeFraction);
+        $coin->setWhole($feeWhole);
 
         $transaction = new Transaction();
         $transaction->setAction($content);

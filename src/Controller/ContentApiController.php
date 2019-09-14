@@ -328,7 +328,7 @@ class ContentApiController extends Controller
                 }
             }
 
-            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'));
+            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'), 0, 10000000);
             if ($broadcastResult instanceof TransactionDone) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
