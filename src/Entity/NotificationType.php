@@ -32,6 +32,7 @@ class NotificationType
         'publication_request_accepted' => ['key' => 'publication_request_accepted', 'en' => '{{performer}} has accepted your request to join {{target}}', 'jp' => '{{performer}}あなたの参加リクエストを受け入れました{{target}}'],
         'publication_request_rejected' => ['key' => 'publication_request_rejected', 'en' => '{{performer}} has rejected your request to join {{target}}', 'jp' => '{{performer}}あなたの参加要請を拒否しました{{target}}'],
         'publication_membership_cancelled' => ['key' => 'publication_membership_cancelled', 'en' => 'You are no longer member of {{target}}', 'jp' => '{{target}}あなたはもはや%sのメンバーではありません'],
+        'publication_membership_cancelled_by_user' => ['key' => 'publication_membership_cancelled_by_user', 'en' => '{{performer}} has left {{target}}', 'jp' => '{{performer}}は{{target}}を残しました'],
     ];
 
     /**

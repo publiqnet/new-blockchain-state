@@ -52,7 +52,7 @@ class Draft
     /**
      * @var string
      * @ORM\Column(name="content", type="text", nullable=false)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $content;
 
@@ -61,7 +61,7 @@ class Draft
      * @ORM\Column(name="for_adults", type="boolean", options={"default":0})
      * @Groups({"draft"})
      */
-    private $forAdults;
+    private $forAdults = 0;
 
     /**
      * @var string
@@ -81,7 +81,7 @@ class Draft
      * @var \DateTime $created
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $created;
 
@@ -89,9 +89,42 @@ class Draft
      * @var \DateTime $updated
      * @Gedmo\Timestampable(on="update")
      * @ORM\Column(type="datetime", nullable=true)
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $updated;
+
+    /**
+     * @var array
+     * @ORM\Column(name="content_uris", type="array", nullable=true)
+     * @Groups({"draft"})
+     */
+    private $contentUris = [];
+
+    /**
+     * @var array
+     * @ORM\Column(name="tags", type="array", nullable=true)
+     * @Groups({"draft", "draftList"})
+     */
+    private $tags = [];
+
+    /**
+     * @var string
+     * @ORM\Column(name="publication", type="string", length=256, nullable=true)
+     * @Groups({"draft", "draftList"})
+     */
+    private $publication;
+
+    /**
+     * @var string
+     * @ORM\Column(name="ds_id", type="string", length=64, nullable=true)
+     */
+    private $dsId;
+
+    /**
+     * @var string
+     * @ORM\Column(name="public_key", type="string", length=64, nullable=true)
+     */
+    private $publicKey;
 
     /**
      * @return int
@@ -245,5 +278,89 @@ class Draft
     public function setUpdated($updated)
     {
         $this->updated = $updated;
+    }
+
+    /**
+     * @return array
+     */
+    public function getContentUris()
+    {
+        return $this->contentUris;
+    }
+
+    /**
+     * @param array $contentUris
+     */
+    public function setContentUris(array $contentUris)
+    {
+        $this->contentUris = $contentUris;
+    }
+
+    /**
+     * @return array
+     */
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    /**
+     * @param array $tags
+     */
+    public function setTags(array $tags)
+    {
+        $this->tags = $tags;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPublication()
+    {
+        return $this->publication;
+    }
+
+    /**
+     * @param string $publication
+     */
+    public function setPublication($publication)
+    {
+        $this->publication = $publication;
+    }
+
+    /**
+     * Get dsId
+     *
+     * @return string
+     */
+    public function getDsId()
+    {
+        return $this->dsId;
+    }
+
+    /**
+     * @param string $dsId
+     */
+    public function setDsId($dsId)
+    {
+        $this->dsId = $dsId;
+    }
+
+    /**
+     * Get publicKey
+     *
+     * @return string
+     */
+    public function getPublicKey()
+    {
+        return $this->publicKey;
+    }
+
+    /**
+     * @param string $publicKey
+     */
+    public function setPublicKey($publicKey)
+    {
+        $this->publicKey = $publicKey;
     }
 }

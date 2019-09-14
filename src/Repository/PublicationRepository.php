@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\Publication;
 use App\Entity\PublicationMember;
 
 /**
@@ -17,17 +18,38 @@ use App\Entity\PublicationMember;
  */
 class PublicationRepository extends \Doctrine\ORM\EntityRepository
 {
+    public function getPublications(int $count = 10, Publication $publication = null)
+    {
+        if ($publication) {
+            return $this->createQueryBuilder('p')
+                ->select('p')
+                ->where('p.id < :id')
+                ->setParameters(['id' => $publication->getId()])
+                ->orderBy('p.id', 'DESC')
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('p')
+                ->select('p')
+                ->orderBy('p.id', 'DESC')
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
+    }
+
     public function getUserPublicationsOwner(Account $account)
     {
         return $this->createQueryBuilder('p')
-            ->select('p')
+            ->select('p, pm.status as memberStatus')
             ->innerJoin('p.members', 'pm')
             ->where('pm.member = :member')
             ->andWhere('pm.status = :status')
             ->setParameters(['member' => $account, 'status' => PublicationMember::TYPES['owner']])
             ->orderBy('p.id', 'DESC')
             ->getQuery()
-            ->getResult();
+            ->getResult('AGGREGATES_HYDRATOR');
     }
 
     public function getUserPublicationsMember(Account $account)
@@ -67,5 +89,85 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->orderBy('p.id', 'DESC')
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
+    }
+
+    public function getUserSubscriptions(Account $user)
+    {
+        return $this->createQueryBuilder('p')
+            ->select('p')
+            ->join('p.subscribers', 's')
+            ->where('s.subscriber = :user')
+            ->setParameters(['user' => $user])
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function fulltextSearch($searchWord)
+    {
+//        $searchWord = explode(' ', $searchWord);
+//        $searchWord = '+'.implode(' +', $searchWord);
+
+        return $this->createQueryBuilder('p')
+            ->select("p")
+            ->leftJoin('p.tags', 't')
+            ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->orWhere('t.name like :tagSearchWord')
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getPopularPublications($count = 5)
+    {
+        return $this->createQueryBuilder('p')
+            ->select("p, SUM(cu.views) as totalViews")
+            ->leftJoin('p.contentUnits', 'cu')
+            ->setMaxResults($count)
+            ->groupBy('p')
+            ->orderBy('totalViews', 'DESC')
+            ->getQuery()
+            ->getResult('AGGREGATES_HYDRATOR');
+    }
+
+    public function getUserRecommendedPublications(Account $user, $count = 5, Publication $publication = null)
+    {
+        $subscriptionQuery = $this->getEntityManager()
+            ->createQuery("
+                select p1
+                from App:Publication p1 
+                join App:Subscription s with s.publication = p1
+                where s.subscriber = :user
+            ");
+
+        $memberQuery = $this->getEntityManager()
+            ->createQuery("
+                select p2
+                from App:Publication p2 
+                join App:PublicationMember m with m.publication = p2
+                where m.member = :user
+            ");
+
+        if ($publication) {
+            $query = $this->createQueryBuilder('p');
+            return $query->select("p")
+                ->where($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
+                ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
+                ->andWhere('p.id < :id')
+                ->setParameters(['id' => $publication->getId(), 'user' => $user])
+                ->setMaxResults($count)
+                ->orderBy('p.id', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $query = $this->createQueryBuilder('p');
+            return $query->select("p")
+                ->where($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
+                ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
+                ->setParameter('user', $user)
+                ->setMaxResults($count)
+                ->orderBy('p.id', 'DESC')
+                ->getQuery()
+                ->getResult();
+        }
     }
 }

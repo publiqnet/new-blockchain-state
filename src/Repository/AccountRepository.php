@@ -115,7 +115,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->select('a')
                 ->where('a.firstName like :searchWord')
                 ->orWhere('a.lastName like :searchWord')
-                ->orWhere('a.address like :searchWord')
+                ->orWhere('a.publicKey like :searchWord')
                 ->andWhere('a != :account')
                 ->setParameters(['searchWord' => '%' . $searchWord . '%', 'account' => $exception])
                 ->orderBy('a.firstName', 'ASC')
@@ -126,11 +126,68 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->select('a')
                 ->where('a.firstName like :searchWord')
                 ->orWhere('a.lastName like :searchWord')
-                ->orWhere('a.address like :searchWord')
+                ->orWhere('a.publicKey like :searchWord')
                 ->setParameters(['searchWord' => '%' . $searchWord . '%'])
                 ->orderBy('a.firstName', 'ASC')
                 ->getQuery()
                 ->getResult();
+        }
+    }
+
+    public function getUserSubscriptions(Account $user)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a')
+            ->join('a.subscribers', 's')
+            ->where('s.subscriber = :user')
+            ->setParameters(['user' => $user])
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getPublicationSubscribers(Publication $publication)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a')
+            ->join('a.subscriptions', 's')
+            ->where('s.publication = :publication')
+            ->setParameters(['publication' => $publication])
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function fulltextSearch($searchWord)
+    {
+        return $this->createQueryBuilder('a')
+            ->select("a")
+            ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->setParameter('searchWord', $searchWord)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getPopularAuthors($count = 5, Account $exception = null)
+    {
+        if ($exception) {
+            return $this->createQueryBuilder('a')
+                ->select("a, SUM(cu.views) as totalViews")
+                ->leftJoin('a.authorContentUnits', 'cu')
+                ->where('a != :exception')
+                ->setParameter('exception', $exception)
+                ->setMaxResults($count)
+                ->groupBy('a')
+                ->orderBy('totalViews', 'DESC')
+                ->getQuery()
+                ->getResult('AGGREGATES_HYDRATOR');
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select("a, SUM(cu.views) as totalViews")
+                ->leftJoin('a.authorContentUnits', 'cu')
+                ->setMaxResults($count)
+                ->groupBy('a')
+                ->orderBy('totalViews', 'DESC')
+                ->getQuery()
+                ->getResult('AGGREGATES_HYDRATOR');
         }
     }
 }

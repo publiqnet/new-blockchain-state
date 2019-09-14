@@ -10,13 +10,15 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Index;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class ContentUnit
  * @package App\Entity
  *
- * @ORM\Table(name="content_unit")
- * @ORM\Entity
+ * @ORM\Table(name="content_unit", indexes={@Index(columns={"title", "text_with_data"}, flags={"fulltext"})})
+ * @ORM\Entity(repositoryClass="App\Repository\ContentUnitRepository")
  */
 class ContentUnit
 {
@@ -29,16 +31,48 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $uri;
 
     /**
-     * @ORM\Column(name="blockchain_content_id", type="string", length=64, unique=true)
+     * @ORM\Column(name="blockchain_content_id", type="string", length=64)
+     * @Groups({"contentUnitContentId"})
      */
     private $contentId;
 
     /**
+     * @ORM\Column(name="title", type="string", length=256, nullable=false)
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $title;
+
+    /**
+     * @ORM\Column(name="text", type="text", nullable=false)
+     * @Groups({"contentUnit", "contentUnitFull"})
+     */
+    private $text;
+
+    /**
+     * @ORM\Column(name="text_with_data", type="text", nullable=false)
+     */
+    private $textWithData;
+
+    /**
+     * @ORM\Column(name="views", type="integer", nullable=true)
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $views = 0;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $cover;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
+     * @Groups({"contentUnitFull", "contentUnitList"})
      */
     private $author;
 
@@ -49,11 +83,13 @@ class ContentUnit
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits")
+     * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $files;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Content", inversedBy="contentUnits")
+     * @ORM\JoinColumn(name="content_id", referencedColumnName="id", onDelete="SET NULL")
      */
     private $content;
 
@@ -62,10 +98,61 @@ class ContentUnit
      */
     private $transaction;
 
+    /**
+     * @var integer
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $published;
+
+    /**
+     * @var boolean
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $boosted;
+
+    /**
+     * @var string
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $status;
+
+    /**
+     * @var mixed
+     * @Groups({"previousVersions"})
+     */
+    private $previousVersions;
+
+    /**
+     * @var mixed
+     * @Groups({"nextVersions"})
+     */
+    private $nextVersions;
+
+    /**
+     * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
+     * @ORM\JoinColumn(name="publication_id", referencedColumnName="id", onDelete="SET NULL")
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $publication;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit")
+     * @Groups({"boost"})
+     */
+    private $boosts;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     */
+    private $tags;
+
 
     public function __construct()
     {
         $this->files = new ArrayCollection();
+        $this->boosts = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     /**
@@ -106,6 +193,102 @@ class ContentUnit
     public function setContentId($contentId)
     {
         $this->contentId = $contentId;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param mixed $title
+     */
+    public function setTitle($title)
+    {
+        $this->title = $title;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getText()
+    {
+        return $this->text;
+    }
+
+    /**
+     * @param mixed $text
+     */
+    public function setText($text)
+    {
+        $this->text = $text;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTextWithData()
+    {
+        return $this->textWithData;
+    }
+
+    /**
+     * @param mixed $textWithData
+     */
+    public function setTextWithData($textWithData)
+    {
+        $this->textWithData = $textWithData;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViews()
+    {
+        return $this->views;
+    }
+
+    /**
+     * @param mixed $views
+     */
+    public function setViews($views)
+    {
+        $this->views = $views;
+    }
+
+    /**
+     * @param integer $views
+     */
+    public function plusViews($views)
+    {
+        $this->views += $views;
+    }
+
+    /**
+     * @param integer $views
+     */
+    public function minusViews($views)
+    {
+        $this->views += $views;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCover()
+    {
+        return $this->cover;
+    }
+
+    /**
+     * @param mixed $cover
+     */
+    public function setCover($cover)
+    {
+        $this->cover = $cover;
     }
 
     /**
@@ -183,5 +366,117 @@ class ContentUnit
     public function setTransaction($transaction)
     {
         $this->transaction = $transaction;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPublished()
+    {
+        return $this->published;
+    }
+
+    /**
+     * @param int $published
+     */
+    public function setPublished(int $published)
+    {
+        $this->published = $published;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPublication()
+    {
+        return $this->publication;
+    }
+
+    /**
+     * @param mixed $publication
+     */
+    public function setPublication($publication)
+    {
+        $this->publication = $publication;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoosts()
+    {
+        return $this->boosts;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isBoosted()
+    {
+        return $this->boosted;
+    }
+
+    /**
+     * @param bool $boosted
+     */
+    public function setBoosted(bool $boosted)
+    {
+        $this->boosted = $boosted;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param string $status
+     */
+    public function setStatus(string $status)
+    {
+        $this->status = $status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPreviousVersions()
+    {
+        return $this->previousVersions;
+    }
+
+    /**
+     * @param mixed $previousVersions
+     */
+    public function setPreviousVersions($previousVersions)
+    {
+        $this->previousVersions = $previousVersions;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getNextVersions()
+    {
+        return $this->nextVersions;
+    }
+
+    /**
+     * @param mixed $nextVersions
+     */
+    public function setNextVersions($nextVersions)
+    {
+        $this->nextVersions = $nextVersions;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTags()
+    {
+        return $this->tags;
     }
 }

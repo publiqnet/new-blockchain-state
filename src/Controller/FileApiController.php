@@ -54,21 +54,22 @@ class FileApiController extends Controller
          * @var UploadedFile $file
          */
         $file = $request->files->get('file');
+        $channelStorageEndpoint = $this->getParameter('channel_storage_endpoint');
 
         if ($file && $file->getClientMimeType()) {
             $fileData = file_get_contents($file->getRealPath());
 
             $uploadResult = $blockChain->uploadFile($fileData, $file->getMimeType());
             if ($uploadResult instanceof StorageFileAddress) {
-                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $this->getParameter('storage_endpoint_get') . '?file=' . $uploadResult->getUri()]);
+                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
             } elseif ($uploadResult instanceof UriError) {
                 if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                    return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $this->getParameter('storage_endpoint_get') . '?file=' . $uploadResult->getUri()]);
+                    return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
                 } else {
                     return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
                 }
             } else {
-                return new JsonResponse(['Error type: ' . get_class($uploadResult)], Response::HTTP_CONFLICT);
+                return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
             }
         }
 
@@ -122,7 +123,7 @@ class FileApiController extends Controller
         }
 
         //  get public key
-        $publicKey = $account->getAddress();
+        $publicKey = $account->getPublicKey();
 
         try {
             if (is_array($files)) {
@@ -138,20 +139,6 @@ class FileApiController extends Controller
                         throw new Exception('Invalid signature for file: ' . $file['uri'] . '; Error type: ' . get_class($signatureResult['signatureResult']));
                     }
 
-//                    if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
-//                        throw new Exception('Invalid signature');
-//                    } elseif ($signatureResult['signatureResult'] instanceof UriError) {
-//                        /**
-//                         * @var UriError $uriError
-//                         */
-//                        $uriError = $signatureResult['signatureResult'];
-//                        if ($uriError->getUriProblemType() !== UriProblemType::duplicate) {
-//                            throw new Exception('Invalid file URI: ' . $uriError->getUri() . '(' . $uriError->getUriProblemType() . ')');
-//                        }
-//
-//                        $duplicateFiles[] = $file['uri'];
-//                    }
-
                     //  Broadcast
                     $broadcastResult = $blockChain->broadcast($signatureResult['transaction'], $publicKey, $file['signedFile']);
                     if (!($broadcastResult instanceof Done)) {
@@ -162,7 +149,7 @@ class FileApiController extends Controller
                                  * @var Account $fileEntityAuthor
                                  */
                                 $fileEntityAuthor = $fileEntity->getAuthor();
-                                $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getAddress(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
+                                $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getPublicKey(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
                             } else {
                                 $duplicateFiles[$file['uri']] = '';
                             }
@@ -182,6 +169,66 @@ class FileApiController extends Controller
             return new JsonResponse('', Response::HTTP_NOT_ACCEPTABLE);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("/upload-content", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Upload content file",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="content", type="string"),
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="File")
+     * @param Request $request
+     * @param BlockChain $blockChain
+     * @return JsonResponse
+     * @throws \Exception
+     */
+    public function uploadContentFile(Request $request, BlockChain $blockChain)
+    {
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $content = $content['content'];
+        } else {
+            $content = $request->request->get('content');
+        }
+
+        if (!$content) {
+            return new JsonResponse(['message' => 'Empty content'], Response::HTTP_CONFLICT);
+        }
+
+        $channelStorageEndpoint = $this->getParameter('channel_storage_endpoint');
+
+        $uploadResult = $blockChain->uploadFile($content, 'text/html');
+        if ($uploadResult instanceof StorageFileAddress) {
+            return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
+        } elseif ($uploadResult instanceof UriError) {
+            if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
+                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
+            } else {
+                return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
+            }
+        } else {
+            return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
         }
     }
 }

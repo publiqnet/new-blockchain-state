@@ -3,7 +3,7 @@
     "license": "proprietary",
     "repositories": [
         {
-            "url": "git@github.com:PUBLIQNetwork/publiq-api.git",
+            "url": "git@github.com:publiqnet/publiq-api.git",
             "type": "git"
         }
     ],
@@ -11,12 +11,16 @@
         "php": "^7.1.3",
         "ext-ctype": "*",
         "ext-iconv": "*",
+        "beberlei/doctrineextensions": "^1.2",
         "doctrine/doctrine-bundle": "^1.9",
         "doctrine/orm": "^2.6",
         "nelmio/api-doc-bundle": "^3.3",
         "nelmio/cors-bundle": "^1.5",
         "publiq/publiq-api": "1.0.x-dev",
         "sensio/framework-extra-bundle": "^5.2",
+        "sonata-project/admin-bundle": "^3.53",
+        "sonata-project/doctrine-orm-admin-bundle": "^3.10",
+        "sonata-project/translation-bundle": "^2.4",
         "stof/doctrine-extensions-bundle": "^1.3",
         "symfony/asset": "*",
         "symfony/console": "*",

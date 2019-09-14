@@ -9,17 +9,22 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Entity\PublicationMember;
+use App\Entity\Subscription;
+use App\Entity\Tag;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
 use App\Event\PublicationInvitationRequestEvent;
 use App\Event\PublicationMembershipCancelEvent;
+use App\Event\PublicationMembershipLeaveEvent;
 use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
+use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -29,6 +34,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Tooleks\Php\AvgColorPicker\Gd\AvgColorPicker;
+use App\Service\ContentUnit as CUService;
 
 /**
  * @package App\Controller
@@ -44,6 +50,9 @@ class PublicationApiController extends Controller
      *     produces={"application/json"},
      *     @SWG\Parameter(name="title", in="formData", type="string", description="Title"),
      *     @SWG\Parameter(name="description", in="formData", type="string", description="Description"),
+     *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
+     *     @SWG\Parameter(name="hideCover", in="formData", type="boolean", description="Hide cover"),
+     *     @SWG\Parameter(name="tags", in="formData", type="array", items={"type": "string"}, description="Tags"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
      *     @SWG\Parameter(name="cover", in="formData", type="file", description="Cover"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -73,15 +82,40 @@ class PublicationApiController extends Controller
 
             $title = $content['title'];
             $description = $content['description'];
+            $listView = $content['listView'];
+            $hideCover = $content['hideCover'];
+            $tags = $content['tags'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
+            $listView = $request->request->get('listView');
+            $hideCover = $request->request->get('hideCover');
+            $tags = $request->request->get('tags');
         }
 
         try {
             $publication = new Publication();
             $publication->setTitle($title);
             $publication->setDescription($description);
+            $publication->setListView($listView);
+            $publication->setHideCover($hideCover);
+
+            //  relate with Tags
+            if ($tags) {
+                $tags = explode(',', $tags);
+                foreach ($tags as $tag) {
+                    $tag = trim($tag);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
+
+                        $em->persist($tagEntity);
+                    }
+
+                    $publication->addTag($tagEntity);
+                }
+            }
 
             //  local function to move uploaded files
             $moveFile = function (UploadedFile $file, string $path) {
@@ -133,7 +167,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             //  prepare return data
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
 
             return new JsonResponse($publication);
         } catch (\Exception $e) {
@@ -149,6 +183,9 @@ class PublicationApiController extends Controller
      *     produces={"application/json"},
      *     @SWG\Parameter(name="title", in="formData", type="string", description="Title"),
      *     @SWG\Parameter(name="description", in="formData", type="string", description="Description"),
+     *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
+     *     @SWG\Parameter(name="hideCover", in="formData", type="boolean", description="Hide cover"),
+     *     @SWG\Parameter(name="tags", in="formData", type="array", items={"type": "string"}, description="Tags"),
      *     @SWG\Parameter(name="deleteLogo", in="formData", type="boolean", description="Delete logo"),
      *     @SWG\Parameter(name="deleteCover", in="formData", type="boolean", description="Delete cover"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
@@ -185,7 +222,7 @@ class PublicationApiController extends Controller
 
         //  check if user has permission - only owner has
         $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
-        if (!$publicationMember || $publicationMember->getStatus() !== PublicationMember::TYPES['owner']) {
+        if (!$publicationMember || !in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor']])) {
             return new JsonResponse(null, Response::HTTP_FORBIDDEN);
         }
 
@@ -197,11 +234,17 @@ class PublicationApiController extends Controller
 
             $title = $content['title'];
             $description = $content['description'];
+            $listView = $content['listView'];
+            $hideCover = $content['hideCover'];
+            $tags = $content['tags'];
             $deleteLogo = $content['deleteLogo'];
             $deleteCover = $content['deleteCover'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
+            $listView = $request->request->get('listView');
+            $hideCover = $request->request->get('hideCover');
+            $tags = $request->request->get('tags');
             $deleteLogo = $request->request->get('deleteLogo');
             $deleteCover = $request->request->get('deleteCover');
         }
@@ -209,6 +252,28 @@ class PublicationApiController extends Controller
         try {
             $publication->setTitle($title);
             $publication->setDescription($description);
+            $publication->setListView($listView);
+            $publication->setHideCover($hideCover);
+
+            //  delete tag relation
+            $publication->removeAllTags();
+
+            //  relate with Tags
+            if ($tags) {
+                $tags = explode(',', $tags);
+                foreach ($tags as $tag) {
+                    $tag = trim($tag);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
+
+                        $em->persist($tagEntity);
+                    }
+
+                    $publication->addTag($tagEntity);
+                }
+            }
 
             //  local function to move uploaded files
             $moveFile = function (UploadedFile $file, string $path) {
@@ -271,7 +336,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             //  prepare return data
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
 
             return new JsonResponse($publication);
         } catch (\Exception $e) {
@@ -339,9 +404,71 @@ class PublicationApiController extends Controller
     }
 
     /**
-     * @Route("s", methods={"GET"})
+     * @Route("s/{count}/{slug}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get publications",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", required=false, in="header", type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param int $count
+     * @param null $slug
+     * @return Response
+     */
+    public function getPublications($count = 10, $slug = null)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+
+        $publications = $em->getRepository(Publication::class)->getPublications($count + 1, $publication);
+
+        if ($account && $publications) {
+            foreach ($publications as $publication) {
+                $memberStatus = 0;
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
+
+                //  if User is a Publication member return Publication info with members
+                if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                    $memberStatus = $publicationMember->getStatus();
+                }
+                $publication->setMemberStatus($memberStatus);
+
+                $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+                if ($subscription) {
+                    $publication->setSubscribed(true);
+                } else {
+                    $publication->setSubscribed(false);
+                }
+            }
+        }
+
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed', 'tag']]);
+
+        $more = false;
+        if (count($publications) > $count) {
+            $more = true;
+            unset($publications[$count]);
+        }
+
+        return new JsonResponse(['publications' => $publications, 'more' => $more]);
+    }
+
+    /**
+     * @Route("s-related", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get user related publications",
      *     consumes={"application/json"},
      *     @SWG\Parameter(name="X-API-TOKEN", required=true, in="header", type="string")
      * )
@@ -351,25 +478,43 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @return Response
      */
-    public function getPublications()
+    public function getRelatedPublications()
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
         $account = $this->getUser();
 
-        $owned = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsOwner($account);
-        $membership = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
-        $invitations = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsInvitations($account);
-        $requests = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsRequests($account);
+        $owned = $em->getRepository(Publication::class)->getUserPublicationsOwner($account);
+        $membership = $em->getRepository(Publication::class)->getUserPublicationsMember($account);
+        $invitations = $em->getRepository(Publication::class)->getUserPublicationsInvitations($account);
+        $requests = $em->getRepository(Publication::class)->getUserPublicationsRequests($account);
 
         if ($owned) {
             /**
              * @var Publication $publication
              */
             foreach ($owned as $publication) {
-                $publicationMembers = $this->getDoctrine()->getRepository(Account::class)->getPublicationMembers($publication);
+                $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
                 $publication->setMembers($publicationMembers);
+
+                $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                $publication->setStoriesCount(intval($storiesCount[0][1]));
+            }
+        }
+
+        if ($membership) {
+            /**
+             * @var Publication $publication
+             */
+            foreach ($membership as $publication) {
+                $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
+                $publication->setMembers($publicationMembers);
+
+                $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                $publication->setStoriesCount(intval($storiesCount[0][1]));
             }
         }
 
@@ -378,38 +523,25 @@ class PublicationApiController extends Controller
              * @var Publication $publication
              */
             foreach ($invitations as $publication) {
-                $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
                 if ($publicationMember && $publicationMember->getInviter()) {
                     $publication->setInviter($publicationMember->getInviter());
                 }
             }
         }
 
-        $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
-        $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'publicationMemberStatus']]);
-        $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
-        $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'publicationMemberStatus']]);
-
-        //  replace address field with publicKey
-        for ($i=0; $i<count($owned); $i++) {
-            for ($j=0; $j<count($owned[$i]['members']); $j++) {
-                $owned[$i]['members'][$j]['publicKey'] = $owned[$i]['members'][$j]['address'];
-                unset($owned[$i]['members'][$j]['address']);
-            }
-        }
-
-        for ($i=0; $i<count($invitations); $i++) {
-            $invitations[$i]['inviter']['publicKey'] = $invitations[$i]['inviter']['address'];
-            unset($invitations[$i]['inviter']['address']);
-        }
+        $owned = $this->get('serializer')->normalize($owned, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
+        $membership = $this->get('serializer')->normalize($membership, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
+        $invitations = $this->get('serializer')->normalize($invitations, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
+        $requests = $this->get('serializer')->normalize($requests, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
 
         return new JsonResponse(['owned' => $owned, 'membership' => $membership, 'invitations' => $invitations, 'requests' => $requests]);
     }
 
     /**
-     * @Route("s/{type}", methods={"GET"})
+     * @Route("s-related/{type}", methods={"GET"})
      * @SWG\Get(
-     *     summary="Get publications by type: owned|membership|invitations|requests",
+     *     summary="Get user related publications by type: owned / membership / invitations / requests",
      *     consumes={"application/json"},
      *     @SWG\Parameter(name="X-API-TOKEN", required=true, in="header", type="string")
      * )
@@ -420,8 +552,10 @@ class PublicationApiController extends Controller
      * @param string $type
      * @return Response
      */
-    public function getPublicationsByType(string $type)
+    public function getRelatedPublicationsByType(string $type)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -429,54 +563,55 @@ class PublicationApiController extends Controller
 
         switch ($type) {
             case 'owned';
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsOwner($account);
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsOwner($account);
                 if ($publications) {
                     /**
                      * @var Publication $publication
                      */
                     foreach ($publications as $publication) {
-                        $publicationMembers = $this->getDoctrine()->getRepository(Account::class)->getPublicationMembers($publication);
+                        $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
                         $publication->setMembers($publicationMembers);
-                    }
-                }
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
 
-                //  replace address field with publicKey
-                for ($i=0; $i<count($publications); $i++) {
-                    for ($j=0; $j<count($publications[$i]['members']); $j++) {
-                        $publications[$i]['members'][$j]['publicKey'] = $publications[$i]['members'][$j]['address'];
-                        unset($publications[$i]['members'][$j]['address']);
+                        $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                        $publication->setStoriesCount(intval($storiesCount[0][1]));
                     }
                 }
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMembers', 'accountBase', 'accountMemberStatus']]);
                 break;
             case 'membership':
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsMember($account);
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus']]);
-                break;
-            case 'invitations':
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsInvitations($account);
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsMember($account);
                 if ($publications) {
                     /**
                      * @var Publication $publication
                      */
                     foreach ($publications as $publication) {
-                        $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                        $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
+                        $publication->setMembers($publicationMembers);
+
+                        $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+                        $publication->setStoriesCount(intval($storiesCount[0][1]));
+                    }
+                }
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
+                break;
+            case 'invitations':
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsInvitations($account);
+                if ($publications) {
+                    /**
+                     * @var Publication $publication
+                     */
+                    foreach ($publications as $publication) {
+                        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
                         if ($publicationMember && $publicationMember->getInviter()) {
                             $publication->setInviter($publicationMember->getInviter());
                         }
                     }
                 }
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
-
-                //  replace address field with publicKey
-                for ($i=0; $i<count($publications); $i++) {
-                    $publications[$i]['inviter']['publicKey'] = $publications[$i]['inviter']['address'];
-                    unset($publications[$i]['inviter']['address']);
-                }
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationMemberInviter', 'accountBase']]);
                 break;
             case 'requests':
-                $publications = $this->getDoctrine()->getRepository(Publication::class)->getUserPublicationsRequests($account);
-                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus']]);
+                $publications = $em->getRepository(Publication::class)->getUserPublicationsRequests($account);
+                $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus']]);
                 break;
             default:
                 return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -519,31 +654,101 @@ class PublicationApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
+        //  get subscribers
+        $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
+
+        //  get articles total views
+        $totalViews = $em->getRepository(ContentUnit::class)->getPublicationArticlesTotalViews($publication);
+
+        //  get articles count
+        $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
+        $publication->setStoriesCount(intval($storiesCount[0][1]));
+
         //  if authorized user check if user is owner of Publication
         $memberStatus = 0;
         if ($account) {
+            $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+            if ($subscription) {
+                $publication->setSubscribed(true);
+            } else {
+                $publication->setSubscribed(false);
+            }
+
             $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
 
             //  if User is a Publication member return Publication info with members
             if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
                 $memberStatus = $publicationMember->getStatus();
 
-                $publicationOwner = $this->getDoctrine()->getRepository(Account::class)->getPublicationOwner($publication);
+                $publicationOwner = $em->getRepository(Account::class)->getPublicationOwner($publication);
+                if ($publicationOwner) {
+                    //  check if user subscribed to author
+                    $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationOwner]);
+                    if ($subscribed) {
+                        $publicationOwner->setSubscribed(true);
+                    } else {
+                        $publicationOwner->setSubscribed(false);
+                    }
+                }
                 $publicationOwner = $this->get('serializer')->normalize($publicationOwner, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
-                $publicationEditors = $this->getDoctrine()->getRepository(Account::class)->getPublicationEditors($publication);
-                $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
+                $publicationEditors = $em->getRepository(Account::class)->getPublicationEditors($publication);
+                if ($publicationEditors) {
+                    /**
+                     * @var Account $publicationEditor
+                     */
+                    foreach ($publicationEditors as $publicationEditor) {
+                        //  check if user subscribed to author
+                        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationEditor]);
+                        if ($subscribed) {
+                            $publicationEditor->setSubscribed(true);
+                        } else {
+                            $publicationEditor->setSubscribed(false);
+                        }
+                    }
+                }
+                $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
-                $publicationContributors = $this->getDoctrine()->getRepository(Account::class)->getPublicationContributors($publication);
-                $publicationContributors = $this->get('serializer')->normalize($publicationContributors, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
+                $publicationContributors = $em->getRepository(Account::class)->getPublicationContributors($publication);
+                if ($publicationContributors) {
+                    /**
+                     * @var Account $publicationContributor
+                     */
+                    foreach ($publicationContributors as $publicationContributor) {
+                        //  check if user subscribed to author
+                        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationContributor]);
+                        if ($subscribed) {
+                            $publicationContributor->setSubscribed(true);
+                        } else {
+                            $publicationContributor->setSubscribed(false);
+                        }
+                    }
+                }
+                $publicationContributors = $this->get('serializer')->normalize($publicationContributors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
-                $publicationInvitations = $this->getDoctrine()->getRepository(Account::class)->getPublicationInvitations($publication);
+                $publicationInvitations = $em->getRepository(Account::class)->getPublicationInvitations($publication);
                 $publicationInvitations = $this->get('serializer')->normalize($publicationInvitations, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountEmail']]);
 
-                $publicationRequests = $this->getDoctrine()->getRepository(Account::class)->getPublicationRequests($publication);
+                $publicationRequests = $em->getRepository(Account::class)->getPublicationRequests($publication);
                 $publicationRequests = $this->get('serializer')->normalize($publicationRequests, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
-                $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+                if ($subscribers) {
+                    /**
+                     * @var Account $subscriber
+                     */
+                    foreach ($subscribers as $subscriber) {
+                        //  check if user subscribed to author
+                        $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $subscriber]);
+                        if ($subscribed) {
+                            $subscriber->setSubscribed(true);
+                        } else {
+                            $subscriber->setSubscribed(false);
+                        }
+                    }
+                }
+                $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+                $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationSubscribed', 'tag']]);
                 $publication['memberStatus'] = $memberStatus;
 
                 $publication['owner'] = $publicationOwner;
@@ -551,34 +756,10 @@ class PublicationApiController extends Controller
                 $publication['contributors'] = $publicationContributors;
                 $publication['invitations'] = $publicationInvitations;
                 $publication['requests'] = $publicationRequests;
-
-                //  replace address field with publicKey
-                $publication['owner']['publicKey'] = $publication['owner']['address'];
-                unset($publication['owner']['address']);
-
-                for ($i=0; $i<count($publication['editors']); $i++) {
-                    $publication['editors'][$i]['publicKey'] = $publication['editors'][$i]['address'];
-                    unset($publication['editors'][$i]['address']);
-                }
-
-                for ($i=0; $i<count($publication['contributors']); $i++) {
-                    $publication['contributors'][$i]['publicKey'] = $publication['contributors'][$i]['address'];
-                    unset($publication['contributors'][$i]['address']);
-                }
-
-                for ($i=0; $i<count($publication['invitations']); $i++) {
-                    $publication['invitations'][$i]['publicKey'] = $publication['invitations'][$i]['address'];
-                    unset($publication['invitations'][$i]['address']);
-
-                    if ($publication['invitations'][$i]['publicKey']) {
-                        unset($publication['invitations'][$i]['email']);
-                    }
-                }
-
-                for ($i=0; $i<count($publication['requests']); $i++) {
-                    $publication['requests'][$i]['publicKey'] = $publication['requests'][$i]['address'];
-                    unset($publication['requests'][$i]['address']);
-                }
+                $publication['subscribers'] = $subscribers;
+                $publication['subscribersCount'] = count($subscribers);
+                $publication['membersCount'] = count($publicationEditors) + count($publicationContributors);
+                $publication['views'] = intval($totalViews[0][1]);
 
                 return new JsonResponse($publication);
             } elseif ($publicationMember) {
@@ -586,21 +767,23 @@ class PublicationApiController extends Controller
             }
         }
 
+        $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
+
         if ($memberStatus === PublicationMember::TYPES['invited_editor'] || $memberStatus === PublicationMember::TYPES['invited_contributor']) {
-            $publicationMember = $this->getDoctrine()->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+            $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
             if ($publicationMember && $publicationMember->getInviter()) {
                 $publication->setInviter($publicationMember->getInviter());
             }
 
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationMemberInviter', 'accountBase']]);
-
-            $publication['inviter']['publicKey'] = $publication['inviter']['address'];
-            unset($publication['inviter']['address']);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationSubscribed', 'publicationMemberInviter', 'accountBase']]);
         } else {
-            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication']]);
+            $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'publicationSubscribed']]);
         }
 
         $publication['memberStatus'] = $memberStatus;
+        $publication['subscribersCount'] = count($subscribers);
+        $publication['membersCount'] = count($publicationMembers);
+        $publication['views'] = intval($totalViews[0][1]);
 
         return new JsonResponse($publication);
     }
@@ -668,20 +851,18 @@ class PublicationApiController extends Controller
         if (is_array($invitations)) {
             $notProceeded = [];
             foreach ($invitations as $invitation) {
-                $publicKey = $invitation['publicKey'];
-                $email = $invitation['email'];
                 $asEditor = $invitation['asEditor'];
 
-                if ($publicKey) {
+                if (isset($invitation['publicKey']) && ($publicKey = $invitation['publicKey'])) {
                     /**
                      * @var Account $member
                      */
-                    $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+                    $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
                     if (!$member) {
                         $notProceeded[] = $publicKey;
                         continue;
                     }
-                } elseif ($email) {
+                } elseif (isset($invitation['email']) && ($email = $invitation['email'])) {
                     /**
                      * @var Account $member
                      */
@@ -732,7 +913,7 @@ class PublicationApiController extends Controller
     }
 
     /**
-     * @Route("/{slug}/invitation/{identifier}", methods={"DELETE"})
+     * @Route("/{slug}/invitation/cancel/{identifier}", methods={"DELETE"})
      * @SWG\Delete(
      *     summary="Cancel invitation to become a member of publication",
      *     consumes={"application/json"},
@@ -767,7 +948,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $identifier]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $identifier]);
         if (!$member) {
             $member = $em->getRepository(Account::class)->findOneBy(['email' => $identifier]);
         }
@@ -1046,7 +1227,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1113,7 +1294,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1209,7 +1390,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1269,7 +1450,7 @@ class PublicationApiController extends Controller
         /**
          * @var Account $member
          */
-        $member = $em->getRepository(Account::class)->findOneBy(['address' => $publicKey]);
+        $member = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
         if (!$member) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
@@ -1295,5 +1476,216 @@ class PublicationApiController extends Controller
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/leave", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Leave Publication",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=403, description="Permission denied")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function leave(string $slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user can leave Publication - only editors & contributors
+        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+        if (!$publicationMember || !in_array($publicationMember->getStatus(), [PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+            return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+        }
+
+        $em->remove($publicationMember);
+        $em->flush();
+
+        // notify member
+        $this->container->get('event_dispatcher')->dispatch(
+            PublicationMembershipLeaveEvent::NAME,
+            new PublicationMembershipLeaveEvent($publication, $account)
+        );
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/subscribe", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Subscribe to Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function subscribe(string $slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is already subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['publication' => $publication, 'subscriber' => $account]);
+        if (!$subscription) {
+            $subscription = new Subscription();
+            $subscription->setPublication($publication);
+            $subscription->setSubscriber($account);
+
+            $em->persist($subscription);
+            $em->flush();
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/subscribe", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Unsubscribe from Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function unsubscribe(string $slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is already subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['publication' => $publication, 'subscriber' => $account]);
+        if ($subscription) {
+            $em->remove($subscription);
+            $em->flush();
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/contents/{count}/{boostedCount}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get Publication contents",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @param int $count
+     * @param int $boostedCount
+     * @param string $fromUri
+     * @param CUService $contentUnitService
+     * @return JsonResponse
+     */
+    public function contents(string $slug, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        $fromContentUnit = null;
+        if ($fromUri) {
+            $fromContentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+        }
+
+        $contentUnits = $em->getRepository(ContentUnit::class)->getPublicationArticles($publication, $count + 1, $fromContentUnit);
+
+        //  prepare data to return
+        if ($contentUnits) {
+            try {
+                $contentUnits = $contentUnitService->prepare($contentUnits);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $boostedContentUnits = $em->getRepository(ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
+        if ($boostedContentUnits) {
+            try {
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($contentUnits) > $count) {
+            unset($contentUnits[$count]);
+            $more = true;
+        }
+
+        //  add boosted articles into random positions of main articles list
+        for ($i = 0; $i < count($boostedContentUnits); $i++) {
+            $aaa = [$boostedContentUnits[$i]];
+            array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
+        }
+
+        return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
 }

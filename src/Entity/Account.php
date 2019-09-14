@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -18,7 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
  * Class Account
  * @package App\Entity
  *
- * @ORM\Table(name="account")
+ * @ORM\Table(name="account", indexes={@Index(columns={"first_name", "last_name", "bio"}, flags={"fulltext"})})
  * @ORM\Entity(repositoryClass="App\Repository\AccountRepository")
  */
 class Account implements UserInterface
@@ -32,10 +33,16 @@ class Account implements UserInterface
 
     /**
      * @var string
-     * @ORM\Column(name="address", type="string", length=128, nullable=true)
+     * @ORM\Column(name="public_key", type="string", length=128, nullable=true)
      * @Groups({"account", "accountBase"})
      */
-    private $address;
+    private $publicKey;
+
+    /**
+     * @var string
+     * @ORM\Column(name="old_public_key", type="string", length=128, nullable=true)
+     */
+    private $oldPublicKey;
 
     /**
      * @var string
@@ -59,6 +66,13 @@ class Account implements UserInterface
     private $lastName;
 
     /**
+     * @var string
+     * @ORM\Column(name="bio", type="text", nullable=true)
+     * @Groups({"account", "accountBase"})
+     */
+    private $bio;
+
+    /**
      * @ORM\Column(name="image", type="string", nullable=true)
      * @Assert\File(
      *     maxSize="8M",
@@ -73,6 +87,13 @@ class Account implements UserInterface
      * @Groups({"account", "accountBase"})
      */
     private $image;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=16, nullable=true)
+     * @Groups({"account"})
+     */
+    private $language;
 
     /**
      * @ORM\Column(name="whole", type="integer")
@@ -95,6 +116,18 @@ class Account implements UserInterface
      * @ORM\Column(name="storage", type="boolean")
      */
     private $storage = 0;
+
+    /**
+     * @ORM\Column(name="list_view", type="boolean", nullable=true)
+     */
+    private $listView = 0;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=64, nullable=true)
+     * @Groups({"account"})
+     */
+    private $url;
 
     /**
      * @ORM\Column(name="blockchain", type="boolean")
@@ -174,10 +207,41 @@ class Account implements UserInterface
     private $notifications;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\UserPreference", mappedBy="account")
+     */
+    private $preferences;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="subscriber")
+     */
+    private $subscriptions;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="author", cascade="remove")
+     */
+    private $subscribers;
+
+    /**
      * @var integer
      * @Groups({"accountMemberStatus"})
      */
     private $memberStatus;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="storages")
+     */
+    private $storageFiles;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="sponsor")
+     */
+    private $boostedContentUnits;
+
+    /**
+     * @var boolean
+     * @Groups({"accountSubscribed"})
+     */
+    private $subscribed;
 
     public function __construct()
     {
@@ -194,11 +258,16 @@ class Account implements UserInterface
         $this->publicationInvitees = new ArrayCollection();
         $this->performedNotifications = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->preferences = new ArrayCollection();
+        $this->subscriptions = new ArrayCollection();
+        $this->subscribers = new ArrayCollection();
+        $this->storageFiles = new ArrayCollection();
+        $this->boostedContentUnits = new ArrayCollection();
     }
 
     public function __toString()
     {
-        return $this->address;
+        return $this->publicKey;
     }
 
     /**
@@ -212,17 +281,33 @@ class Account implements UserInterface
     /**
      * @return mixed
      */
-    public function getAddress()
+    public function getPublicKey()
     {
-        return $this->address;
+        return $this->publicKey;
     }
 
     /**
-     * @param mixed $address
+     * @param mixed $publicKey
      */
-    public function setAddress($address)
+    public function setPublicKey($publicKey)
     {
-        $this->address = $address;
+        $this->publicKey = $publicKey;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOldPublicKey()
+    {
+        return $this->oldPublicKey;
+    }
+
+    /**
+     * @param mixed $oldPublicKey
+     */
+    public function setOldPublicKey($oldPublicKey)
+    {
+        $this->oldPublicKey = $oldPublicKey;
     }
 
     /**
@@ -287,6 +372,22 @@ class Account implements UserInterface
     public function setImage($image)
     {
         $this->image = $image;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLanguage()
+    {
+        return $this->language;
+    }
+
+    /**
+     * @param mixed $language
+     */
+    public function setLanguage($language)
+    {
+        $this->language = $language;
     }
 
     /**
@@ -428,6 +529,22 @@ class Account implements UserInterface
     /**
      * @return mixed
      */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    /**
+     * @param mixed $url
+     */
+    public function setUrl($url)
+    {
+        $this->url = $url;
+    }
+
+    /**
+     * @return mixed
+     */
     public function isBlockchain()
     {
         return $this->blockchain;
@@ -514,6 +631,48 @@ class Account implements UserInterface
     }
 
     /**
+     * Get preferences
+     */
+    public function getPreferences()
+    {
+        return $this->preferences;
+    }
+
+    /**
+     * Get subscriptions
+     */
+    public function getSubscriptions()
+    {
+        return $this->subscriptions;
+    }
+
+    /**
+     * Get subscribers
+     */
+    public function getSubscribers()
+    {
+        return $this->subscribers;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorageFiles()
+    {
+        return $this->storageFiles;
+    }
+
+    public function addStorageFile(File $file)
+    {
+        $this->storageFiles[] = $file;
+    }
+
+    public function removeStorageFile(File $file)
+    {
+        $this->storageFiles->removeElement($file);
+    }
+
+    /**
      * @return int
      */
     public function getMemberStatus()
@@ -527,5 +686,61 @@ class Account implements UserInterface
     public function setMemberStatus(int $memberStatus)
     {
         $this->memberStatus = $memberStatus;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostedContentUnits()
+    {
+        return $this->boostedContentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getListView()
+    {
+        return $this->listView;
+    }
+
+    /**
+     * @param mixed $listView
+     */
+    public function setListView($listView)
+    {
+        $this->listView = $listView;
+    }
+
+    /**
+     * @return string
+     */
+    public function getBio()
+    {
+        return $this->bio;
+    }
+
+    /**
+     * @param mixed $bio
+     */
+    public function setBio($bio)
+    {
+        $this->bio = $bio;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSubscribed()
+    {
+        return $this->subscribed;
+    }
+
+    /**
+     * @param bool $subscribed
+     */
+    public function setSubscribed(bool $subscribed)
+    {
+        $this->subscribed = $subscribed;
     }
 }

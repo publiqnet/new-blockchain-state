@@ -9,16 +9,20 @@
 namespace App\EventSubscriber;
 
 use App\Entity\Account;
+use App\Entity\ContentUnitTag;
 use App\Entity\NotificationType;
+use App\Entity\UserPreference;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
 use App\Event\PublicationInvitationRequestEvent;
 use App\Event\PublicationMembershipCancelEvent;
+use App\Event\PublicationMembershipLeaveEvent;
 use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
+use App\Event\UserPreferenceEvent;
 use App\Service\UserNotification;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -75,6 +79,8 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             PublicationMembershipRequestAcceptEvent::NAME => 'onPublicationMembershipRequestAcceptEvent',
             PublicationMembershipRequestRejectEvent::NAME => 'onPublicationMembershipRequestRejectEvent',
             PublicationMembershipCancelEvent::NAME => 'onPublicationMembershipCancelEvent',
+            PublicationMembershipLeaveEvent::NAME => 'onPublicationMembershipLeaveEvent',
+            UserPreferenceEvent::NAME => 'onUserPreferenceEvent',
         ];
     }
 
@@ -100,7 +106,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $performer = $event->getPerformer();
             $user = $event->getUser();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_new']['key'], $performer, ($user->getAddress() ? $user->getAddress() : $user->getEmail()), $publication);
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_new']['key'], $performer, ($user->getPublicKey() ? $user->getPublicKey() : $user->getEmail()), $publication);
             $this->userNotificationService->notify($user, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
@@ -117,7 +123,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $performer = $event->getPerformer();
             $user = $event->getUser();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_cancelled']['key'], $performer, ($user->getAddress() ? $user->getAddress() : $user->getEmail()), $publication);
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_invitation_cancelled']['key'], $performer, ($user->getPublicKey() ? $user->getPublicKey() : $user->getEmail()), $publication);
             $this->userNotificationService->notify($user, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
@@ -258,6 +264,71 @@ class GeneralEventSubscriber implements EventSubscriberInterface
 
             $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_membership_cancelled']['key'], $performer, 'Membership cancelled', $publication);
             $this->userNotificationService->notify($user, $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param PublicationMembershipLeaveEvent $event
+     */
+    public function onPublicationMembershipLeaveEvent(PublicationMembershipLeaveEvent $event)
+    {
+        try {
+            $publication = $event->getPublication();
+            $performer = $event->getPerformer();
+
+            $publicationOwner = $this->em->getRepository(Account::class)->getPublicationOwner($publication);
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_membership_cancelled_by_user']['key'], $performer, 'Membership cancelled by User', $publication);
+            $this->userNotificationService->notify($publicationOwner, $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param UserPreferenceEvent $event
+     */
+    public function onUserPreferenceEvent(UserPreferenceEvent $event)
+    {
+        try {
+            $user = $event->getUser();
+            $article = $event->getArticle();
+
+            $articleAuthor = $article->getAuthor();
+            $articleTags = $article->getTags();
+
+            //  AUTHOR
+            $authorPreference = $this->em->getRepository(UserPreference::class)->findOneBy(['account' => $user, 'author' => $articleAuthor]);
+            if (!$authorPreference) {
+                $authorPreference = new UserPreference();
+                $authorPreference->setAccount($user);
+                $authorPreference->setAuthor($articleAuthor);
+            }
+            $count = $authorPreference->getCount();
+            $authorPreference->setCount(++$count);
+            $this->em->persist($authorPreference);
+
+            //  TAGS
+            if ($articleTags) {
+                /**
+                 * @var ContentUnitTag $articleTag
+                 */
+                foreach ($articleTags as $articleTag) {
+                    $tagPreference = $this->em->getRepository(UserPreference::class)->findOneBy(['account' => $user, 'tag' => $articleTag->getTag()]);
+                    if (!$tagPreference) {
+                        $tagPreference = new UserPreference();
+                        $tagPreference->setAccount($user);
+                        $tagPreference->setTag($articleTag->getTag());
+                    }
+                    $count = $tagPreference->getCount();
+                    $tagPreference->setCount(++$count);
+                    $this->em->persist($tagPreference);
+                }
+            }
+
+            $this->em->flush();
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }

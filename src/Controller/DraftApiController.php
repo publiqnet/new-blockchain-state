@@ -44,6 +44,9 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="forAdults", type="boolean"),
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
+     *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="tags", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="publication", type="string"),
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -71,18 +74,38 @@ class DraftApiController extends Controller
             $contentArr = json_decode($content, true);
 
             $title = $contentArr['title'];
-            $headline = $contentArr['headline'];
             $content = $contentArr['content'];
-            $forAdults = $contentArr['forAdults'];
-            $reference = $contentArr['reference'];
-            $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            if (isset($contentArr['headline'])) {
+                $headline = $contentArr['headline'];
+            }
+            if (isset($contentArr['forAdults'])) {
+                $forAdults = $contentArr['forAdults'];
+            }
+            if (isset($contentArr['reference'])) {
+                $reference = $contentArr['reference'];
+            }
+            if (isset($contentArr['sourceOfMaterial'])) {
+                $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            }
+            if (isset($contentArr['contentUris'])) {
+                $contentUris = $contentArr['contentUris'];
+            }
+            if (isset($contentArr['tags'])) {
+                $tags = $contentArr['tags'];
+            }
+            if (isset($contentArr['publication'])) {
+                $publication = $contentArr['publication'];
+            }
         } else {
             $title = $request->request->get('title');
-            $headline = $request->request->get('headline');
             $content = $request->request->get('content');
+            $headline = $request->request->get('headline');
             $forAdults = $request->request->get('forAdults');
             $reference = $request->request->get('reference');
             $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            $contentUris = $request->request->get('contentUris');
+            $tags = $request->request->get('tags');
+            $publication = $request->request->get('publication');
         }
 
         $draft = new Draft();
@@ -90,11 +113,28 @@ class DraftApiController extends Controller
         try {
             $draft->setAccount($account);
             $draft->setTitle($title);
-            $draft->setHeadline($headline);
             $draft->setContent($content);
-            $draft->setForAdults($forAdults);
-            $draft->setReference($reference);
-            $draft->setSourceOfMaterial($sourceOfMaterial);
+            if (isset($headline)) {
+                $draft->setHeadline($headline);
+            }
+            if (isset($forAdults)) {
+                $draft->setForAdults($forAdults);
+            }
+            if (isset($reference)) {
+                $draft->setReference($reference);
+            }
+            if (isset($sourceOfMaterial)) {
+                $draft->setSourceOfMaterial($sourceOfMaterial);
+            }
+            if (isset($contentUris)) {
+                $draft->setContentUris($contentUris);
+            }
+            if (isset($tags)) {
+                $draft->setTags($tags);
+            }
+            if (isset($publication)) {
+                $draft->setPublication($publication);
+            }
 
             $em->persist($draft);
             $em->flush();
@@ -126,6 +166,9 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="forAdults", type="boolean"),
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
+     *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="tags", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="publication", type="string"),
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -166,27 +209,64 @@ class DraftApiController extends Controller
             $contentArr = json_decode($content, true);
 
             $title = $contentArr['title'];
-            $headline = $contentArr['headline'];
             $content = $contentArr['content'];
-            $forAdults = $contentArr['forAdults'];
-            $reference = $contentArr['reference'];
-            $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            if (isset($contentArr['headline'])) {
+                $headline = $contentArr['headline'];
+            }
+            if (isset($contentArr['forAdults'])) {
+                $forAdults = $contentArr['forAdults'];
+            }
+            if (isset($contentArr['reference'])) {
+                $reference = $contentArr['reference'];
+            }
+            if (isset($contentArr['sourceOfMaterial'])) {
+                $sourceOfMaterial = $contentArr['sourceOfMaterial'];
+            }
+            if (isset($contentArr['contentUris'])) {
+                $contentUris = $contentArr['contentUris'];
+            }
+            if (isset($contentArr['tags'])) {
+                $tags = $contentArr['tags'];
+            }
+            if (isset($contentArr['publication'])) {
+                $publication = $contentArr['publication'];
+            }
         } else {
             $title = $request->request->get('title');
-            $headline = $request->request->get('headline');
             $content = $request->request->get('content');
+            $headline = $request->request->get('headline');
             $forAdults = $request->request->get('forAdults');
             $reference = $request->request->get('reference');
             $sourceOfMaterial = $request->request->get('sourceOfMaterial');
+            $contentUris = $request->request->get('contentUris');
+            $tags = $request->request->get('tags');
+            $publication = $request->request->get('publication');
         }
 
         try {
             $draft->setTitle($title);
-            $draft->setHeadline($headline);
             $draft->setContent($content);
-            $draft->setForAdults($forAdults);
-            $draft->setReference($reference);
-            $draft->setSourceOfMaterial($sourceOfMaterial);
+            if (isset($headline)) {
+                $draft->setHeadline($headline);
+            }
+            if (isset($forAdults)) {
+                $draft->setForAdults($forAdults);
+            }
+            if (isset($reference)) {
+                $draft->setReference($reference);
+            }
+            if (isset($sourceOfMaterial)) {
+                $draft->setSourceOfMaterial($sourceOfMaterial);
+            }
+            if (isset($contentUris)) {
+                $draft->setContentUris($contentUris);
+            }
+            if (isset($tags)) {
+                $draft->setTags($tags);
+            }
+            if (isset($publication)) {
+                $draft->setPublication($publication);
+            }
 
             $em->persist($draft);
             $em->flush();
@@ -304,6 +384,18 @@ class DraftApiController extends Controller
             return new JsonResponse(['message' => 'no_such_draft_associated_with_user'], Response::HTTP_CONFLICT);
         }
 
+        /**
+         * @var \DateTime $created
+         */
+        $created = $draft->getCreated();
+        $draft->setCreated($created->getTimestamp());
+
+        /**
+         * @var \DateTime $updated
+         */
+        $updated = $draft->getUpdated();
+        $draft->setUpdated($updated->getTimestamp());
+
         $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
         return new JsonResponse($draft);
@@ -331,8 +423,26 @@ class DraftApiController extends Controller
          */
         $account = $this->getUser();
 
-        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account]);
-        $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList']]);
+        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account], ['id' => 'DESC']);
+        if ($drafts) {
+            /**
+             * @var Draft $draft
+             */
+            foreach ($drafts as $draft) {
+                /**
+                 * @var \DateTime $created
+                 */
+                $created = $draft->getCreated();
+                $draft->setCreated($created->getTimestamp());
+
+                /**
+                 * @var \DateTime $updated
+                 */
+                $updated = $draft->getUpdated();
+                $draft->setUpdated($updated->getTimestamp());
+            }
+        }
+        $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList', 'tag', 'accountBase', 'publication']]);
 
         return new JsonResponse($drafts);
     }

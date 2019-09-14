@@ -9,13 +9,23 @@ security:
             entity:
                 class: App:Account
                 property: apiKey
+        in_memory:
+            memory:
+                users:
+                    publiq: { password: "MSNmmFDYUvN8F5xozpe4wE7MiNsUQZ3XkQ1nO6Ongch12yF4Gb0b8QsoxG8xoEFPBy2WnrEDGfaVPiOFIi31Vg==", roles: 'ROLE_ADMIN' }
 
     firewalls:
         # disables authentication for assets and the profiler, adapt it according to your needs
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+        admin:
+            pattern: ^/admin
+            anonymous: ~
+            http_basic: ~
+            provider: in_memory
         api:
+            provider: api
             pattern: ^/api
             anonymous: true
             stateless: true
@@ -31,3 +41,6 @@ security:
 
             # https://symfony.com/doc/current/security/form_login_setup.html
             #form_login: ~
+
+    access_control:
+        - { path: ^/admin, role: ROLE_ADMIN }

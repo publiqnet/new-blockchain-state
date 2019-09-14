@@ -11,11 +11,12 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * @ORM\Table(name="publication")
+ * @ORM\Table(name="publication", indexes={@Index(columns={"title", "description"}, flags={"fulltext"})})
  * @ORM\Entity(repositoryClass="App\Repository\PublicationRepository")
  * @HasLifecycleCallbacks
  */
@@ -56,7 +57,7 @@ class Publication
     /**
      * @ORM\Column(type="string", nullable=true)
      * @Assert\Image(
-     *     maxSize="2M",
+     *     maxSize="5M",
      *     maxSizeMessage="max upload size: {{ limit }}{{ suffix }}",
      *     mimeTypesMessage="The mime type of the file is invalid ({{ type }}). Allowed mime types are {{ types }}.",
      *     mimeTypes = {
@@ -72,7 +73,7 @@ class Publication
     /**
      * @ORM\Column(type="string", nullable=true)
      * @Assert\File(
-     *     maxSize="2M",
+     *     maxSize="5M",
      *     maxSizeMessage="max upload size: {{ limit }}{{ suffix }}",
      *     mimeTypesMessage="The mime type of the file is invalid ({{ type }}). Allowed mime types are {{ types }}.",
      *     mimeTypes = {
@@ -93,6 +94,18 @@ class Publication
     private $color;
 
     /**
+     * @ORM\Column(name="list_view", type="boolean", nullable=true)
+     * @Groups({"publication"})
+     */
+    private $listView = 0;
+
+    /**
+     * @ORM\Column(name="hide_cover", type="boolean", nullable=true)
+     * @Groups({"publication"})
+     */
+    private $hideCover = 0;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="publication", cascade="remove")
      * @Groups({"publicationMembers"})
      */
@@ -105,10 +118,21 @@ class Publication
     private $notifications;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="publication", cascade="remove")
+     */
+    private $subscribers;
+
+    /**
      * @var integer
      * @Groups({"publicationMemberStatus"})
      */
     private $memberStatus;
+
+    /**
+     * @var integer
+     * @Groups({"publication"})
+     */
+    private $storiesCount;
 
     /**
      * @var mixed
@@ -116,10 +140,42 @@ class Publication
      */
     private $inviter;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="publication")
+     */
+    private $contentUnits;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\PublicationArticle", mappedBy="publication")
+     */
+    private $articles;
+
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Tag", inversedBy="publications")
+     * @Groups({"publication"})
+     */
+    private $tags;
+
+    /**
+     * @var boolean
+     * @Groups({"publicationSubscribed"})
+     */
+    private $subscribed;
+
+    /**
+     * @var int
+     * @Groups({"publication"})
+     */
+    private $subscribersCount;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->subscribers = new ArrayCollection();
+        $this->contentUnits = new ArrayCollection();
+        $this->articles = new ArrayCollection();
+        $this->tags = new ArrayCollection();
     }
 
     /**
@@ -241,11 +297,43 @@ class Publication
     }
 
     /**
-     * @param string $color
+     * @param mixed $color
      */
-    public function setColor(string $color)
+    public function setColor($color)
     {
         $this->color = $color;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getListView()
+    {
+        return $this->listView;
+    }
+
+    /**
+     * @param mixed $listView
+     */
+    public function setListView($listView)
+    {
+        $this->listView = $listView;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHideCover()
+    {
+        return $this->hideCover;
+    }
+
+    /**
+     * @param mixed $hideCover
+     */
+    public function setHideCover($hideCover)
+    {
+        $this->hideCover = $hideCover;
     }
 
     /**
@@ -273,6 +361,14 @@ class Publication
     }
 
     /**
+     * Get subscribers
+     */
+    public function getSubscribers()
+    {
+        return $this->subscribers;
+    }
+
+    /**
      * @return int
      */
     public function getMemberStatus()
@@ -289,6 +385,22 @@ class Publication
     }
 
     /**
+     * @return int
+     */
+    public function getStoriesCount()
+    {
+        return $this->storiesCount;
+    }
+
+    /**
+     * @param int $storiesCount
+     */
+    public function setStoriesCount(int $storiesCount)
+    {
+        $this->storiesCount = $storiesCount;
+    }
+
+    /**
      * @return mixed
      */
     public function getInviter()
@@ -302,5 +414,76 @@ class Publication
     public function setInviter($inviter)
     {
         $this->inviter = $inviter;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContentUnits()
+    {
+        return $this->contentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getArticles()
+    {
+        return $this->articles;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTags()
+    {
+        return $this->tags;
+    }
+
+    public function addTag(Tag $tag)
+    {
+        $this->tags->add($tag);
+    }
+
+    public function removeTag(Tag $tag)
+    {
+        $this->tags->removeElement($tag);
+    }
+
+    public function removeAllTags()
+    {
+        $this->tags->clear();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSubscribed()
+    {
+        return $this->subscribed;
+    }
+
+    /**
+     * @param bool $subscribed
+     */
+    public function setSubscribed(bool $subscribed)
+    {
+        $this->subscribed = $subscribed;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSubscribersCount()
+    {
+        return $this->subscribersCount;
+    }
+
+    /**
+     * @param int $subscribersCount
+     */
+    public function setSubscribersCount(int $subscribersCount)
+    {
+        $this->subscribersCount = $subscribersCount;
     }
 }

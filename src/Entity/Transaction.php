@@ -48,19 +48,19 @@ class Transaction
 
     /**
      * @ORM\Column(name="transaction_hash", type="string", length=64, nullable=true, unique=true)
-     * @Groups({"transaction", "block"})
+     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $transactionHash;
 
     /**
      * @ORM\Column(name="transaction_size", type="integer")
-     * @Groups({"transaction", "block"})
+     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $transactionSize;
 
     /**
      * @ORM\Column(name="time_signed", type="integer")
-     * @Groups({"transaction", "block"})
+     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $timeSigned;
 
@@ -77,6 +77,13 @@ class Transaction
      * @Groups({"transaction"})
      */
     private $contentUnit;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"})
+     * @Groups({"transaction"})
+     */
+    private $boostedContentUnit;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
@@ -259,5 +266,21 @@ class Transaction
     public function setTransfer($transfer)
     {
         $this->transfer = $transfer;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostedContentUnit()
+    {
+        return $this->boostedContentUnit;
+    }
+
+    /**
+     * @param mixed $boostedContentUnit
+     */
+    public function setBoostedContentUnit($boostedContentUnit)
+    {
+        $this->boostedContentUnit = $boostedContentUnit;
     }
 }

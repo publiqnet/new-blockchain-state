@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class File
@@ -29,8 +30,26 @@ class File
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
+     * @Groups({"file"})
      */
     private $uri;
+
+    /**
+     * @ORM\Column(name="mime_type", type="string", length=128, nullable=true)
+     * @Groups({"file"})
+     */
+    private $mimeType;
+
+    /**
+     * @ORM\Column(name="size", type="integer", nullable=true)
+     * @Groups({"file"})
+     */
+    private $size;
+
+    /**
+     * @Groups({"file"})
+     */
+    private $url;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="files")
@@ -38,7 +57,7 @@ class File
     private $author;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transaction", mappedBy="file")
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file")
      */
     private $transaction;
 
@@ -47,10 +66,21 @@ class File
      */
     private $contentUnits;
 
+    /**
+     * @ORM\ManyToMany(targetEntity="App\Entity\Account", mappedBy="storageFiles")
+     */
+    private $storages;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="cover")
+     */
+    private $covers;
+
 
     public function __construct()
     {
         $this->contentUnits = new ArrayCollection();
+        $this->storages = new ArrayCollection();
     }
 
     /**
@@ -75,6 +105,54 @@ class File
     public function setUri($uri)
     {
         $this->uri = $uri;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMimeType()
+    {
+        return $this->mimeType;
+    }
+
+    /**
+     * @param mixed $mimeType
+     */
+    public function setMimeType($mimeType)
+    {
+        $this->mimeType = $mimeType;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSize()
+    {
+        return $this->size;
+    }
+
+    /**
+     * @param mixed $size
+     */
+    public function setSize($size)
+    {
+        $this->size = $size;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getUrl()
+    {
+        return $this->url;
+    }
+
+    /**
+     * @param mixed $url
+     */
+    public function setUrl($url)
+    {
+        $this->url = $url;
     }
 
     /**
@@ -107,5 +185,21 @@ class File
     public function getContentUnits()
     {
         return $this->contentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorages()
+    {
+        return $this->storages;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCovers()
+    {
+        return $this->covers;
     }
 }
