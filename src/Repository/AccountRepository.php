@@ -170,9 +170,10 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
     {
         if ($exception) {
             return $this->createQueryBuilder('a')
-                ->select("a, SUM(cu.views) as totalViews")
+                ->select("a, SUM(cu.views) as totalViews, COUNT(cu) as totalArticles")
                 ->leftJoin('a.authorContentUnits', 'cu')
                 ->where('a != :exception')
+                ->having('totalArticles > 0')
                 ->setParameter('exception', $exception)
                 ->setMaxResults($count)
                 ->groupBy('a')
@@ -181,8 +182,9 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->getResult('AGGREGATES_HYDRATOR');
         } else {
             return $this->createQueryBuilder('a')
-                ->select("a, SUM(cu.views) as totalViews")
+                ->select("a, SUM(cu.views) as totalViews, COUNT(cu) as totalArticles")
                 ->leftJoin('a.authorContentUnits', 'cu')
+                ->having('totalArticles > 0')
                 ->setMaxResults($count)
                 ->groupBy('a')
                 ->orderBy('totalViews', 'DESC')
