@@ -146,7 +146,7 @@ class Publication
     private $contentUnits;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PublicationArticle", mappedBy="publication")
+     * @ORM\OneToMany(targetEntity="App\Entity\PublicationArticle", mappedBy="publication", cascade={"remove"})
      */
     private $articles;
 
