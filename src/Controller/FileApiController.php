@@ -14,6 +14,7 @@ use Exception;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Done;
 use PubliqAPI\Model\File;
+use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
 use PubliqAPI\Model\UriError;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -153,6 +154,8 @@ class FileApiController extends Controller
                             } else {
                                 $duplicateFiles[$file['uri']] = '';
                             }
+                        } elseif ($broadcastResult instanceof NotEnoughBalance) {
+                            return new JsonResponse(['type' => 'not_enough_balance'], Response::HTTP_CONFLICT);
                         } else {
                             throw new Exception('Broadcasting failed for URI: ' . $file['uri'] . '; Error type: ' . get_class($broadcastResult));
                         }
