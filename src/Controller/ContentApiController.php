@@ -852,6 +852,74 @@ class ContentApiController extends Controller
     }
 
     /**
+     * @Route("-seo/{uri}", methods={"GET"}, name="get_content_by_uri_for_seo")
+     * @SWG\Get(
+     *     summary="Get content by uri for SEO",
+     *     consumes={"application/json"},
+     *     produces={"application/json"}
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param string $uri
+     * @param Custom $customService
+     * @return JsonResponse
+     */
+    public function contentSeo(string $uri, Custom $customService)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $channelAddress = $this->getParameter('channel_address');
+
+        $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+        if (!$contentUnit) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        if ($contentUnit->getCover()) {
+            /**
+             * @var File $file
+             */
+            $file = $contentUnit->getCover();
+            $storageUrl = '';
+            $storageAddress = '';
+
+            /**
+             * @var Account[] $fileStorages
+             */
+            $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
+            if (count($fileStorages)) {
+                $randomStorage = rand(0, count($fileStorages) - 1);
+                $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
+
+                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+            } elseif ($contentUnit->getContent()) {
+                /**
+                 * @var \App\Entity\Content $content
+                 */
+                $content = $contentUnit->getContent();
+
+                /**
+                 * @var Account $channel
+                 */
+                $channel = $content->getChannel();
+
+                $storageUrl = $channel->getUrl();
+                $storageAddress = $channel->getPublicKey();
+
+                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+            }
+
+            $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
+        }
+
+        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitSeo', 'file', 'accountBase']]);
+
+        return new JsonResponse($contentUnit);
+    }
+
+    /**
      * @Route("-boost", methods={"POST"})
      * @SWG\Post(
      *     summary="Boost content",
