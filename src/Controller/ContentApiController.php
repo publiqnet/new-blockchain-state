@@ -989,7 +989,7 @@ class ContentApiController extends Controller
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
-                return new JsonResponse(['type' => 'not_enough_balance'], Response::HTTP_CONFLICT);
+                return new JsonResponse(['type' => 'boost_not_enough_balance'], Response::HTTP_CONFLICT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }

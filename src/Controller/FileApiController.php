@@ -155,7 +155,7 @@ class FileApiController extends Controller
                                 $duplicateFiles[$file['uri']] = '';
                             }
                         } elseif ($broadcastResult instanceof NotEnoughBalance) {
-                            return new JsonResponse(['type' => 'not_enough_balance'], Response::HTTP_CONFLICT);
+                            return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
                         } else {
                             throw new Exception('Broadcasting failed for URI: ' . $file['uri'] . '; Error type: ' . get_class($broadcastResult));
                         }
