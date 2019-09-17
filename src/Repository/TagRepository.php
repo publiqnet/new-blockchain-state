@@ -25,7 +25,9 @@ class TagRepository extends EntityRepository
         $subQuery = $this->getEntityManager()
             ->createQuery("
                 select max(cu2)
-                from App:ContentUnit cu2
+                from App:Block bl
+                join App:Transaction tr with bl = tr.block
+                join App:ContentUnit cu2 with cu2 = tr.contentUnit
                 group by cu2.contentId
             ");
 
