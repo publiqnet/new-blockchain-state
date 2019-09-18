@@ -176,7 +176,7 @@ class SearchApiController extends Controller
         }
         $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'author' => $authors]);
+        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'authors' => $authors]);
     }
 
     /**
@@ -345,6 +345,6 @@ class SearchApiController extends Controller
             unset($authors[$count]);
         }
 
-        return new JsonResponse(['author' => $authors, 'more' => $more]);
+        return new JsonResponse(['authors' => $authors, 'more' => $more]);
     }
 }
