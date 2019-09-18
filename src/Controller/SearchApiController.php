@@ -114,6 +114,7 @@ class SearchApiController extends Controller
     public function search(string $word, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
+        $defaultCount = 5;
 
         /**
          * @var Account $account
@@ -121,7 +122,7 @@ class SearchApiController extends Controller
         $account = $this->getUser();
 
         //  SEARCH IN PUBLICATIONS
-        $publications = $em->getRepository(Publication::class)->fulltextSearch($word, 5);
+        $publications = $em->getRepository(Publication::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $publications) {
             /**
              * @var Publication $publication
@@ -146,8 +147,14 @@ class SearchApiController extends Controller
         }
         $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationSubscribed']]);
 
+        $publicationsMore = false;
+        if (count($publications) > $defaultCount) {
+            $publicationsMore = true;
+            unset($publications[$defaultCount]);
+        }
+
         //  SEARCH IN ARTICLES
-        $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, 5);
+        $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $defaultCount + 1);
         if ($articles) {
             try {
                 $articles = $contentUnitService->prepare($articles);
@@ -158,8 +165,14 @@ class SearchApiController extends Controller
         $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $articles = $contentUnitService->prepareTags($articles);
 
+        $articlesMore = false;
+        if (count($articles) > $defaultCount) {
+            $articlesMore = true;
+            unset($articles[$defaultCount]);
+        }
+
         //  SEARCH IN AUTHORS
-        $authors = $em->getRepository(Account::class)->fulltextSearch($word, 5);
+        $authors = $em->getRepository(Account::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $authors) {
             /**
              * @var Account $author
@@ -176,7 +189,13 @@ class SearchApiController extends Controller
         }
         $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'authors' => $authors]);
+        $authorsMore = false;
+        if (count($authors) > $defaultCount) {
+            $authorsMore = true;
+            unset($authors[$defaultCount]);
+        }
+
+        return new JsonResponse(['publication' => $publications, 'publicationMore' => $publicationsMore, 'article' => $articles, 'articleMore' => $articlesMore, 'authors' => $authors, 'authorsMore' => $authorsMore]);
     }
 
     /**
@@ -246,8 +265,7 @@ class SearchApiController extends Controller
      * @Route("/article/{word}/{count}/{fromUri}", methods={"POST"})
      * @SWG\Post(
      *     summary="Search for Article",
-     *     consumes={"application/json"},
-     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
+     *     consumes={"application/json"}
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=409, description="Error - see description for more information")
@@ -261,11 +279,6 @@ class SearchApiController extends Controller
     public function searchArticle(string $word, int $count, string $fromUri, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
-
-        /**
-         * @var Account $account
-         */
-        $account = $this->getUser();
 
         /**
          * @var ContentUnit $publication
