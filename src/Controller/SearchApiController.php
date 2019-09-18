@@ -293,7 +293,7 @@ class SearchApiController extends Controller
     }
 
     /**
-     * @Route("/article/{word}/{count}/{fromPublicKey}", methods={"POST"})
+     * @Route("/author/{word}/{count}/{fromPublicKey}", methods={"POST"})
      * @SWG\Post(
      *     summary="Search for Authors",
      *     consumes={"application/json"},
