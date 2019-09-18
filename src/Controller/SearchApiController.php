@@ -176,7 +176,7 @@ class SearchApiController extends Controller
         }
         $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'authors' => $authors]);
+        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'author' => $authors]);
     }
 
     /**
@@ -208,7 +208,6 @@ class SearchApiController extends Controller
          */
         $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $fromSlug]);
 
-        //  SEARCH IN PUBLICATIONS
         $publications = $em->getRepository(Publication::class)->fulltextSearch($word, $count + 1, $publication);
         if ($account && $publications) {
             /**
@@ -291,5 +290,61 @@ class SearchApiController extends Controller
         }
 
         return new JsonResponse(['article' => $articles, 'more' => $more]);
+    }
+
+    /**
+     * @Route("/article/{word}/{count}/{fromPublicKey}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Search for Authors",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Search")
+     * @param string $word
+     * @param int $count
+     * @param string $fromPublicKey
+     * @return Response
+     */
+    public function searchAuthors(string $word, int $count, string $fromPublicKey)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Account $fromAccount
+         */
+        $fromAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $fromPublicKey]);
+
+
+        $authors = $em->getRepository(Account::class)->fulltextSearch($word, $count + 1, $fromAccount);
+        if ($account && $authors) {
+            /**
+             * @var Account $author
+             */
+            foreach ($authors as $author) {
+                //  check if user subscribed to author
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                if ($subscribed) {
+                    $author->setSubscribed(true);
+                } else {
+                    $author->setSubscribed(false);
+                }
+            }
+        }
+        $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+        $more = false;
+        if (count($authors) > $count) {
+            $more = true;
+            unset($authors[$count]);
+        }
+
+        return new JsonResponse(['author' => $authors, 'more' => $more]);
     }
 }
