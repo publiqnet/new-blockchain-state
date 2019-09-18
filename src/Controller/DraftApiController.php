@@ -46,6 +46,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
      *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
      *             @SWG\Property(property="tags", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="options", type="array", items={"type": "object"}),
      *             @SWG\Property(property="publication", type="string"),
      *         )
      *     ),
@@ -93,6 +94,9 @@ class DraftApiController extends Controller
             if (isset($contentArr['tags'])) {
                 $tags = $contentArr['tags'];
             }
+            if (isset($contentArr['options'])) {
+                $options = $contentArr['options'];
+            }
             if (isset($contentArr['publication'])) {
                 $publication = $contentArr['publication'];
             }
@@ -105,6 +109,7 @@ class DraftApiController extends Controller
             $sourceOfMaterial = $request->request->get('sourceOfMaterial');
             $contentUris = $request->request->get('contentUris');
             $tags = $request->request->get('tags');
+            $options = $request->request->get('options');
             $publication = $request->request->get('publication');
         }
 
@@ -131,6 +136,9 @@ class DraftApiController extends Controller
             }
             if (isset($tags)) {
                 $draft->setTags($tags);
+            }
+            if (isset($options)) {
+                $draft->setOptions($options);
             }
             if (isset($publication)) {
                 $draft->setPublication($publication);
@@ -168,6 +176,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
      *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
      *             @SWG\Property(property="tags", type="array", items={"type": "object"}),
+     *             @SWG\Property(property="options", type="array", items={"type": "object"}),
      *             @SWG\Property(property="publication", type="string"),
      *         )
      *     ),
@@ -228,6 +237,9 @@ class DraftApiController extends Controller
             if (isset($contentArr['tags'])) {
                 $tags = $contentArr['tags'];
             }
+            if (isset($contentArr['options'])) {
+                $options = $contentArr['options'];
+            }
             if (isset($contentArr['publication'])) {
                 $publication = $contentArr['publication'];
             }
@@ -240,6 +252,7 @@ class DraftApiController extends Controller
             $sourceOfMaterial = $request->request->get('sourceOfMaterial');
             $contentUris = $request->request->get('contentUris');
             $tags = $request->request->get('tags');
+            $options = $request->request->get('options');
             $publication = $request->request->get('publication');
         }
 
@@ -263,6 +276,9 @@ class DraftApiController extends Controller
             }
             if (isset($tags)) {
                 $draft->setTags($tags);
+            }
+            if (isset($options)) {
+                $draft->setOptions($options);
             }
             if (isset($publication)) {
                 $draft->setPublication($publication);
