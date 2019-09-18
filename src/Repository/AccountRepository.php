@@ -156,12 +156,13 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function fulltextSearch($searchWord)
+    public function fulltextSearch($searchWord, $count = 5)
     {
         return $this->createQueryBuilder('a')
             ->select("a")
             ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
             ->setParameter('searchWord', $searchWord)
+            ->setMaxResults($count)
             ->getQuery()
             ->getResult();
     }

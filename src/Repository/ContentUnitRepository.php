@@ -322,7 +322,7 @@ class ContentUnitRepository extends EntityRepository
             ->getResult();
     }
 
-    public function fulltextSearch($searchWord)
+    public function fulltextSearch($searchWord, $count = 5)
     {
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
@@ -349,6 +349,7 @@ class ContentUnitRepository extends EntityRepository
             ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+            ->setMaxResults($count)
             ->orderBy('cu.id', 'desc')
             ->getQuery()
             ->getResult();
