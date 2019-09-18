@@ -322,7 +322,7 @@ class ContentUnitRepository extends EntityRepository
             ->getResult();
     }
 
-    public function fulltextSearch($searchWord, $count = 5)
+    public function fulltextSearch($searchWord, $count = 5, ContentUnit $fromContentUnit = null)
     {
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
@@ -340,19 +340,36 @@ class ContentUnitRepository extends EntityRepository
 
         $query = $this->createQueryBuilder('cu');
 
-        return $query->select('cu, a')
-            ->join('cu.author', 'a')
-            ->join('cu.transaction', 't')
-            ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
-            ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
-            ->andWhere('t.block is not null')
-            ->andWhere('cu.content is not null')
-            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
-            ->setMaxResults($count)
-            ->orderBy('cu.id', 'desc')
-            ->getQuery()
-            ->getResult();
+        if ($fromContentUnit) {
+            return $query->select('cu, a')
+                ->join('cu.author', 'a')
+                ->join('cu.transaction', 't')
+                ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
+                ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
+                ->andWhere('t.block is not null')
+                ->andWhere('cu.content is not null')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->andWhere('cu.id < :fromId')
+                ->setParameters(['fromId' => $fromContentUnit->getId(), 'searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $query->select('cu, a')
+                ->join('cu.author', 'a')
+                ->join('cu.transaction', 't')
+                ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
+                ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
+                ->andWhere('t.block is not null')
+                ->andWhere('cu.content is not null')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        }
     }
 
     public function getArticleHistory(ContentUnit $article, $previous = false)

@@ -234,6 +234,62 @@ class SearchApiController extends Controller
         }
         $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationSubscribed']]);
 
-        return new JsonResponse(['publication' => $publications]);
+        $more = false;
+        if (count($publications) > $count) {
+            $more = true;
+            unset($publications[$count]);
+        }
+
+        return new JsonResponse(['publication' => $publications, 'more' => $more]);
+    }
+
+    /**
+     * @Route("/article/{word}/{count}/{fromUri}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Search for Article",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Search")
+     * @param string $word
+     * @param int $count
+     * @param string $fromUri
+     * @param CUService $contentUnitService
+     * @return Response
+     */
+    public function searchArticle(string $word, int $count, string $fromUri, CUService $contentUnitService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var ContentUnit $publication
+         */
+        $fromContentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+
+        $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $count + 1, $fromContentUnit);
+        if ($articles) {
+            try {
+                $articles = $contentUnitService->prepare($articles);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $articles = $contentUnitService->prepareTags($articles);
+
+        $more = false;
+        if (count($articles) > $count) {
+            $more = true;
+            unset($articles[$count]);
+        }
+
+        return new JsonResponse(['article' => $articles, 'more' => $more]);
     }
 }
