@@ -213,19 +213,18 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t, tg, p')
+            return $query->select('cu, a, t')
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
-                ->leftJoin('cu.tags', 'tg')
-                ->leftJoin('cu.publication', 'p')
-                ->where('t.block is not null')
-                ->andWhere('cu.content is not null')
-                ->andWhere('cu.id < :fromId')
+                ->where('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['fromId' => $fromContentUnit->getId()])
                 ->setMaxResults($count)
@@ -235,14 +234,10 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t, tg, p')
+            return $query->select('cu, a, t')
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
-                ->leftJoin('cu.tags', 'tg')
-                ->leftJoin('cu.publication', 'p')
-                ->where('t.block is not null')
-                ->andWhere('cu.content is not null')
-                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()
