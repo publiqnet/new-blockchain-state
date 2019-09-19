@@ -57,6 +57,7 @@ class ContentUnit
      * @param null $boosted
      * @param Account|null $author
      * @return mixed
+     * @throws \Exception
      */
     public function prepare($contentUnits, $boosted = null, Account $author = null)
     {
@@ -71,6 +72,8 @@ class ContentUnit
             $contentUnit->setPublished($transaction->getTimeSigned());
 
             if ($contentUnit->getCover()) {
+                $storageAddress= '';
+
                 /**
                  * @var File $coverFile
                  */
@@ -83,6 +86,7 @@ class ContentUnit
                 if (count($fileStorages)) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                    $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
 
                     $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri() . '&channel_address=' . $this->channelAddress);
                 } elseif ($contentUnit->getContent()) {
@@ -97,9 +101,13 @@ class ContentUnit
                     $channel = $content->getChannel();
 
                     $storageUrl = $channel->getUrl();
+                    $storageAddress = $channel->getPublicKey();
 
                     $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri() . '&channel_address=' . $this->channelAddress);
                 }
+
+                //  inform Blockchain about served files
+                $this->blockChain->servedFile($coverFile->getUri(), $contentUnit->getUri(), $storageAddress);
             }
 
             if ($boosted === null) {

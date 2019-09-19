@@ -102,19 +102,35 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function fulltextSearch($searchWord)
+    public function fulltextSearch($searchWord, $count = 5, Publication $publication = null)
     {
 //        $searchWord = explode(' ', $searchWord);
 //        $searchWord = '+'.implode(' +', $searchWord);
 
-        return $this->createQueryBuilder('p')
-            ->select("p")
-            ->leftJoin('p.tags', 't')
-            ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
-            ->orWhere('t.name like :tagSearchWord')
-            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
-            ->getQuery()
-            ->getResult();
+        if ($publication) {
+            return $this->createQueryBuilder('p')
+                ->select("p")
+                ->leftJoin('p.tags', 't')
+                ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
+                ->orWhere('t.name like :tagSearchWord')
+                ->andWhere('p.id < :id')
+                ->setParameters(['id' => $publication->getId(), 'searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setMaxResults($count)
+                ->orderBy('p.id', 'DESC')
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('p')
+                ->select("p")
+                ->leftJoin('p.tags', 't')
+                ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
+                ->orWhere('t.name like :tagSearchWord')
+                ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setMaxResults($count)
+                ->orderBy('p.id', 'DESC')
+                ->getQuery()
+                ->getResult();
+        }
     }
 
     public function getPopularPublications($count = 5)

@@ -737,11 +737,14 @@ class ContentApiController extends Controller
             try {
                 foreach ($fileStorageUrls as $uri => $fileStorageData) {
                     $contentUnitText = $contentUnit->getText();
+                    $occurrences = substr_count($contentUnitText, $uri);
                     $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files
-                    $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                    for ($i = 0; $i < $occurrences; $i++) {
+                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                    }
                 }
             } catch (Exception $e) {
                 $logger->error($e->getMessage());
@@ -836,7 +839,7 @@ class ContentApiController extends Controller
              */
             $author = $contentUnit->getAuthor();
             $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
-            $author->setSubscribed($subscribed ? true: false);
+            $author->setSubscribed($subscribed ? true : false);
         }
 
         if ($account && $contentUnit->getAuthor() == $account) {

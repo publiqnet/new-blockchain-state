@@ -156,14 +156,28 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function fulltextSearch($searchWord)
+    public function fulltextSearch($searchWord, $count = 5, Account $fromAccount = null)
     {
-        return $this->createQueryBuilder('a')
-            ->select("a")
-            ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
-            ->setParameter('searchWord', $searchWord)
-            ->getQuery()
-            ->getResult();
+        if ($fromAccount) {
+            return $this->createQueryBuilder('a')
+                ->select("a")
+                ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
+                ->andWhere('a.id > :fromId')
+                ->setParameters(['searchWord' => $searchWord, 'fromId' => $fromAccount->getId()])
+                ->addOrderBy('a.id', 'ASC')
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select("a")
+                ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
+                ->setParameter('searchWord', $searchWord)
+                ->addOrderBy('a.id', 'ASC')
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
     }
 
     public function getPopularAuthors($count = 5, Account $exception = null)

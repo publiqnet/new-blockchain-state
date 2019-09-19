@@ -108,6 +108,13 @@ class Draft
     private $tags = [];
 
     /**
+     * @var array
+     * @ORM\Column(name="options", type="array", nullable=true)
+     * @Groups({"draft", "draftList"})
+     */
+    private $options = [];
+
+    /**
      * @var string
      * @ORM\Column(name="publication", type="string", length=256, nullable=true)
      * @Groups({"draft", "draftList"})
@@ -310,6 +317,22 @@ class Draft
     public function setTags(array $tags)
     {
         $this->tags = $tags;
+    }
+
+    /**
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
+    /**
+     * @param array $options
+     */
+    public function setOptions(array $options)
+    {
+        $this->options = $options;
     }
 
     /**

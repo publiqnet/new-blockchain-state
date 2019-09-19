@@ -114,6 +114,7 @@ class SearchApiController extends Controller
     public function search(string $word, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
+        $defaultCount = 5;
 
         /**
          * @var Account $account
@@ -121,7 +122,7 @@ class SearchApiController extends Controller
         $account = $this->getUser();
 
         //  SEARCH IN PUBLICATIONS
-        $publications = $em->getRepository(Publication::class)->fulltextSearch($word);
+        $publications = $em->getRepository(Publication::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $publications) {
             /**
              * @var Publication $publication
@@ -146,8 +147,14 @@ class SearchApiController extends Controller
         }
         $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationSubscribed']]);
 
+        $publicationsMore = false;
+        if (count($publications) > $defaultCount) {
+            $publicationsMore = true;
+            unset($publications[$defaultCount]);
+        }
+
         //  SEARCH IN ARTICLES
-        $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word);
+        $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $defaultCount + 1);
         if ($articles) {
             try {
                 $articles = $contentUnitService->prepare($articles);
@@ -158,8 +165,14 @@ class SearchApiController extends Controller
         $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
         $articles = $contentUnitService->prepareTags($articles);
 
+        $articlesMore = false;
+        if (count($articles) > $defaultCount) {
+            $articlesMore = true;
+            unset($articles[$defaultCount]);
+        }
+
         //  SEARCH IN AUTHORS
-        $authors = $em->getRepository(Account::class)->fulltextSearch($word);
+        $authors = $em->getRepository(Account::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $authors) {
             /**
              * @var Account $author
@@ -176,6 +189,175 @@ class SearchApiController extends Controller
         }
         $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['publication' => $publications, 'article' => $articles, 'authors' => $authors]);
+        $authorsMore = false;
+        if (count($authors) > $defaultCount) {
+            $authorsMore = true;
+            unset($authors[$defaultCount]);
+        }
+
+        return new JsonResponse(['publication' => $publications, 'publicationMore' => $publicationsMore, 'article' => $articles, 'articleMore' => $articlesMore, 'authors' => $authors, 'authorsMore' => $authorsMore]);
+    }
+
+    /**
+     * @Route("/publication/{word}/{count}/{fromSlug}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Search for Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Search")
+     * @param string $word
+     * @param int $count
+     * @param string $fromSlug
+     * @return Response
+     */
+    public function searchPublication(string $word, int $count, string $fromSlug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $fromSlug]);
+
+        $publications = $em->getRepository(Publication::class)->fulltextSearch($word, $count + 1, $publication);
+        if ($account && $publications) {
+            /**
+             * @var Publication $publication
+             */
+            foreach ($publications as $publication) {
+                $memberStatus = 0;
+                $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
+
+                //  if User is a Publication member return Publication info with members
+                if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                    $memberStatus = $publicationMember->getStatus();
+                }
+                $publication->setMemberStatus($memberStatus);
+
+                $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+                if ($subscription) {
+                    $publication->setSubscribed(true);
+                } else {
+                    $publication->setSubscribed(false);
+                }
+            }
+        }
+        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'tag', 'publicationMemberStatus', 'publicationSubscribed']]);
+
+        $more = false;
+        if (count($publications) > $count) {
+            $more = true;
+            unset($publications[$count]);
+        }
+
+        return new JsonResponse(['publication' => $publications, 'more' => $more]);
+    }
+
+    /**
+     * @Route("/article/{word}/{count}/{fromUri}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Search for Article",
+     *     consumes={"application/json"}
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Search")
+     * @param string $word
+     * @param int $count
+     * @param string $fromUri
+     * @param CUService $contentUnitService
+     * @return Response
+     */
+    public function searchArticle(string $word, int $count, string $fromUri, CUService $contentUnitService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var ContentUnit $publication
+         */
+        $fromContentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+
+        $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $count + 1, $fromContentUnit);
+        if ($articles) {
+            try {
+                $articles = $contentUnitService->prepare($articles);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $articles = $contentUnitService->prepareTags($articles);
+
+        $more = false;
+        if (count($articles) > $count) {
+            $more = true;
+            unset($articles[$count]);
+        }
+
+        return new JsonResponse(['article' => $articles, 'more' => $more]);
+    }
+
+    /**
+     * @Route("/author/{word}/{count}/{fromPublicKey}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Search for Authors",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Search")
+     * @param string $word
+     * @param int $count
+     * @param string $fromPublicKey
+     * @return Response
+     */
+    public function searchAuthors(string $word, int $count, string $fromPublicKey)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Account $fromAccount
+         */
+        $fromAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $fromPublicKey]);
+
+
+        $authors = $em->getRepository(Account::class)->fulltextSearch($word, $count + 1, $fromAccount);
+        if ($account && $authors) {
+            /**
+             * @var Account $author
+             */
+            foreach ($authors as $author) {
+                //  check if user subscribed to author
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                if ($subscribed) {
+                    $author->setSubscribed(true);
+                } else {
+                    $author->setSubscribed(false);
+                }
+            }
+        }
+        $authors = $this->get('serializer')->normalize($authors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+        $more = false;
+        if (count($authors) > $count) {
+            $more = true;
+            unset($authors[$count]);
+        }
+
+        return new JsonResponse(['authors' => $authors, 'more' => $more]);
     }
 }
