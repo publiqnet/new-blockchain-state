@@ -737,14 +737,11 @@ class ContentApiController extends Controller
             try {
                 foreach ($fileStorageUrls as $uri => $fileStorageData) {
                     $contentUnitText = $contentUnit->getText();
-                    $occurrences = substr_count($contentUnitText, $uri);
                     $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files
-                    for ($i = 0; $i < $occurrences; $i++) {
-                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
-                    }
+                    $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
                 }
             } catch (Exception $e) {
                 $logger->error($e->getMessage());
