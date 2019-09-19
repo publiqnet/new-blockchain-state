@@ -74,7 +74,8 @@ class ContentUnit
             /**
              * @var File $coverFile
              */
-            if ($coverFile = $contentUnit->getCover() && $contentUnit->getContent()) {
+            $coverFile = $contentUnit->getCover();
+            if ($coverFile && $contentUnit->getContent()) {
                 /**
                  * @var \App\Entity\Content $content
                  */
