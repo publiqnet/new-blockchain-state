@@ -221,9 +221,10 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
+            return $query->select('cu, a, t, p')
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
+                ->leftJoin('cu.publication', 'p')
                 ->where('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['fromId' => $fromContentUnit->getId()])
@@ -234,9 +235,10 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
+            return $query->select('cu, a, t, p')
                 ->join('cu.author', 'a')
                 ->join('cu.transaction', 't')
+                ->leftJoin('cu.publication', 'p')
                 ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
