@@ -236,8 +236,8 @@ class Custom
                 list($feeWhole, $feeFraction) = sscanf(round($fee / $transactionsCount, 8), '%d.%d');
             }
 
-            $block->setFeeWhole($feeWhole);
-            $block->setFeeFraction($feeFraction);
+            $block->setFeeWhole(intval($feeWhole));
+            $block->setFeeFraction(intval($feeFraction));
 
             $this->em->persist($block);
             $this->em->flush();
