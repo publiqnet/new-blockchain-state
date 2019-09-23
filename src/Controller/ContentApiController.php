@@ -249,12 +249,18 @@ class ContentApiController extends Controller
                         $em->persist($tagEntity);
                     }
 
-                    $contentUnitTag = new ContentUnitTag();
-                    $contentUnitTag->setTag($tagEntity);
-                    $contentUnitTag->setContentUnitUri($uri);
-                    if ($contentUnitEntity) {
+                    $contentUnitTag = $em->getRepository(ContentUnitTag::class)->findOneBy(['tag' => $tagEntity, 'contentUnitUri' => $uri]);
+                    if (!$contentUnitTag) {
+                        $contentUnitTag = new ContentUnitTag();
+                        $contentUnitTag->setTag($tagEntity);
+                        $contentUnitTag->setContentUnitUri($uri);
+                        if ($contentUnitEntity) {
+                            $contentUnitTag->setContentUnit($contentUnitEntity);
+                        }
+                    } elseif ($contentUnitEntity) {
                         $contentUnitTag->setContentUnit($contentUnitEntity);
                     }
+
                     $em->persist($contentUnitTag);
                     $em->flush();
                 }
