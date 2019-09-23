@@ -51,12 +51,14 @@ class FeeApiController extends Controller
 
         list($feeWhole, $feeFraction) = $customService->getFee();
 
+        $firstArticle = false;
         $contentUnits = $account->getAuthorContentUnits();
         if (count($contentUnits) == 0) {
             $feeWhole = 0;
             $feeFraction = 0;
+            $firstArticle = true;
         }
 
-        return new JsonResponse(['whole' => $feeWhole, 'fraction' => $feeFraction]);
+        return new JsonResponse(['whole' => $feeWhole, 'fraction' => $feeFraction, 'firstArticle' => $firstArticle]);
     }
 }
