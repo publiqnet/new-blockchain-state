@@ -272,7 +272,7 @@ class Block
      */
     public function setFeeWhole($feeWhole)
     {
-        $this->feeWhole = $feeWhole;
+        $this->feeWhole = intval($feeWhole);
     }
 
     /**
@@ -288,6 +288,6 @@ class Block
      */
     public function setFeeFraction($feeFraction)
     {
-        $this->feeFraction = $feeFraction;
+        $this->feeFraction = intval($feeFraction);
     }
 }

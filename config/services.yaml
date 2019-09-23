@@ -11,8 +11,6 @@ parameters:
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
     json_path: '../public/jsons/'
-    fee_whole: 0
-    fee_fraction: 10000000
 
 services:
     # default configuration for services in *this* file
