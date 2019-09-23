@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Service\BlockChain;
+use App\Service\Custom;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Done;
@@ -91,6 +92,8 @@ class FileApiController extends Controller
      *         @SWG\Schema(
      *             type="object",
      *             @SWG\Property(property="files", type="array", items={"type": "object", "properties": {"signedFileString": {"type": "string"}, "uri": {"type": "string"}, "signedFile": {"type": "string"}, "creationTime": {"type": "integer"}, "expiryTime": {"type": "integer"}}}),
+     *             @SWG\Property(property="feeWhole", type="integer"),
+     *             @SWG\Property(property="feeFraction", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -101,9 +104,12 @@ class FileApiController extends Controller
      * @SWG\Tag(name="File")
      * @param Request $request
      * @param Blockchain $blockChain
+     * @param Custom $customService
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function signFile(Request $request, BlockChain $blockChain)
+    public function signFile(Request $request, BlockChain $blockChain, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -119,12 +125,21 @@ class FileApiController extends Controller
             $content = json_decode($content, true);
 
             $files = $content['files'];
+            $feeWhole = $content['feeWhole'];
+            $feeFraction = $content['feeFraction'];
         } else {
             $files = $request->request->get('files');
+            $feeWhole = $request->request->get('feeWhole');
+            $feeFraction = $request->request->get('feeFraction');
         }
 
         //  get public key
         $publicKey = $account->getPublicKey();
+
+        $contentUnits = $account->getAuthorContentUnits();
+        if (count($contentUnits) == 0) {
+            list($feeWhole, $feeFraction) = $customService->getFee();
+        }
 
         try {
             if (is_array($files)) {
@@ -135,7 +150,7 @@ class FileApiController extends Controller
                     $action->addAuthorAddresses($publicKey);
 
                     //  Verify signature
-                    $signatureResult = $blockChain->verifySignature($publicKey, $file['signedFile'], $action, $file['creationTime'], $file['expiryTime'], 0, 10000000);
+                    $signatureResult = $blockChain->verifySignature($publicKey, $file['signedFile'], $action, $file['creationTime'], $file['expiryTime'], $feeWhole, $feeFraction);
                     if (!($signatureResult['signatureResult'] instanceof Done)) {
                         throw new Exception('Invalid signature for file: ' . $file['uri'] . '; Error type: ' . get_class($signatureResult['signatureResult']));
                     }

@@ -11,6 +11,8 @@ parameters:
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
     json_path: '../public/jsons/'
+    fee_whole: 0
+    fee_fraction: 10000000
 
 services:
     # default configuration for services in *this* file
@@ -52,7 +54,7 @@ services:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
 
     App\Service\Custom:
-        arguments: ['%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%']
+        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%']
 
     json:
         class: App\Service\Json
