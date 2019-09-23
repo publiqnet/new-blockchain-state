@@ -963,7 +963,9 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="hours", type="integer"),
      *             @SWG\Property(property="startTimePoint", type="integer"),
      *             @SWG\Property(property="creationTime", type="integer"),
-     *             @SWG\Property(property="expiryTime", type="integer")
+     *             @SWG\Property(property="expiryTime", type="integer"),
+     *             @SWG\Property(property="feeWhole", type="integer"),
+     *             @SWG\Property(property="feeFraction", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -999,6 +1001,8 @@ class ContentApiController extends Controller
             $startTimePoint = $content['startTimePoint'];
             $creationTime = $content['creationTime'];
             $expiryTime = $content['expiryTime'];
+            $feeWhole = $content['feeWhole'];
+            $feeFraction = $content['feeFraction'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
@@ -1007,10 +1011,12 @@ class ContentApiController extends Controller
             $startTimePoint = $request->request->get('startTimePoint');
             $creationTime = $request->request->get('creationTime');
             $expiryTime = $request->request->get('expiryTime');
+            $feeWhole = $request->request->get('feeWhole');
+            $feeFraction = $request->request->get('feeFraction');
         }
 
         try {
-            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, 0, 10000000);
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
@@ -1040,7 +1046,9 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="uri", type="string"),
      *             @SWG\Property(property="transactionHash", type="string"),
      *             @SWG\Property(property="creationTime", type="integer"),
-     *             @SWG\Property(property="expiryTime", type="integer")
+     *             @SWG\Property(property="expiryTime", type="integer"),
+     *             @SWG\Property(property="feeWhole", type="integer"),
+     *             @SWG\Property(property="feeFraction", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -1074,16 +1082,20 @@ class ContentApiController extends Controller
             $transactionHash = $content['transactionHash'];
             $creationTime = $content['creationTime'];
             $expiryTime = $content['expiryTime'];
+            $feeWhole = $content['feeWhole'];
+            $feeFraction = $content['feeFraction'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
             $transactionHash = $request->request->get('transactionHash');
             $creationTime = $request->request->get('creationTime');
             $expiryTime = $request->request->get('expiryTime');
+            $feeWhole = $request->request->get('feeWhole');
+            $feeFraction = $request->request->get('feeFraction');
         }
 
         try {
-            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, 0, 10000000);
+            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
