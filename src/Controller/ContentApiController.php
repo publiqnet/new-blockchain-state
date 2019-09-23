@@ -725,9 +725,6 @@ class ContentApiController extends Controller
              * @var File $file
              */
             foreach ($files as $file) {
-                $storageUrl = '';
-                $storageAddress = '';
-
                 /**
                  * @var Account[] $fileStorages
                  */
@@ -736,8 +733,11 @@ class ContentApiController extends Controller
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
                     $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
 
-                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                    $file->setUrl($fileUrl);
+
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
                 } elseif ($contentUnit->getContent()) {
                     /**
                      * @var \App\Entity\Content $content
@@ -751,18 +751,21 @@ class ContentApiController extends Controller
 
                     $storageUrl = $channel->getUrl();
                     $storageAddress = $channel->getPublicKey();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
-                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                    $file->setUrl($fileUrl);
+
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                } else {
+                    $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
                 }
-
-                $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
             }
 
             //  replace file uri to url
             try {
                 foreach ($fileStorageUrls as $uri => $fileStorageData) {
                     $contentUnitText = $contentUnit->getText();
-                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
+                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files

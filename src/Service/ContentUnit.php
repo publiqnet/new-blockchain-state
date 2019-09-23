@@ -88,7 +88,7 @@ class ContentUnit
 
                 $storageUrl = $channel->getUrl();
 
-                $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri() . '&channel_address=' . $this->channelAddress);
+                $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
             }
 
             if ($boosted === null) {
