@@ -138,9 +138,9 @@ class PublicationApiController extends Controller
             if ($logo instanceof UploadedFile) {
                 $publication->setLogo($moveFile($logo, $currentPublicationPath));
 
-                $imageAvgRgbColor = (new AvgColorPicker)->getImageAvgRgbByPath($publication->getLogo());
-                $color = sprintf('%02X%02X%02X', $imageAvgRgbColor[0], $imageAvgRgbColor[1], $imageAvgRgbColor[2]);
-                $publication->setColor($color);
+//                $imageAvgRgbColor = (new AvgColorPicker)->getImageAvgRgbByPath($publication->getLogo());
+//                $color = sprintf('%02X%02X%02X', $imageAvgRgbColor[0], $imageAvgRgbColor[1], $imageAvgRgbColor[2]);
+//                $publication->setColor($color);
             }
 
             /**
@@ -297,9 +297,9 @@ class PublicationApiController extends Controller
                 }
                 $publication->setLogo($moveFile($logo, $currentPublicationPath));
 
-                $imageAvgRgbColor = (new AvgColorPicker)->getImageAvgRgbByPath($publication->getLogo());
-                $color = sprintf('%02X%02X%02X', $imageAvgRgbColor[0], $imageAvgRgbColor[1], $imageAvgRgbColor[2]);
-                $publication->setColor($color);
+//                $imageAvgRgbColor = (new AvgColorPicker)->getImageAvgRgbByPath($publication->getLogo());
+//                $color = sprintf('%02X%02X%02X', $imageAvgRgbColor[0], $imageAvgRgbColor[1], $imageAvgRgbColor[2]);
+//                $publication->setColor($color);
             } elseif ($deleteLogo) {
                 $oldLogo = $publication->getLogo();
                 if ($oldLogo && file_exists($oldLogo)) {
