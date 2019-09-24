@@ -10,7 +10,6 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Service\BlockChain;
-use App\Service\Custom;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Done;
@@ -104,12 +103,9 @@ class FileApiController extends Controller
      * @SWG\Tag(name="File")
      * @param Request $request
      * @param Blockchain $blockChain
-     * @param Custom $customService
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function signFile(Request $request, BlockChain $blockChain, Custom $customService)
+    public function signFile(Request $request, BlockChain $blockChain)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -135,11 +131,6 @@ class FileApiController extends Controller
 
         //  get public key
         $publicKey = $account->getPublicKey();
-
-        $contentUnits = $account->getAuthorContentUnits();
-        if (count($contentUnits) == 0 && $feeWhole == 0 && $feeFraction == 0) {
-            list($feeWhole, $feeFraction) = $customService->getFee();
-        }
 
         try {
             if (is_array($files)) {
