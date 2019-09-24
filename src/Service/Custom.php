@@ -8,17 +8,27 @@
 
 namespace App\Service;
 
+use App\Entity\Block;
 use App\Entity\File;
 use App\Entity\Account;
+use App\Entity\Transaction;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 
 class Custom
 {
+    /**
+     * @var EntityManager
+     */
+    private $em;
+
     private $endpoint;
     private $dsEndpoint;
     private $oldBackendEndpoint;
 
-    function __construct($endpoint, $dsEndpoint, $oldBackendEndpoint)
+    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint)
     {
+        $this->em = $em;
         $this->endpoint = $endpoint;
         $this->dsEndpoint = $dsEndpoint;
         $this->oldBackendEndpoint = $oldBackendEndpoint;
@@ -185,5 +195,57 @@ class Custom
         }
 
         return $data['content']['data'];
+    }
+
+    /**
+     * @return array
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
+    public function getFee()
+    {
+        /**
+         * @var Block $block
+         */
+        $block = $this->em->getRepository(Block::class)->getLastBlock();
+        if ($block->getFeeWhole() === null) {
+            $feeWhole = 0;
+            $feeFraction = 0;
+
+            /**
+             * @var Transaction[] $transactions
+             */
+            $transactions = $block->getTransactions();
+            if (count($transactions)) {
+                foreach ($transactions as $transaction) {
+                    $feeWhole += $transaction->getFeeWhole();
+                    $feeFraction += $transaction->getFeeFraction();
+                }
+
+                if ($feeFraction > 99999999) {
+                    while ($feeFraction > 99999999) {
+                        $feeWhole++;
+                        $feeFraction -= 100000000;
+                    }
+                }
+
+                //  calculate average fee
+                $fee = $feeWhole + $feeFraction / 100000000;
+                $transactionsCount = count($transactions);
+
+                list($feeWhole, $feeFraction) = sscanf(round($fee / $transactionsCount, 8), '%d.%d');
+            }
+
+            $block->setFeeWhole(intval($feeWhole));
+            $block->setFeeFraction(intval($feeFraction));
+
+            $this->em->persist($block);
+            $this->em->flush();
+        } else {
+            $feeWhole = $block->getFeeWhole();
+            $feeFraction = $block->getFeeFraction();
+        }
+
+        return [$feeWhole, $feeFraction];
     }
 }

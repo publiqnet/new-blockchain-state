@@ -52,7 +52,7 @@ services:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
 
     App\Service\Custom:
-        arguments: ['%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%']
+        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%']
 
     json:
         class: App\Service\Json

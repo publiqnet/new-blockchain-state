@@ -86,6 +86,16 @@ class Block
      */
     private $previousBlockHash;
 
+    /**
+     * @ORM\Column(name="fee_whole", type="integer", nullable=true)
+     */
+    private $feeWhole;
+
+    /**
+     * @ORM\Column(name="fee_fraction", type="integer", nullable=true)
+     */
+    private $feeFraction;
+
     public function __construct()
     {
         $this->rewards = new ArrayCollection();
@@ -247,5 +257,37 @@ class Block
     public function setSize($size)
     {
         $this->size = $size;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFeeWhole()
+    {
+        return $this->feeWhole;
+    }
+
+    /**
+     * @param mixed $feeWhole
+     */
+    public function setFeeWhole($feeWhole)
+    {
+        $this->feeWhole = intval($feeWhole);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFeeFraction()
+    {
+        return $this->feeFraction;
+    }
+
+    /**
+     * @param mixed $feeFraction
+     */
+    public function setFeeFraction($feeFraction)
+    {
+        $this->feeFraction = intval($feeFraction);
     }
 }

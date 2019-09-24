@@ -139,7 +139,9 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="expiryTime", type="integer"),
      *             @SWG\Property(property="fileUris", type="array", items={"type": "string"}),
      *             @SWG\Property(property="publicationSlug", type="string"),
-     *             @SWG\Property(property="tags", type="string")
+     *             @SWG\Property(property="tags", type="string"),
+     *             @SWG\Property(property="feeWhole", type="integer"),
+     *             @SWG\Property(property="feeFraction", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -150,9 +152,12 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param Request $request
      * @param Blockchain $blockChain
+     * @param Custom $customService
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function signContentUnit(Request $request, BlockChain $blockChain)
+    public function signContentUnit(Request $request, BlockChain $blockChain, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
         $publicationSlug = '';
@@ -181,6 +186,8 @@ class ContentApiController extends Controller
             if (isset($content['tags'])) {
                 $tags = $content['tags'];
             }
+            $feeWhole = intval($content['feeWhole']);
+            $feeFraction = intval($content['feeFraction']);
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
@@ -190,10 +197,17 @@ class ContentApiController extends Controller
             $fileUris = $request->request->get('fileUris');
             $publicationSlug = $request->request->get('publicationSlug');
             $tags = $request->request->get('tags');
+            $feeWhole = intval($request->request->get('feeWhole'));
+            $feeFraction = intval($request->request->get('feeFraction'));
         }
 
         //  get public key
         $publicKey = $account->getPublicKey();
+
+        $contentUnits = $account->getAuthorContentUnits();
+        if (count($contentUnits) == 0 && $feeWhole == 0 && $feeFraction == 0) {
+            list($feeWhole, $feeFraction) = $customService->getFee();
+        }
 
         try {
             $action = new ContentUnit();
@@ -208,7 +222,7 @@ class ContentApiController extends Controller
             }
 
             //  Verify signature
-            $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime, 0, 10000000);
+            $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
                 throw new Exception('Invalid signature');
             } elseif ($signatureResult['signatureResult'] instanceof UriError) {
@@ -249,12 +263,18 @@ class ContentApiController extends Controller
                         $em->persist($tagEntity);
                     }
 
-                    $contentUnitTag = new ContentUnitTag();
-                    $contentUnitTag->setTag($tagEntity);
-                    $contentUnitTag->setContentUnitUri($uri);
-                    if ($contentUnitEntity) {
+                    $contentUnitTag = $em->getRepository(ContentUnitTag::class)->findOneBy(['tag' => $tagEntity, 'contentUnitUri' => $uri]);
+                    if (!$contentUnitTag) {
+                        $contentUnitTag = new ContentUnitTag();
+                        $contentUnitTag->setTag($tagEntity);
+                        $contentUnitTag->setContentUnitUri($uri);
+                        if ($contentUnitEntity) {
+                            $contentUnitTag->setContentUnit($contentUnitEntity);
+                        }
+                    } elseif ($contentUnitEntity) {
                         $contentUnitTag->setContentUnit($contentUnitEntity);
                     }
+
                     $em->persist($contentUnitTag);
                     $em->flush();
                 }
@@ -320,9 +340,12 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param Request $request
      * @param Blockchain $blockChain
+     * @param Custom $customService
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function publishContent(Request $request, BlockChain $blockChain)
+    public function publishContent(Request $request, BlockChain $blockChain, Custom $customService)
     {
         /**
          * @var Account $account
@@ -345,13 +368,15 @@ class ContentApiController extends Controller
             $contentId = $request->request->get('contentId');
         }
 
+        list($feeWhole, $feeFraction) = $customService->getFee();
+
         try {
             $content = new Content();
             $content->setContentId($contentId);
             $content->setChannelAddress($this->getParameter('channel_address'));
             $content->addContentUnitUris($uri);
 
-            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'));
+            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'), $feeWhole, $feeFraction);
             if ($broadcastResult instanceof TransactionDone) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
@@ -700,9 +725,6 @@ class ContentApiController extends Controller
              * @var File $file
              */
             foreach ($files as $file) {
-                $storageUrl = '';
-                $storageAddress = '';
-
                 /**
                  * @var Account[] $fileStorages
                  */
@@ -711,8 +733,11 @@ class ContentApiController extends Controller
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
                     $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
 
-                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                    $file->setUrl($fileUrl);
+
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
                 } elseif ($contentUnit->getContent()) {
                     /**
                      * @var \App\Entity\Content $content
@@ -726,25 +751,25 @@ class ContentApiController extends Controller
 
                     $storageUrl = $channel->getUrl();
                     $storageAddress = $channel->getPublicKey();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
-                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                    $file->setUrl($fileUrl);
+
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                } else {
+                    $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
                 }
-
-                $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
             }
 
             //  replace file uri to url
             try {
                 foreach ($fileStorageUrls as $uri => $fileStorageData) {
                     $contentUnitText = $contentUnit->getText();
-                    $occurrences = substr_count($contentUnitText, $uri);
-                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '/storage?file=' . $uri . '&channel_address=' . $channelAddress . '"', $contentUnitText);
+                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files
-                    for ($i = 0; $i < $occurrences; $i++) {
-                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
-                    }
+                    $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
                 }
             } catch (Exception $e) {
                 $logger->error($e->getMessage());
@@ -941,7 +966,9 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="hours", type="integer"),
      *             @SWG\Property(property="startTimePoint", type="integer"),
      *             @SWG\Property(property="creationTime", type="integer"),
-     *             @SWG\Property(property="expiryTime", type="integer")
+     *             @SWG\Property(property="expiryTime", type="integer"),
+     *             @SWG\Property(property="feeWhole", type="integer"),
+     *             @SWG\Property(property="feeFraction", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -977,6 +1004,8 @@ class ContentApiController extends Controller
             $startTimePoint = $content['startTimePoint'];
             $creationTime = $content['creationTime'];
             $expiryTime = $content['expiryTime'];
+            $feeWhole = $content['feeWhole'];
+            $feeFraction = $content['feeFraction'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
@@ -985,10 +1014,12 @@ class ContentApiController extends Controller
             $startTimePoint = $request->request->get('startTimePoint');
             $creationTime = $request->request->get('creationTime');
             $expiryTime = $request->request->get('expiryTime');
+            $feeWhole = $request->request->get('feeWhole');
+            $feeFraction = $request->request->get('feeFraction');
         }
 
         try {
-            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, 0, 10000000);
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
@@ -1018,7 +1049,9 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="uri", type="string"),
      *             @SWG\Property(property="transactionHash", type="string"),
      *             @SWG\Property(property="creationTime", type="integer"),
-     *             @SWG\Property(property="expiryTime", type="integer")
+     *             @SWG\Property(property="expiryTime", type="integer"),
+     *             @SWG\Property(property="feeWhole", type="integer"),
+     *             @SWG\Property(property="feeFraction", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -1052,16 +1085,20 @@ class ContentApiController extends Controller
             $transactionHash = $content['transactionHash'];
             $creationTime = $content['creationTime'];
             $expiryTime = $content['expiryTime'];
+            $feeWhole = $content['feeWhole'];
+            $feeFraction = $content['feeFraction'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
             $transactionHash = $request->request->get('transactionHash');
             $creationTime = $request->request->get('creationTime');
             $expiryTime = $request->request->get('expiryTime');
+            $feeWhole = $request->request->get('feeWhole');
+            $feeFraction = $request->request->get('feeFraction');
         }
 
         try {
-            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, 0, 10000000);
+            $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {

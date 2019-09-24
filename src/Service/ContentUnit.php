@@ -71,43 +71,24 @@ class ContentUnit
             $transaction = $contentUnit->getTransaction();
             $contentUnit->setPublished($transaction->getTimeSigned());
 
-            if ($contentUnit->getCover()) {
-                $storageAddress= '';
+            /**
+             * @var File $coverFile
+             */
+            $coverFile = $contentUnit->getCover();
+            if ($coverFile && $contentUnit->getContent()) {
+                /**
+                 * @var \App\Entity\Content $content
+                 */
+                $content = $contentUnit->getContent();
 
                 /**
-                 * @var File $coverFile
+                 * @var Account $channel
                  */
-                $coverFile = $contentUnit->getCover();
+                $channel = $content->getChannel();
 
-                /**
-                 * @var Account[] $fileStorages
-                 */
-                $fileStorages = $this->custom->getFileStoragesWithPublicAccess($coverFile);
-                if (count($fileStorages)) {
-                    $randomStorage = rand(0, count($fileStorages) - 1);
-                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                    $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
+                $storageUrl = $channel->getUrl();
 
-                    $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri() . '&channel_address=' . $this->channelAddress);
-                } elseif ($contentUnit->getContent()) {
-                    /**
-                     * @var \App\Entity\Content $content
-                     */
-                    $content = $contentUnit->getContent();
-
-                    /**
-                     * @var Account $channel
-                     */
-                    $channel = $content->getChannel();
-
-                    $storageUrl = $channel->getUrl();
-                    $storageAddress = $channel->getPublicKey();
-
-                    $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri() . '&channel_address=' . $this->channelAddress);
-                }
-
-                //  inform Blockchain about served files
-                $this->blockChain->servedFile($coverFile->getUri(), $contentUnit->getUri(), $storageAddress);
+                $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
             }
 
             if ($boosted === null) {

@@ -8,7 +8,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Block;
 use Doctrine\ORM\EntityRepository;
 
 /**
@@ -20,77 +19,14 @@ use Doctrine\ORM\EntityRepository;
 class BlockRepository extends EntityRepository
 {
     /**
-     * @param Block $block
-     * @return array|null
-     */
-    public function getBlockConfirmations(Block $block)
-    {
-        return $this->createQueryBuilder('b')
-            ->select('COUNT(b) as confirmationsCount')
-            ->where('b.signTime > :signTime')
-            ->setParameter('signTime', $block->getSignTime())
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * @param Block $block
      * @return array|null
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function getPreviousBlock(Block $block)
+    public function getLastBlock()
     {
         return $this->createQueryBuilder('b')
             ->select('b')
-            ->where('b.signTime < :signTime')
-            ->setParameter('signTime', $block->getSignTime())
             ->orderBy('b.signTime', 'desc')
-            ->setMaxResults(1)
-            ->getQuery()
-            ->getOneOrNullResult();
-    }
-
-    /**
-     * @param int $year
-     * @param int $month
-     * @param int $day
-     * @param int $from
-     * @param int $count
-     * @return array|null
-     */
-    public function getBlocksByDate(int $year, int $month, int $day, int $from, int $count)
-    {
-        $timezoneObj = new \DateTimeZone('UTC');
-        $dateObj = new \DateTime();
-        $dateObj->setDate($year, $month, $day);
-        $dateObj->setTime(0, 0);
-        $dateObj->setTimezone($timezoneObj);
-
-        return $this->createQueryBuilder('b')
-            ->select('b')
-            ->where('b.signTime >= :fromDate')
-            ->andWhere('b.signTime < :toDate')
-            ->setParameters(['fromDate' => $dateObj->getTimestamp(), 'toDate' => $dateObj->getTimestamp() + 86400])
-            ->setFirstResult($from)
-            ->setMaxResults($count)
-            ->orderBy('b.signTime', 'desc')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * @param string $identifier
-     * @return mixed
-     * @throws \Doctrine\ORM\NonUniqueResultException
-     */
-    public function findBlock(string $identifier)
-    {
-        return $this->createQueryBuilder('b')
-            ->select('b')
-            ->where('b.hash = :identifier')
-            ->orWhere('b.number = :identifier')
-            ->setParameter('identifier', $identifier)
-            ->orderBy('b.id', 'desc')
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
