@@ -186,8 +186,8 @@ class ContentApiController extends Controller
             if (isset($content['tags'])) {
                 $tags = $content['tags'];
             }
-            $feeWhole = $content['feeWhole'];
-            $feeFraction = $content['feeFraction'];
+            $feeWhole = intval($content['feeWhole']);
+            $feeFraction = intval($content['feeFraction']);
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
@@ -197,15 +197,15 @@ class ContentApiController extends Controller
             $fileUris = $request->request->get('fileUris');
             $publicationSlug = $request->request->get('publicationSlug');
             $tags = $request->request->get('tags');
-            $feeWhole = $request->request->get('feeWhole');
-            $feeFraction = $request->request->get('feeFraction');
+            $feeWhole = intval($request->request->get('feeWhole'));
+            $feeFraction = intval($request->request->get('feeFraction'));
         }
 
         //  get public key
         $publicKey = $account->getPublicKey();
 
         $contentUnits = $account->getAuthorContentUnits();
-        if (count($contentUnits) == 0) {
+        if (count($contentUnits) == 0 && $feeWhole == 0 && $feeFraction == 0) {
             list($feeWhole, $feeFraction) = $customService->getFee();
         }
 

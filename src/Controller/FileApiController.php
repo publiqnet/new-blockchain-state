@@ -125,19 +125,19 @@ class FileApiController extends Controller
             $content = json_decode($content, true);
 
             $files = $content['files'];
-            $feeWhole = $content['feeWhole'];
-            $feeFraction = $content['feeFraction'];
+            $feeWhole = intval($content['feeWhole']);
+            $feeFraction = intval($content['feeFraction']);
         } else {
             $files = $request->request->get('files');
-            $feeWhole = $request->request->get('feeWhole');
-            $feeFraction = $request->request->get('feeFraction');
+            $feeWhole = intval($request->request->get('feeWhole'));
+            $feeFraction = intval($request->request->get('feeFraction'));
         }
 
         //  get public key
         $publicKey = $account->getPublicKey();
 
         $contentUnits = $account->getAuthorContentUnits();
-        if (count($contentUnits) == 0) {
+        if (count($contentUnits) == 0 && $feeWhole == 0 && $feeFraction == 0) {
             list($feeWhole, $feeFraction) = $customService->getFee();
         }
 
