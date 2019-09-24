@@ -274,6 +274,10 @@ class BlockChain
      */
     public function signContent(Content $content, string $channelPrivateKey, $feeWhole = 0, $feeFraction = 0)
     {
+        $date = new \DateTime();
+        $timeZone = new \DateTimeZone('UTC');
+        $date->setTimezone($timeZone);
+
         $coin = new Coin();
         $coin->setFraction($feeFraction);
         $coin->setWhole($feeWhole);
@@ -281,8 +285,8 @@ class BlockChain
         $transaction = new Transaction();
         $transaction->setAction($content);
         $transaction->setFee($coin);
-        $transaction->setCreation(time());
-        $transaction->setExpiry(time() + 43200);
+        $transaction->setCreation($date->getTimestamp());
+        $transaction->setExpiry($date->getTimestamp() + 3600);
 
         $transactionBroadcastRequest = new TransactionBroadcastRequest();
         $transactionBroadcastRequest->setTransactionDetails($transaction);

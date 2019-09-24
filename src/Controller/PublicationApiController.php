@@ -1686,6 +1686,8 @@ class PublicationApiController extends Controller
             array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
         }
 
+        $contentUnits = $contentUnitService->prepareTags($contentUnits);
+
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
 }
