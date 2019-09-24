@@ -232,8 +232,10 @@ class Custom
                 //  calculate average fee
                 $fee = $feeWhole + $feeFraction / 100000000;
                 $transactionsCount = count($transactions);
+                $averageFee = $fee * 100000000 / $transactionsCount;
 
-                list($feeWhole, $feeFraction) = sscanf(round($fee / $transactionsCount, 8), '%d.%d');
+                $feeWhole = floor($averageFee / 100000000);
+                $feeFraction = $averageFee % 100000000;
             }
 
             $block->setFeeWhole(intval($feeWhole));
