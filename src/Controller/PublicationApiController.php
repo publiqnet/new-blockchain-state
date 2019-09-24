@@ -1670,8 +1670,8 @@ class PublicationApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
         $more = false;
@@ -1685,6 +1685,8 @@ class PublicationApiController extends Controller
             $aaa = [$boostedContentUnits[$i]];
             array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
         }
+
+        $contentUnits = $contentUnitService->prepareTags($contentUnits);
 
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
     }
