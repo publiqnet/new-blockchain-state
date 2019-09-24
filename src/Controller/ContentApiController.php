@@ -152,12 +152,9 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param Request $request
      * @param Blockchain $blockChain
-     * @param Custom $customService
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function signContentUnit(Request $request, BlockChain $blockChain, Custom $customService)
+    public function signContentUnit(Request $request, BlockChain $blockChain)
     {
         $em = $this->getDoctrine()->getManager();
         $publicationSlug = '';
@@ -203,11 +200,6 @@ class ContentApiController extends Controller
 
         //  get public key
         $publicKey = $account->getPublicKey();
-
-        $contentUnits = $account->getAuthorContentUnits();
-        if (count($contentUnits) == 0 && $feeWhole == 0 && $feeFraction == 0) {
-            list($feeWhole, $feeFraction) = $customService->getFee();
-        }
 
         try {
             $action = new ContentUnit();
