@@ -90,7 +90,7 @@ class FileApiController extends Controller
      *         format="application/json",
      *         @SWG\Schema(
      *             type="object",
-     *             @SWG\Property(property="files", type="array", items={"type": "object", "properties": {"signedFileString": {"type": "string"}, "uri": {"type": "string"}, "signedFile": {"type": "string"}, "creationTime": {"type": "integer"}, "expiryTime": {"type": "integer"}}}),
+     *             @SWG\Property(property="files", type="array", items={"type": "object", "properties": {"uri": {"type": "string"}, "signedFile": {"type": "string"}, "creationTime": {"type": "integer"}, "expiryTime": {"type": "integer"}}}),
      *             @SWG\Property(property="feeWhole", type="integer"),
      *             @SWG\Property(property="feeFraction", type="integer")
      *         )
@@ -99,6 +99,7 @@ class FileApiController extends Controller
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=406, description="Invalid arguments")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="File")
      * @param Request $request
