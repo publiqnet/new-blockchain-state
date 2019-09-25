@@ -128,6 +128,9 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         if ($fromContentUnit) {
@@ -173,6 +176,9 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         $query = $this->createQueryBuilder('cu');
@@ -258,6 +264,9 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         if ($fromContentUnit) {
@@ -308,6 +317,14 @@ class ContentUnitRepository extends EntityRepository
         $date = new \DateTime();
         $date->setTimezone($timezone);
 
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->groupBy('cu2.contentId');
+
         $query = $this->createQueryBuilder('cu');
 
         return $query->select('cu')
@@ -315,6 +332,7 @@ class ContentUnitRepository extends EntityRepository
             ->where('bcu.startTimePoint <= :date')
             ->andWhere('(bcu.startTimePoint + bcu.hours * 3600) >= :date')
             ->andWhere('cu NOT IN (:excludes)')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
             ->setMaxResults($count)
             ->orderBy('RAND()')
@@ -328,6 +346,9 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         $preferenceQuery = $this->getEntityManager()
@@ -412,6 +433,9 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         $preferenceQuery = $this->getEntityManager()
@@ -448,6 +472,9 @@ class ContentUnitRepository extends EntityRepository
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
             ->groupBy('cu2.contentId');
 
         $preferenceQuery = $this->getEntityManager()
