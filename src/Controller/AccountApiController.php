@@ -536,7 +536,7 @@ class AccountApiController extends Controller
      * @param string|null $fromPublicationSlug
      * @return JsonResponse
      */
-    public function getPreferences(CUService $contentUnitService, int $publicationsCount, string $fromPublicationSlug = null)
+    public function getRecommendations(CUService $contentUnitService, int $publicationsCount, string $fromPublicationSlug = null)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -603,6 +603,12 @@ class AccountApiController extends Controller
             unset($publications[$publicationsCount]);
         }
 
-        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more]);
+        $firstArticle = false;
+        $contentUnits = $account->getAuthorContentUnits();
+        if (count($contentUnits) == 0) {
+            $firstArticle = true;
+        }
+
+        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more, 'firstArticle' => $firstArticle]);
     }
 }
