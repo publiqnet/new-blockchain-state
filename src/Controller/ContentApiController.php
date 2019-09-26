@@ -297,6 +297,8 @@ class ContentApiController extends Controller
             $broadcastResult = $blockChain->broadcast($signatureResult['transaction'], $publicKey, $signedContentUnit);
             if ($broadcastResult instanceof UriError && $broadcastResult->getUriProblemType() == UriProblemType::duplicate) {
                 return new JsonResponse(['type' => 'duplicate_uri'], Response::HTTP_CONFLICT);
+            } elseif ($broadcastResult instanceof NotEnoughBalance) {
+                return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
             } elseif (!($broadcastResult instanceof Done)) {
                 throw new Exception('Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult));
             }
