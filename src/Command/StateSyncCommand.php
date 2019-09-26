@@ -109,56 +109,6 @@ class StateSyncCommand extends ContainerAwareCommand
             return 0;
         }
 
-
-        //  GET FILES WITHOUT DETAILS
-        $files = $this->em->getRepository(\App\Entity\File::class)->findBy(['mimeType' => null]);
-        if ($files) {
-            /**
-             * @var \App\Entity\File $file
-             */
-            foreach ($files as $file) {
-                /**
-                 * @var Account[] $fileStorages
-                 */
-                $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
-                if (count($fileStorages)) {
-                    $randomStorage = rand(0, count($fileStorages) - 1);
-                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
-
-                    //  get file details
-                    if (!$file->getMimeType()) {
-                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-
-                            $this->em->persist($file);
-                            $this->em->flush();
-
-                            if ($file->getMimeType() == 'text/html') {
-                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-
-                                $fileContentUnits = $file->getContentUnits();
-                                if ($fileContentUnits) {
-                                    /**
-                                     * @var \App\Entity\ContentUnit $fileContentUnit
-                                     */
-                                    foreach ($fileContentUnits as $fileContentUnit) {
-                                        $contentUnitText = $fileContentUnit->getTextWithData();
-                                        $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
-                                        $fileContentUnit->setTextWithData($contentUnitText);
-
-                                        $this->em->persist($fileContentUnit);
-                                        $this->em->flush();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         $this->em->beginTransaction();
 
         $index = 0;
