@@ -62,7 +62,7 @@ class StateSyncCommand extends ContainerAwareCommand
     /** @var EntityManager $em */
     private $em;
 
-    /** @var SymfonyStyle $em */
+    /** @var SymfonyStyle $io */
     private $io;
 
     /** @var array $balances */
