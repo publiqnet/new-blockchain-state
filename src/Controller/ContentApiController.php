@@ -709,6 +709,14 @@ class ContentApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
+        // update user preference
+        if ($account && $contentUnit->getAuthor() != $account) {
+            $this->container->get('event_dispatcher')->dispatch(
+                UserPreferenceEvent::NAME,
+                new UserPreferenceEvent($account, $contentUnit)
+            );
+        }
+
         //  get files & find storage address
         $files = $contentUnit->getFiles();
         $contentUnitUri = $contentUnit->getUri();
@@ -842,14 +850,6 @@ class ContentApiController extends Controller
         //  check if article boosted
         $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
         $contentUnit->setBoosted($isBoosted);
-
-        // update user preference
-        if ($account && $contentUnit->getAuthor() != $account) {
-            $this->container->get('event_dispatcher')->dispatch(
-                UserPreferenceEvent::NAME,
-                new UserPreferenceEvent($account, $contentUnit)
-            );
-        }
 
         //  check if user subscribed to author
         if ($account) {
