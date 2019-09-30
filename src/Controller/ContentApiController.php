@@ -300,7 +300,7 @@ class ContentApiController extends Controller
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
                 return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
             } elseif (!($broadcastResult instanceof Done)) {
-                throw new Exception('Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult));
+                return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
 
             return new JsonResponse('', Response::HTTP_NO_CONTENT);
