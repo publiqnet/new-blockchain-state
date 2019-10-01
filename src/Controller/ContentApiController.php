@@ -687,6 +687,7 @@ class ContentApiController extends Controller
      * @SWG\Response(response=404, description="User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Content")
+     * @param Request $request
      * @param string $uri
      * @param Blockchain $blockChain
      * @param Custom $customService
@@ -695,7 +696,7 @@ class ContentApiController extends Controller
      * @return JsonResponse
      * @throws Exception
      */
-    public function content(string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
+    public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
@@ -711,11 +712,8 @@ class ContentApiController extends Controller
         }
 
         //  get / set session id & determine if view must be added
-        $userIdentifier = $this->get('session')->get('userIdentifier');
-        if (!$userIdentifier) {
-            $userIdentifier = md5(random_bytes(128));
-            $this->get('session')->set('userIdentifier', $userIdentifier);
-        }
+        $userIdentifier = $request->headers->get('User-Agent');
+        $userIdentifier = md5($userIdentifier);
 
         $date = new \DateTime();
         $timezone = new \DateTimeZone('UTC');
