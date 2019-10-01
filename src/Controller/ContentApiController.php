@@ -724,10 +724,13 @@ class ContentApiController extends Controller
             $viewLog = new UserViewLog();
             $viewLog->setContentUnit($contentUnit);
             $viewLog->setUserIdentifier($userIdentifier);
+            $viewLog->setDatetime($date->getTimestamp());
 
             $addView = true;
         } else {
             if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
+                $viewLog->setDatetime($date->getTimestamp());
+                
                 $addView = true;
             } else {
                 $addView = false;
@@ -737,7 +740,6 @@ class ContentApiController extends Controller
         if ($account) {
             $viewLog->setUser($account);
         }
-        $viewLog->setDatetime($date->getTimestamp());
         $em->persist($viewLog);
         $em->flush();
 
