@@ -147,12 +147,18 @@ class ContentUnit
      */
     private $tags;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit")
+     */
+    private $viewLogs;
+
 
     public function __construct()
     {
         $this->files = new ArrayCollection();
         $this->boosts = new ArrayCollection();
         $this->tags = new ArrayCollection();
+        $this->viewLogs = new ArrayCollection();
     }
 
     /**
@@ -478,5 +484,13 @@ class ContentUnit
     public function getTags()
     {
         return $this->tags;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViewLogs()
+    {
+        return $this->viewLogs;
     }
 }

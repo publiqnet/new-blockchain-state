@@ -9,6 +9,7 @@
 namespace App\Command;
 
 use App\Entity\Account;
+use App\Entity\Content;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -110,21 +111,36 @@ class FileDetailsCommand extends ContainerAwareCommand
                     }
                 }
 
-                if ($file->getMimeType() == 'text/html') {
-                    $fileText = $file->getContent();
-                    $fileContentUnits = $file->getContentUnits();
-                    if ($fileContentUnits) {
-                        /**
-                         * @var \App\Entity\ContentUnit $fileContentUnit
-                         */
-                        foreach ($fileContentUnits as $fileContentUnit) {
-                            $contentUnitText = $fileContentUnit->getTextWithData();
-                            $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
-                            $fileContentUnit->setTextWithData($contentUnitText);
 
-                            $this->em->persist($fileContentUnit);
-                            $this->em->flush();
+                $fileContentUnits = $file->getContentUnits();
+                if ($fileContentUnits) {
+                    /**
+                     * @var \App\Entity\ContentUnit $fileContentUnit
+                     */
+                    foreach ($fileContentUnits as $fileContentUnit) {
+                        $contentUnitText = $fileContentUnit->getTextWithData();
+
+                        if ($file->getMimeType() == 'text/html') {
+                            $fileText = $file->getContent();
+                            $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
+                        } elseif ($fileContentUnit->getContent()) {
+                            /**
+                             * @var Content $fileContent
+                             */
+                            $fileContent = $fileContentUnit->getContent();
+
+                            /**
+                             * @var Account $channel
+                             */
+                            $channel = $fileContent->getChannel();
+
+                            $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
+                            $contentUnitText = str_replace('src="' . $file->getUri() . '"', 'src="' . $fileUrl . '"', $contentUnitText);
                         }
+
+                        $fileContentUnit->setTextWithData($contentUnitText);
+                        $this->em->persist($fileContentUnit);
+                        $this->em->flush();
                     }
                 }
             }

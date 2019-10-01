@@ -18,6 +18,7 @@ use App\Entity\PublicationMember;
 use App\Entity\Subscription;
 use App\Entity\Tag;
 use App\Entity\Transaction;
+use App\Entity\UserViewLog;
 use App\Event\UserPreferenceEvent;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
@@ -709,6 +710,42 @@ class ContentApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
+        //  get / set session id & determine if view must be added
+        $userIdentifier = $this->get('session')->get('userIdentifier');
+        if (!$userIdentifier) {
+            $userIdentifier = md5(random_bytes(128));
+            $this->get('session')->set('userIdentifier', $userIdentifier);
+        }
+
+        $date = new \DateTime();
+        $timezone = new \DateTimeZone('UTC');
+        $date->setTimezone($timezone);
+
+        $viewLog = $em->getRepository(UserViewLog::class)->findOneBy(['userIdentifier' => $userIdentifier, 'contentUnit' => $contentUnit]);
+        if (!$viewLog) {
+            $viewLog = new UserViewLog();
+            $viewLog->setContentUnit($contentUnit);
+            $viewLog->setUserIdentifier($userIdentifier);
+            if ($account) {
+                $viewLog->setUser($account);
+            }
+
+            $addView = true;
+        } else {
+            if (!$viewLog->getUser() && $account) {
+                $viewLog->setUser($account);
+            }
+
+            if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
+                $addView = true;
+            } else {
+                $addView = false;
+            }
+        }
+        $viewLog->setDatetime($date->getTimestamp());
+        $em->persist($viewLog);
+        $em->flush();
+
         // update user preference
         if ($account && $contentUnit->getAuthor() != $account) {
             $this->container->get('event_dispatcher')->dispatch(
@@ -717,16 +754,76 @@ class ContentApiController extends Controller
             );
         }
 
-        //  get files & find storage address
-        $files = $contentUnit->getFiles();
-        $contentUnitUri = $contentUnit->getUri();
-        if ($files) {
-            $fileStorageUrls = [];
+        if ($addView) {
+            //  get files & find storage address
+            $files = $contentUnit->getFiles();
+            $contentUnitUri = $contentUnit->getUri();
+            if ($files) {
+                $fileStorageUrls = [];
 
-            /**
-             * @var File $file
-             */
-            foreach ($files as $file) {
+                /**
+                 * @var File $file
+                 */
+                foreach ($files as $file) {
+                    /**
+                     * @var Account[] $fileStorages
+                     */
+                    $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
+                    if (count($fileStorages)) {
+                        $randomStorage = rand(0, count($fileStorages) - 1);
+                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                        $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
+                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
+
+                        $file->setUrl($fileUrl);
+
+                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                    } elseif ($contentUnit->getContent()) {
+                        /**
+                         * @var \App\Entity\Content $content
+                         */
+                        $content = $contentUnit->getContent();
+
+                        /**
+                         * @var Account $channel
+                         */
+                        $channel = $content->getChannel();
+
+                        $storageUrl = $channel->getUrl();
+                        $storageAddress = $channel->getPublicKey();
+                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+
+                        $file->setUrl($fileUrl);
+
+                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                    } else {
+                        $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
+                    }
+                }
+
+                //  replace file uri to url
+                try {
+                    foreach ($fileStorageUrls as $uri => $fileStorageData) {
+                        $contentUnitText = $contentUnit->getText();
+                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
+                        $contentUnit->setText($contentUnitText);
+
+                        //  inform Blockchain about served files
+                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                    }
+                } catch (Exception $e) {
+                    $logger->error($e->getMessage());
+                }
+            }
+        } else {
+            $contentUnit->setText($contentUnit->getTextWithData());
+
+            if ($contentUnit->getCover()) {
+                /**
+                 * @var File $file
+                 */
+                $file = $contentUnit->getCover();
+
                 /**
                  * @var Account[] $fileStorages
                  */
@@ -734,12 +831,9 @@ class ContentApiController extends Controller
                 if (count($fileStorages)) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                    $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
                     $file->setUrl($fileUrl);
-
-                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
                 } elseif ($contentUnit->getContent()) {
                     /**
                      * @var \App\Entity\Content $content
@@ -752,29 +846,10 @@ class ContentApiController extends Controller
                     $channel = $content->getChannel();
 
                     $storageUrl = $channel->getUrl();
-                    $storageAddress = $channel->getPublicKey();
                     $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
                     $file->setUrl($fileUrl);
-
-                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                } else {
-                    $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
                 }
-            }
-
-            //  replace file uri to url
-            try {
-                foreach ($fileStorageUrls as $uri => $fileStorageData) {
-                    $contentUnitText = $contentUnit->getText();
-                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
-                    $contentUnit->setText($contentUnitText);
-
-                    //  inform Blockchain about served files
-                    $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
-                }
-            } catch (Exception $e) {
-                $logger->error($e->getMessage());
             }
         }
 
@@ -869,6 +944,11 @@ class ContentApiController extends Controller
 
         $contentUnit = $contentUnitService->prepareTags($contentUnit, false);
         $contentUnit['related'] = $relatedArticles;
+
+        //  remove files field if served from local
+        if (!$addView) {
+            unset($contentUnit['files']);
+        }
 
         return new JsonResponse($contentUnit);
     }
