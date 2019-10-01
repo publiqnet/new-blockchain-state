@@ -711,8 +711,8 @@ class ContentApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
-        //  get / set session id & determine if view must be added
-        $userIdentifier = $request->headers->get('User-Agent');
+        //  get user info & determine if view must be added
+        $userIdentifier = $request->headers->get('User-Agent') . '; IP ' . $request->getClientIp();
         $userIdentifier = md5($userIdentifier);
 
         $date = new \DateTime();
@@ -724,21 +724,18 @@ class ContentApiController extends Controller
             $viewLog = new UserViewLog();
             $viewLog->setContentUnit($contentUnit);
             $viewLog->setUserIdentifier($userIdentifier);
-            if ($account) {
-                $viewLog->setUser($account);
-            }
 
             $addView = true;
         } else {
-            if (!$viewLog->getUser() && $account) {
-                $viewLog->setUser($account);
-            }
-
             if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
                 $addView = true;
             } else {
                 $addView = false;
             }
+        }
+
+        if ($account) {
+            $viewLog->setUser($account);
         }
         $viewLog->setDatetime($date->getTimestamp());
         $em->persist($viewLog);
