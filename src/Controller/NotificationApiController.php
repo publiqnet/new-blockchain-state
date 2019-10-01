@@ -55,6 +55,37 @@ class NotificationApiController extends Controller
     }
 
     /**
+     * @Route("/seen-all", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Mark all notifications as seen",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Notification")
+     * @return JsonResponse
+     */
+    public function markAllAsSeen()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
+
+        $em->getRepository(UserNotification::class)->markAllAsSeen($account);
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
      * @Route("/read/{notificationId}", methods={"POST"})
      * @SWG\Post(
      *     summary="Mark notification as reed",
@@ -214,6 +245,7 @@ class NotificationApiController extends Controller
         }
 
         $unreadNotifications = $em->getRepository(UserNotification::class)->getUserUnreadNotifications($account, $count, $fromId);
+        $unseenNotifications = $em->getRepository(UserNotification::class)->getUserUnseenNotifications($account);
 
         $notifications = $em->getRepository(Notification::class)->getUserNotifications($account, $count, $fromId);
         $notifications = $this->get('serializer')->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase']]);
@@ -230,6 +262,6 @@ class NotificationApiController extends Controller
             $notificationsRewrited[] = $notification;
         }
 
-        return new JsonResponse(['notifications' => $notificationsRewrited, 'unreadCount' => count($unreadNotifications)]);
+        return new JsonResponse(['notifications' => $notificationsRewrited, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]);
     }
 }

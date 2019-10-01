@@ -50,6 +50,13 @@ class UserNotification
     private $isRead = false;
 
     /**
+     * @var bool
+     * @ORM\Column(name="is_seen", type="boolean")
+     * @Groups({"userNotification"})
+     */
+    private $isSeen = false;
+
+    /**
      * @return int
      */
     public function getId(): int
@@ -103,5 +110,21 @@ class UserNotification
     public function setIsRead(bool $isRead)
     {
         $this->isRead = $isRead;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSeen(): bool
+    {
+        return $this->isSeen;
+    }
+
+    /**
+     * @param bool $isSeen
+     */
+    public function setIsSeen(bool $isSeen)
+    {
+        $this->isSeen = $isSeen;
     }
 }
