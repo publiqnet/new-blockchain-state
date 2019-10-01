@@ -712,8 +712,15 @@ class ContentApiController extends Controller
         }
 
         //  get user info & determine if view must be added
-        $userIdentifier = $request->headers->get('User-Agent') . '; IP ' . $request->getClientIp();
-        $userIdentifier = md5($userIdentifier);
+        $userInfo = [];
+        $userInfo['userAgent'] = $request->headers->get('User-Agent');
+        $userInfo['acceptableContentTypes'] = $request->getAcceptableContentTypes();
+        $userInfo['clientIp'] = $request->getClientIp();
+        $userInfo['mimeType'] = $request->getMimeType('string');
+        $userInfo['charset'] = $request->getCharsets();
+        $userInfo['encodings'] = $request->getEncodings();
+        $userInfo['userInfo'] = $request->getUserInfo();
+        $userIdentifier = md5(serialize($userInfo));
 
         $date = new \DateTime();
         $timezone = new \DateTimeZone('UTC');
@@ -730,7 +737,7 @@ class ContentApiController extends Controller
         } else {
             if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
                 $viewLog->setDatetime($date->getTimestamp());
-                
+
                 $addView = true;
             } else {
                 $addView = false;
