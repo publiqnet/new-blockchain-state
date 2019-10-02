@@ -12,8 +12,12 @@ use App\Entity\Block;
 use App\Entity\File;
 use App\Entity\Account;
 use App\Entity\Transaction;
+use App\Entity\UserViewLog;
+use App\Entity\ContentUnit;
+use App\Entity\UserViewLogHistory;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 class Custom
 {
@@ -249,5 +253,67 @@ class Custom
         }
 
         return [$feeWhole, $feeFraction];
+    }
+
+    /**
+     * @param Request $request
+     * @param ContentUnit $contentUnit
+     * @param $account
+     * @return bool
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
+    public function viewLog(Request $request, ContentUnit $contentUnit, $account)
+    {
+        //  generate fingerprint by request
+        $userInfo = [];
+        $userInfo['userAgent'] = $request->headers->get('User-Agent');
+        $userInfo['acceptableContentTypes'] = $request->getAcceptableContentTypes();
+        $userInfo['clientIp'] = $request->getClientIp();
+        $userInfo['mimeType'] = $request->getMimeType('string');
+        $userInfo['charset'] = $request->getCharsets();
+        $userInfo['encodings'] = $request->getEncodings();
+        $userInfo['userInfo'] = $request->getUserInfo();
+        $userIdentifier = md5(serialize($userInfo));
+
+        $date = new \DateTime();
+        $timezone = new \DateTimeZone('UTC');
+        $date->setTimezone($timezone);
+
+        $viewLog = $this->em->getRepository(UserViewLog::class)->findOneBy(['userIdentifier' => $userIdentifier, 'contentUnit' => $contentUnit]);
+        if (!$viewLog) {
+            $viewLog = new UserViewLog();
+            $viewLog->setContentUnit($contentUnit);
+            $viewLog->setUserIdentifier($userIdentifier);
+            $viewLog->setDatetime($date->getTimestamp());
+
+            $addView = true;
+        } else {
+            if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
+                $viewLog->setDatetime($date->getTimestamp());
+
+                $addView = true;
+            } else {
+                $addView = false;
+            }
+        }
+
+        if ($account) {
+            $viewLog->setUser($account);
+        }
+        $this->em->persist($viewLog);
+
+        //  insert data into history
+        $viewLogHistory = new UserViewLogHistory();
+        $viewLogHistory->setContentUnit($contentUnit);
+        $viewLogHistory->setUserIdentifier($userIdentifier);
+        $viewLogHistory->setDatetime($date->getTimestamp());
+        if ($account) {
+            $viewLogHistory->setUser($account);
+        }
+        $this->em->persist($viewLogHistory);
+        $this->em->flush();
+
+        return $addView;
     }
 }

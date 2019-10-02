@@ -18,7 +18,6 @@ use App\Entity\PublicationMember;
 use App\Entity\Subscription;
 use App\Entity\Tag;
 use App\Entity\Transaction;
-use App\Entity\UserViewLog;
 use App\Event\UserPreferenceEvent;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
@@ -712,43 +711,7 @@ class ContentApiController extends Controller
         }
 
         //  get user info & determine if view must be added
-        $userInfo = [];
-        $userInfo['userAgent'] = $request->headers->get('User-Agent');
-        $userInfo['acceptableContentTypes'] = $request->getAcceptableContentTypes();
-        $userInfo['clientIp'] = $request->getClientIp();
-        $userInfo['mimeType'] = $request->getMimeType('string');
-        $userInfo['charset'] = $request->getCharsets();
-        $userInfo['encodings'] = $request->getEncodings();
-        $userInfo['userInfo'] = $request->getUserInfo();
-        $userIdentifier = md5(serialize($userInfo));
-
-        $date = new \DateTime();
-        $timezone = new \DateTimeZone('UTC');
-        $date->setTimezone($timezone);
-
-        $viewLog = $em->getRepository(UserViewLog::class)->findOneBy(['userIdentifier' => $userIdentifier, 'contentUnit' => $contentUnit]);
-        if (!$viewLog) {
-            $viewLog = new UserViewLog();
-            $viewLog->setContentUnit($contentUnit);
-            $viewLog->setUserIdentifier($userIdentifier);
-            $viewLog->setDatetime($date->getTimestamp());
-
-            $addView = true;
-        } else {
-            if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
-                $viewLog->setDatetime($date->getTimestamp());
-
-                $addView = true;
-            } else {
-                $addView = false;
-            }
-        }
-
-        if ($account) {
-            $viewLog->setUser($account);
-        }
-        $em->persist($viewLog);
-        $em->flush();
+        $addView = $customService->viewLog($request, $contentUnit, $account);
 
         // update user preference
         if ($account && $contentUnit->getAuthor() != $account) {
@@ -975,7 +938,6 @@ class ContentApiController extends Controller
     public function contentSeo(string $uri, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
-        $channelAddress = $this->getParameter('channel_address');
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
@@ -999,7 +961,7 @@ class ContentApiController extends Controller
                 $storageUrl = $fileStorages[$randomStorage]->getUrl();
                 $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
 
-                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
             } elseif ($contentUnit->getContent()) {
                 /**
                  * @var \App\Entity\Content $content
@@ -1014,7 +976,7 @@ class ContentApiController extends Controller
                 $storageUrl = $channel->getUrl();
                 $storageAddress = $channel->getPublicKey();
 
-                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress);
+                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
             }
 
             $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
