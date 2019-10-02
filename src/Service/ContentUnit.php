@@ -129,6 +129,10 @@ class ContentUnit
 
             //  check boosts
             if ($contentUnit->getBoosts()) {
+                $timezone = new \DateTimeZone('UTC');
+                $date = new \DateTime();
+                $date->setTimezone($timezone);
+
                 $boosts = $contentUnit->getBoosts();
 
                 /**
@@ -137,10 +141,12 @@ class ContentUnit
                 foreach ($boosts as $boost) {
                     if ($boost->isCancelled()) {
                         $boost->setStatus('cancelled');
+                    } elseif (($boost->getStartTimePoint() + $boost->getHours() * 3600) < $date->getTimestamp()) {
+                        $boost->setStatus('finished');
                     } elseif (!$boost->getTransaction()->getBlock()) {
                         $boost->setStatus('pending');
                     } else {
-                        $boost->setStatus('confirmed');
+                        $boost->setStatus('active');
                     }
                 }
             }
