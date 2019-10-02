@@ -72,6 +72,12 @@ class BoostedContentUnit
      */
     private $fraction;
 
+    /**
+     * @var string
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
+     */
+    private $status;
+
 
     /**
      * @return mixed
@@ -207,5 +213,21 @@ class BoostedContentUnit
     public function setFraction($fraction)
     {
         $this->fraction = $fraction;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param string $status
+     */
+    public function setStatus(string $status)
+    {
+        $this->status = $status;
     }
 }

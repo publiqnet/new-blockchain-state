@@ -126,6 +126,24 @@ class ContentUnit
             } else {
                 $contentUnit->setStatus('pending');
             }
+
+            //  check boosts
+            if ($contentUnit->getBoosts()) {
+                $boosts = $contentUnit->getBoosts();
+
+                /**
+                 * @var BoostedContentUnit $boost
+                 */
+                foreach ($boosts as $boost) {
+                    if ($boost->isCancelled()) {
+                        $boost->setStatus('cancelled');
+                    } elseif (!$boost->getTransaction()->getBlock()) {
+                        $boost->setStatus('pending');
+                    } else {
+                        $boost->setStatus('confirmed');
+                    }
+                }
+            }
         }
 
         return $contentUnits;
