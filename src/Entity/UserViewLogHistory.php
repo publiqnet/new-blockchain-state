@@ -46,6 +46,12 @@ class UserViewLogHistory
     private $userIdentifier;
 
     /**
+     * @var string
+     * @ORM\Column(name="ip", type="string", length=32, nullable=true)
+     */
+    private $ip;
+
+    /**
      * @var int
      * @ORM\Column(name="datetime", type="integer")
      */
@@ -105,6 +111,22 @@ class UserViewLogHistory
     public function setUserIdentifier(string $userIdentifier)
     {
         $this->userIdentifier = $userIdentifier;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getIp()
+    {
+        return $this->ip;
+    }
+
+    /**
+     * @param string $ip
+     */
+    public function setIp(string $ip)
+    {
+        $this->ip = $ip;
     }
 
     /**
