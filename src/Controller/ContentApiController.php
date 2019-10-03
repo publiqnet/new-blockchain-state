@@ -699,6 +699,7 @@ class ContentApiController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
+        $removeFilesFromResponse = true;
 
         /**
          * @var Account $account
@@ -723,6 +724,8 @@ class ContentApiController extends Controller
 
         //  if viewer is article author return full data without adding view
         if ($account && $contentUnit->getAuthor() == $account) {
+            $removeFilesFromResponse = false;
+
             //  get files & find storage address
             $files = $contentUnit->getFiles();
             if ($files) {
@@ -776,6 +779,8 @@ class ContentApiController extends Controller
             }
         } else {
             if ($addView) {
+                $removeFilesFromResponse = false;
+
                 //  get files & find storage address
                 $files = $contentUnit->getFiles();
                 $contentUnitUri = $contentUnit->getUri();
@@ -957,7 +962,7 @@ class ContentApiController extends Controller
         $contentUnit['related'] = $relatedArticles;
 
         //  remove files field if served from local
-        if (!$addView) {
+        if ($removeFilesFromResponse) {
             unset($contentUnit['files']);
         }
 
