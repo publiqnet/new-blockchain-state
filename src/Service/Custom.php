@@ -307,6 +307,7 @@ class Custom
         $viewLogHistory = new UserViewLogHistory();
         $viewLogHistory->setContentUnit($contentUnit);
         $viewLogHistory->setUserIdentifier($userIdentifier);
+        $viewLogHistory->setIp($request->getClientIp());
         $viewLogHistory->setDatetime($date->getTimestamp());
         if ($account) {
             $viewLogHistory->setUser($account);
