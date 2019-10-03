@@ -18,9 +18,10 @@ use Doctrine\ORM\EntityRepository;
 class TagRepository extends EntityRepository
 {
     /**
+     * @param int $count
      * @return array|null
      */
-    public function getTagsByPopularity()
+    public function getTagsByPopularity(int $count = 50)
     {
         $subQuery = $this->getEntityManager()
             ->createQuery("
@@ -41,6 +42,7 @@ class TagRepository extends EntityRepository
             ->addOrderBy('totalCount', 'DESC')
             ->addOrderBy('t.name', 'ASC')
             ->groupBy('t.id')
+            ->setMaxResults($count)
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
     }

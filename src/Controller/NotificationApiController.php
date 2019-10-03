@@ -244,10 +244,10 @@ class NotificationApiController extends Controller
             return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
         }
 
-        $unreadNotifications = $em->getRepository(UserNotification::class)->getUserUnreadNotifications($account, $count, $fromId);
+        $unreadNotifications = $em->getRepository(UserNotification::class)->getUserUnreadNotifications($account);
         $unseenNotifications = $em->getRepository(UserNotification::class)->getUserUnseenNotifications($account);
 
-        $notifications = $em->getRepository(Notification::class)->getUserNotifications($account, $count, $fromId);
+        $notifications = $em->getRepository(Notification::class)->getUserNotifications($account, $count + 1, $fromId);
         $notifications = $this->get('serializer')->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase']]);
 
         $notificationsRewrited = [];
@@ -262,6 +262,12 @@ class NotificationApiController extends Controller
             $notificationsRewrited[] = $notification;
         }
 
-        return new JsonResponse(['notifications' => $notificationsRewrited, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]);
+        $more = false;
+        if (count($notificationsRewrited) > $count) {
+            unset($notificationsRewrited[$count]);
+            $more = true;
+        }
+
+        return new JsonResponse(['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]);
     }
 }
