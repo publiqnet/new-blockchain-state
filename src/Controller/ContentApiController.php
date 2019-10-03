@@ -998,37 +998,27 @@ class ContentApiController extends Controller
              * @var File $file
              */
             $file = $contentUnit->getCover();
-            $storageUrl = '';
-            $storageAddress = '';
 
-            /**
-             * @var Account[] $fileStorages
-             */
-            $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-            if (count($fileStorages)) {
-                $randomStorage = rand(0, count($fileStorages) - 1);
-                $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-
-                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
-            } elseif ($contentUnit->getContent()) {
-                /**
-                 * @var \App\Entity\Content $content
-                 */
-                $content = $contentUnit->getContent();
-
+            if ($contentUnit->getContent()) {
                 /**
                  * @var Account $channel
                  */
-                $channel = $content->getChannel();
-
+                $channel = $contentUnit->getContent()->getChannel();
                 $storageUrl = $channel->getUrl();
-                $storageAddress = $channel->getPublicKey();
 
                 $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
-            }
+            } else {
+                /**
+                 * @var Account[] $fileStorages
+                 */
+                $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
+                if (count($fileStorages)) {
+                    $randomStorage = rand(0, count($fileStorages) - 1);
+                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
 
-            $fileStorageUrls[$file->getUri()] = ['url' => $storageUrl, 'address' => $storageAddress];
+                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
+                }
+            }
         }
 
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitSeo', 'file', 'accountBase']]);
