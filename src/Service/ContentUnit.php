@@ -77,15 +77,9 @@ class ContentUnit
             $coverFile = $contentUnit->getCover();
             if ($coverFile && $contentUnit->getContent()) {
                 /**
-                 * @var \App\Entity\Content $content
-                 */
-                $content = $contentUnit->getContent();
-
-                /**
                  * @var Account $channel
                  */
-                $channel = $content->getChannel();
-
+                $channel = $contentUnit->getContent()->getChannel();
                 $storageUrl = $channel->getUrl();
 
                 $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
