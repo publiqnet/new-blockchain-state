@@ -164,7 +164,7 @@ class FileApiController extends Controller
                         } elseif ($broadcastResult instanceof NotEnoughBalance) {
                             return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
                         } else {
-                            throw new Exception('Broadcasting failed for URI: ' . $file['uri'] . '; Error type: ' . get_class($broadcastResult));
+                            return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $file['uri'] . '; Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
                         }
                     }
                 }

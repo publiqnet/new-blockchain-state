@@ -59,6 +59,10 @@ class FeeApiController extends Controller
             $firstArticle = true;
         }
 
-        return new JsonResponse(['whole' => $feeWhole, 'fraction' => $feeFraction, 'firstArticle' => $firstArticle]);
+        $date = new \DateTime();
+        $timezone = new \DateTimeZone('UTC');
+        $date->setTimezone($timezone);
+
+        return new JsonResponse(['whole' => $feeWhole, 'fraction' => $feeFraction, 'firstArticle' => $firstArticle, 'currentTime' => $date->getTimestamp()]);
     }
 }

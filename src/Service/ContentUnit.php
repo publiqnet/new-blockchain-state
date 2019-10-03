@@ -77,15 +77,9 @@ class ContentUnit
             $coverFile = $contentUnit->getCover();
             if ($coverFile && $contentUnit->getContent()) {
                 /**
-                 * @var \App\Entity\Content $content
-                 */
-                $content = $contentUnit->getContent();
-
-                /**
                  * @var Account $channel
                  */
-                $channel = $content->getChannel();
-
+                $channel = $contentUnit->getContent()->getChannel();
                 $storageUrl = $channel->getUrl();
 
                 $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
@@ -125,6 +119,30 @@ class ContentUnit
                 $contentUnit->setStatus('confirmed');
             } else {
                 $contentUnit->setStatus('pending');
+            }
+
+            //  check boosts
+            if ($contentUnit->getBoosts()) {
+                $timezone = new \DateTimeZone('UTC');
+                $date = new \DateTime();
+                $date->setTimezone($timezone);
+
+                $boosts = $contentUnit->getBoosts();
+
+                /**
+                 * @var BoostedContentUnit $boost
+                 */
+                foreach ($boosts as $boost) {
+                    if ($boost->isCancelled()) {
+                        $boost->setStatus('cancelled');
+                    } elseif (($boost->getStartTimePoint() + $boost->getHours() * 3600) < $date->getTimestamp()) {
+                        $boost->setStatus('finished');
+                    } elseif (!$boost->getTransaction()->getBlock()) {
+                        $boost->setStatus('pending');
+                    } else {
+                        $boost->setStatus('active');
+                    }
+                }
             }
         }
 

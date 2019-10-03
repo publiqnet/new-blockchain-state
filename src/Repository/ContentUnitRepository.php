@@ -63,12 +63,25 @@ class ContentUnitRepository extends EntityRepository
      */
     public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null, $self = false)
     {
-        $subQuery = $this->createQueryBuilder('cu2');
-        $subQuery
-            ->select('max(cu2.id)')
-            ->where('cu2.author = :author')
-            ->setParameter('author', $account)
-            ->groupBy('cu2.contentId');
+        if ($self) {
+            $subQuery = $this->createQueryBuilder('cu2');
+            $subQuery
+                ->select('max(cu2.id)')
+                ->where('cu2.author = :author')
+                ->andWhere('cu2.content is not null')
+                ->setParameter('author', $account)
+                ->groupBy('cu2.contentId');
+        } else {
+            $subQuery = $this->createQueryBuilder('cu2');
+            $subQuery
+                ->select('max(cu2.id)')
+                ->join('cu2.transaction', 't2')
+                ->where('cu2.author = :author')
+                ->andWhere('t2.block is not null')
+                ->andWhere('cu2.content is not null')
+                ->setParameter('author', $account)
+                ->groupBy('cu2.contentId');
+        }
 
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
@@ -76,14 +89,8 @@ class ContentUnitRepository extends EntityRepository
             $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
-                ->where('cu.content is not null')
-                ->andWhere('cu.author = :author')
-                ->andWhere('cu.id < :fromId')
+                ->where('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()));
-
-            if (!$self) {
-                $query->andWhere('t.block is not null');
-            }
 
             return $query->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
                 ->setMaxResults($count)
@@ -96,20 +103,9 @@ class ContentUnitRepository extends EntityRepository
             $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
-                ->where('cu.content is not null')
-                ->andWhere('cu.author = :author')
-                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-                ->setParameter('author', $account)
-                ->setMaxResults($count)
-                ->orderBy('cu.id', 'desc')
-                ->getQuery()
-                ->getResult();
+                ->where($query->expr()->in('cu.id', $subQuery->getDQL()));
 
-            if (!$self) {
-                $query->andWhere('t.block is not null');
-            }
-
-            return $query->setParameter('author', $account)
+            return $query->setParameters(['author' => $account])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()

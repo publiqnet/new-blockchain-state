@@ -9,6 +9,7 @@
 namespace App\Command;
 
 use App\Entity\Account;
+use App\Entity\Content;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -79,49 +80,67 @@ class FileDetailsCommand extends ContainerAwareCommand
         }
 
         //  GET FILES WITHOUT DETAILS
-        $files = $this->em->getRepository(\App\Entity\File::class)->findBy(['mimeType' => null]);
+        $files = $this->em->getRepository(\App\Entity\File::class)->findAll();
         if ($files) {
             /**
              * @var \App\Entity\File $file
              */
             foreach ($files as $file) {
-                /**
-                 * @var Account[] $fileStorages
-                 */
-                $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
-                if (count($fileStorages)) {
-                    $randomStorage = rand(0, count($fileStorages) - 1);
-                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                //  get file details
+                if (!$file->getMimeType()) {
+                    /**
+                     * @var Account[] $fileStorages
+                     */
+                    $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
+                    if (count($fileStorages)) {
+                        $randomStorage = rand(0, count($fileStorages) - 1);
+                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
 
-                    //  get file details
-                    if (!$file->getMimeType()) {
                         $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
                         if ($fileDetails instanceof StorageFileDetailsResponse) {
                             $file->setMimeType($fileDetails->getMimeType());
                             $file->setSize($fileDetails->getSize());
+                            if ($file->getMimeType() == 'text/html') {
+                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
+                                $file->setContent($fileText);
+                            }
 
                             $this->em->persist($file);
                             $this->em->flush();
-
-                            if ($file->getMimeType() == 'text/html') {
-                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-
-                                $fileContentUnits = $file->getContentUnits();
-                                if ($fileContentUnits) {
-                                    /**
-                                     * @var \App\Entity\ContentUnit $fileContentUnit
-                                     */
-                                    foreach ($fileContentUnits as $fileContentUnit) {
-                                        $contentUnitText = $fileContentUnit->getTextWithData();
-                                        $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
-                                        $fileContentUnit->setTextWithData($contentUnitText);
-
-                                        $this->em->persist($fileContentUnit);
-                                        $this->em->flush();
-                                    }
-                                }
-                            }
                         }
+                    }
+                }
+
+
+                $fileContentUnits = $file->getContentUnits();
+                if ($fileContentUnits) {
+                    /**
+                     * @var \App\Entity\ContentUnit $fileContentUnit
+                     */
+                    foreach ($fileContentUnits as $fileContentUnit) {
+                        $contentUnitText = $fileContentUnit->getTextWithData();
+
+                        if ($file->getMimeType() == 'text/html') {
+                            $fileText = $file->getContent();
+                            $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
+                        } elseif ($fileContentUnit->getContent()) {
+                            /**
+                             * @var Content $fileContent
+                             */
+                            $fileContent = $fileContentUnit->getContent();
+
+                            /**
+                             * @var Account $channel
+                             */
+                            $channel = $fileContent->getChannel();
+
+                            $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
+                            $contentUnitText = str_replace('src="' . $file->getUri() . '"', 'src="' . $fileUrl . '"', $contentUnitText);
+                        }
+
+                        $fileContentUnit->setTextWithData($contentUnitText);
+                        $this->em->persist($fileContentUnit);
+                        $this->em->flush();
                     }
                 }
             }

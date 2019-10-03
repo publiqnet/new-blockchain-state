@@ -30,6 +30,18 @@ class UserNotificationRepository extends EntityRepository
         return $query->execute();
     }
 
+    public function markAllAsSeen(Account $account)
+    {
+        $query = $this->createQueryBuilder('un')
+            ->update()
+            ->where('un.account = :account')
+            ->setParameter('account', $account)
+            ->andWhere('un.isSeen = 0')
+            ->set('un.isSeen', true)
+            ->getQuery();
+        return $query->execute();
+    }
+
     public function getUserNotifications(Account $account, int $count = 0, int $fromId = 0)
     {
         $query = $this->createQueryBuilder('un')
@@ -74,6 +86,21 @@ class UserNotificationRepository extends EntityRepository
             $query
                 ->setMaxResults($count);
         }
+
+        return $query
+            ->orderBy('un.id', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getUserUnseenNotifications(Account $account)
+    {
+        $query = $this->createQueryBuilder('un')
+            ->select('un, n')
+            ->join('un.notification', 'n')
+            ->where('un.account = :account')
+            ->setParameter('account', $account)
+            ->andWhere('un.isSeen = 0');
 
         return $query
             ->orderBy('un.id', 'desc')

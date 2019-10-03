@@ -47,6 +47,12 @@ class File
     private $size;
 
     /**
+     * @ORM\Column(name="content", type="text", nullable=true)
+     * @Groups({"file"})
+     */
+    private $content;
+
+    /**
      * @Groups({"file"})
      */
     private $url;
@@ -137,6 +143,22 @@ class File
     public function setSize($size)
     {
         $this->size = $size;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getContent()
+    {
+        return $this->content;
+    }
+
+    /**
+     * @param mixed $content
+     */
+    public function setContent($content)
+    {
+        $this->content = $content;
     }
 
     /**
