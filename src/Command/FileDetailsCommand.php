@@ -10,6 +10,8 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\Content;
+use App\Entity\ContentUnit;
+use App\Entity\File;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -75,15 +77,20 @@ class FileDetailsCommand extends ContainerAwareCommand
     {
         if (!$this->lock()) {
             $output->writeln('The command is already running in another process.');
-
             return 0;
         }
 
+        //  GET LAST CONTENT UNIT & ALL CONTENTS WITHOUT DATA CHECKED
+        $contentUnit = $this->em->getRepository(ContentUnit::class)->findBy([], ['id' => 'DESC'], 1);
+        $lastContentUnit = $contentUnit[0];
+
+        $contentUnitsToUpdate = $this->em->getRepository(ContentUnit::class)->findBy(['textWithDataChecked' => 0]);
+
         //  GET FILES WITHOUT DETAILS
-        $files = $this->em->getRepository(\App\Entity\File::class)->findAll();
+        $files = $this->em->getRepository(File::class)->findAll();
         if ($files) {
             /**
-             * @var \App\Entity\File $file
+             * @var File $file
              */
             foreach ($files as $file) {
                 //  get file details
@@ -111,13 +118,16 @@ class FileDetailsCommand extends ContainerAwareCommand
                     }
                 }
 
-
                 $fileContentUnits = $file->getContentUnits();
                 if ($fileContentUnits) {
                     /**
                      * @var \App\Entity\ContentUnit $fileContentUnit
                      */
                     foreach ($fileContentUnits as $fileContentUnit) {
+                        if ($fileContentUnit->isTextWithDataChecked()) {
+                            continue;
+                        }
+
                         $contentUnitText = $fileContentUnit->getTextWithData();
 
                         if ($file->getMimeType() == 'text/html') {
@@ -143,6 +153,16 @@ class FileDetailsCommand extends ContainerAwareCommand
                         $this->em->flush();
                     }
                 }
+            }
+
+            if ($contentUnitsToUpdate) {
+                foreach ($contentUnitsToUpdate as $contentUnit) {
+                    if ($contentUnit->getId() < $lastContentUnit->getId()) {
+                        $contentUnit->setTextWithDataChecked(true);
+                        $this->em->persist($contentUnit);
+                    }
+                }
+                $this->em->flush();
             }
         }
 
