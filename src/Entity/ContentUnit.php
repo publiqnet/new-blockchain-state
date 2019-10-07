@@ -153,9 +153,14 @@ class ContentUnit
     private $tags;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit")
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit", cascade={"remove"})
      */
     private $viewLogs;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLogHistory", mappedBy="contentUnit", cascade={"remove"})
+     */
+    private $viewLogsHistory;
 
 
     public function __construct()
@@ -164,6 +169,7 @@ class ContentUnit
         $this->boosts = new ArrayCollection();
         $this->tags = new ArrayCollection();
         $this->viewLogs = new ArrayCollection();
+        $this->viewLogsHistory = new ArrayCollection();
     }
 
     /**
@@ -513,5 +519,13 @@ class ContentUnit
     public function getViewLogs()
     {
         return $this->viewLogs;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViewLogsHistory()
+    {
+        return $this->viewLogsHistory;
     }
 }

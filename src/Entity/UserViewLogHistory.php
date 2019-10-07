@@ -34,7 +34,7 @@ class UserViewLogHistory
 
     /**
      * @var ContentUnit
-     * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit")
+     * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="viewLogs")
      * @ORM\JoinColumn(name="content_unit_id", referencedColumnName="id", nullable=false)
      */
     private $contentUnit;
