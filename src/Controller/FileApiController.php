@@ -137,6 +137,17 @@ class FileApiController extends Controller
             if (is_array($files)) {
                 $duplicateFiles = [];
                 foreach ($files as $file) {
+                    $fileEntity = $em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $file['uri']]);
+                    if ($fileEntity) {
+                        /**
+                         * @var Account $fileEntityAuthor
+                         */
+                        $fileEntityAuthor = $fileEntity->getAuthor();
+                        $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getPublicKey(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
+
+                        continue;
+                    }
+
                     $action = new File();
                     $action->setUri($file['uri']);
                     $action->addAuthorAddresses($publicKey);

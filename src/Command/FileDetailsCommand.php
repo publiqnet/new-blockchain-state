@@ -108,6 +108,20 @@ class FileDetailsCommand extends ContainerAwareCommand
                             $this->em->persist($file);
                             $this->em->flush();
                         }
+                    } else {
+                        $storageUrl = $this->getContainer()->getParameter('channel_storage_endpoint');
+                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
+                        if ($fileDetails instanceof StorageFileDetailsResponse) {
+                            $file->setMimeType($fileDetails->getMimeType());
+                            $file->setSize($fileDetails->getSize());
+                            if ($file->getMimeType() == 'text/html') {
+                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
+                                $file->setContent($fileText);
+                            }
+
+                            $this->em->persist($file);
+                            $this->em->flush();
+                        }
                     }
                 }
 
