@@ -59,6 +59,11 @@ class ContentUnit
     private $textWithData;
 
     /**
+     * @ORM\Column(name="text_with_data_checked", type="boolean")
+     */
+    private $textWithDataChecked = 0;
+
+    /**
      * @ORM\Column(name="views", type="integer", nullable=true)
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
@@ -247,6 +252,22 @@ class ContentUnit
     public function setTextWithData($textWithData)
     {
         $this->textWithData = $textWithData;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isTextWithDataChecked()
+    {
+        return $this->textWithDataChecked;
+    }
+
+    /**
+     * @param mixed $textWithDataChecked
+     */
+    public function setTextWithDataChecked($textWithDataChecked)
+    {
+        $this->textWithDataChecked = $textWithDataChecked;
     }
 
     /**

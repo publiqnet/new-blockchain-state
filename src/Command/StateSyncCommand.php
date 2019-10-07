@@ -334,6 +334,10 @@ class StateSyncCommand extends ContainerAwareCommand
                                                 if ($fileDetails instanceof StorageFileDetailsResponse) {
                                                     $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
                                                     $contentUnitEntityFile->setSize($fileDetails->getSize());
+                                                    if ($fileDetails->getMimeType() == 'text/html') {
+                                                        $fileText = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $contentUnitEntityFile->getUri());
+                                                        $contentUnitEntityFile->setContent($fileText);
+                                                    }
 
                                                     $this->em->persist($contentUnitEntityFile);
                                                 }
@@ -808,6 +812,10 @@ class StateSyncCommand extends ContainerAwareCommand
                                         if ($fileDetails instanceof StorageFileDetailsResponse) {
                                             $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
                                             $contentUnitEntityFile->setSize($fileDetails->getSize());
+                                            if ($fileDetails->getMimeType() == 'text/html') {
+                                                $fileText = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $contentUnitEntityFile->getUri());
+                                                $contentUnitEntityFile->setContent($fileText);
+                                            }
 
                                             $this->em->persist($contentUnitEntityFile);
                                         }
