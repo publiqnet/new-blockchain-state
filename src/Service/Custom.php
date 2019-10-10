@@ -11,6 +11,7 @@ namespace App\Service;
 use App\Entity\Block;
 use App\Entity\File;
 use App\Entity\Account;
+use App\Entity\Publication;
 use App\Entity\Transaction;
 use App\Entity\UserViewLog;
 use App\Entity\ContentUnit;
@@ -398,7 +399,7 @@ class Custom
         }
 
         //  CREATE SOCIAL IMAGE
-        $socialImageName = 'social-' . md5(random_bytes(128)) . '.jpg';
+        $socialImageName = 'article-' . md5(random_bytes(128)) . '.jpg';
         if ($author->getImage()) {
             //  add author name & bio
             $coverWorkshop->addLayerOnTop($authorNameLayer, 200, 60, 'LT');
@@ -448,6 +449,126 @@ class Custom
         $contentUnit->setSocialImage($this->socialImagePath . '/' . $socialImageName);
         $contentUnit->setUpdateSocialImage(false);
         $this->em->persist($contentUnit);
+        $this->em->flush();
+
+        return true;
+    }
+
+    /**
+     * @param Publication $publication
+     * @param string $relativePath
+     * @return bool|string
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \PHPImageWorkshop\Core\Exception\ImageWorkshopLayerException
+     * @throws \PHPImageWorkshop\Exception\ImageWorkshopException
+     * @throws \Exception
+     */
+    function createSocialImageOfPublication(Publication $publication, $relativePath = '')
+    {
+        $imagePath = $relativePath . $this->socialImagePath;
+        $assetsPath = $relativePath . $this->socialAssetsPath;
+
+        $font = $assetsPath . '/OpenSansCondensed-Bold.ttf';
+
+        $publicationTitle = trim($publication->getTitle());
+        $authorDescription = trim($publication->getDescription());
+
+        $publicationTitle = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $publicationTitle);
+        $authorDescription = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorDescription);
+
+        if ($publication->getCover()) {
+            $cover = $publication->getCover();
+
+            $tempImage = $imagePath . '/temp.jpg';
+            copy($cover, $tempImage);
+
+            //  COVER MANIPULATION
+            //  create instance of ImageWorkshop from cover
+            $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+
+            //  resize cover width 1280px, height 720px
+            $coverWorkshop->resizeInPixel(1280, null, true);
+            if ($coverWorkshop->getHeight() < 720) {
+                $coverWorkshop->resizeInPixel(null, 720, true);
+            }
+
+            //  crop
+            if ($coverWorkshop->getWidth() == 1280) {
+                $coverWorkshop->cropInPixel(1280, 720, 0, 0, 'LT');
+            } else {
+                $coverWorkshop->cropInPixel(1280, 720, ($coverWorkshop->getWidth() - 1280) / 2, 0, 'LT');
+            }
+
+            //  add main background
+            $backgroundWorkshop = ImageWorkshop::initFromPath($assetsPath . '/background.png');
+            $coverWorkshop->addLayerOnTop($backgroundWorkshop, 24, 24, 'LT');
+        } else {
+            //  COVER MANIPULATION
+            //  create instance of ImageWorkshop for cover
+            $coverWorkshop = ImageWorkshop::initVirginLayer(1280, 218, '3366FF');
+        }
+
+        //  add logo
+        $logoWorkshop = ImageWorkshop::initFromPath($assetsPath . '/logo.png');
+        $coverWorkshop->addLayerOnTop($logoWorkshop, 50, 50, 'RT');
+
+        //  create author name & bio layers
+        $authorNameLayer = ImageWorkshop::initTextLayer($publicationTitle, $font, 32);
+        if ($authorDescription) {
+            $authorBioLayer = ImageWorkshop::initTextLayer($authorDescription, $font, 22);
+        }
+
+        //  CREATE SOCIAL IMAGE
+        $socialImageName = 'publication-' . md5(random_bytes(128)) . '.jpg';
+        if ($publication->getLogo()) {
+            //  add author name & bio
+            $coverWorkshop->addLayerOnTop($authorNameLayer, 200, 60, 'LT');
+            if (isset($authorBioLayer)) {
+                $coverWorkshop->addLayerOnTop($authorBioLayer, 200, 120, 'LT');
+            }
+
+            $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
+
+            //  AUTHOR IMAGE MANIPULATION
+            $authorImageWorkshop = ImageWorkshop::initFromPath($relativePath . $publication->getLogo());
+
+            //  resize
+            if ($authorImageWorkshop->getWidth() > $authorImageWorkshop->getHeight()) {
+                $authorImageWorkshop->cropInPixel($authorImageWorkshop->getHeight(), $authorImageWorkshop->getHeight(), ($authorImageWorkshop->getWidth() - $authorImageWorkshop->getHeight()) / 2, 0, 'LT');
+            } else {
+                $authorImageWorkshop->cropInPixel($authorImageWorkshop->getWidth(), $authorImageWorkshop->getWidth(), 0, 0, 'LT');
+            }
+            $authorImageWorkshop->resizeInPixel(130, 130);
+
+            $authorImageName = $publication->getId() . '-publication.jpg';
+            $authorImageWorkshop->save($imagePath, $authorImageName, false, null, 99);
+
+            $this->imageCreateCorners($imagePath . '/' . $authorImageName, $imagePath . '/' . $socialImageName, 48, 44);
+            unlink($imagePath . '/' . $authorImageName);
+        } else {
+            //  add author name & bio
+            if (isset($authorBioLayer)) {
+                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 66, 'LT');
+                $coverWorkshop->addLayerOnTop($authorBioLayer, 48, 120, 'LT');
+            } else {
+                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 88, 'LT');
+            }
+
+            $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
+        }
+
+        if (isset($tempImage)) {
+            unlink($tempImage);
+        }
+
+        //  delete old image if exist
+        if ($publication->getSocialImage() && file_exists($imagePath . '/' . $publication->getSocialImage())) {
+            unlink($imagePath . '/' . $publication->getSocialImage());
+        }
+
+        $publication->setSocialImage($this->socialImagePath . '/' . $socialImageName);
+        $this->em->persist($publication);
         $this->em->flush();
 
         return true;

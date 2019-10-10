@@ -33,7 +33,7 @@ class Publication
     /**
      * @var string
      * @ORM\Column(type="string")
-     * @Groups({"publication"})
+     * @Groups({"publication", "publicationSeo"})
      */
     private $slug;
 
@@ -42,7 +42,7 @@ class Publication
      *
      * @ORM\Column(name="title", type="string", length=256)
      * @Assert\NotBlank(message="Title can not be empty")
-     * @Groups({"publication"})
+     * @Groups({"publication", "publicationSeo"})
      */
     private $title;
 
@@ -50,7 +50,7 @@ class Publication
      * @var string
      *
      * @ORM\Column(name="description", type="text", nullable=true)
-     * @Groups({ "publication"})
+     * @Groups({ "publication", "publicationSeo"})
      */
     private $description;
 
@@ -167,6 +167,13 @@ class Publication
      * @Groups({"publication"})
      */
     private $subscribersCount;
+
+    /**
+     * @ORM\Column(name="social_image", type="string", nullable=true)
+     * @Assert\File()
+     * @Groups({"publicationSeo"})
+     */
+    private $socialImage;
 
     public function __construct()
     {
@@ -485,5 +492,21 @@ class Publication
     public function setSubscribersCount(int $subscribersCount)
     {
         $this->subscribersCount = $subscribersCount;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSocialImage()
+    {
+        return $this->socialImage;
+    }
+
+    /**
+     * @param mixed $socialImage
+     */
+    public function setSocialImage($socialImage)
+    {
+        $this->socialImage = $socialImage;
     }
 }
