@@ -17,6 +17,7 @@ use App\Entity\ContentUnit;
 use App\Entity\UserViewLogHistory;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPImageWorkshop\ImageWorkshop;
 use Symfony\Component\HttpFoundation\Request;
 
 class Custom
@@ -29,13 +30,19 @@ class Custom
     private $endpoint;
     private $dsEndpoint;
     private $oldBackendEndpoint;
+    private $socialAssetsPath;
+    private $socialImagePath;
+    private $channelStorageEndpoint;
 
-    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint)
+    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $channelStorageEndpoint)
     {
         $this->em = $em;
         $this->endpoint = $endpoint;
         $this->dsEndpoint = $dsEndpoint;
         $this->oldBackendEndpoint = $oldBackendEndpoint;
+        $this->socialAssetsPath = $socialAssetsPath;
+        $this->socialImagePath = $socialImagePath;
+        $this->channelStorageEndpoint = $channelStorageEndpoint;
     }
 
     /**
@@ -316,5 +323,201 @@ class Custom
         $this->em->flush();
 
         return $addView;
+    }
+
+    /**
+     * @param ContentUnit $contentUnit
+     * @param string $relativePath
+     * @return bool|string
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \PHPImageWorkshop\Core\Exception\ImageWorkshopLayerException
+     * @throws \PHPImageWorkshop\Exception\ImageWorkshopException
+     * @throws \Exception
+     */
+    function createSocialImageOfArticle(ContentUnit $contentUnit, $relativePath = '')
+    {
+        $imagePath = $relativePath . $this->socialImagePath;
+        $assetsPath = $relativePath . $this->socialAssetsPath;
+
+        $font = $assetsPath . '/OpenSansCondensed-Bold.ttf';
+
+        /**
+         * @var Account $author
+         */
+        $author = $contentUnit->getAuthor();
+        $authorName = trim($author->getFirstName() . ' ' . $author->getLastName());
+        $authorBio = trim($author->getBio());
+
+        $authorName = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorName);
+        $authorBio = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorBio);
+
+        if ($contentUnit->getCover()) {
+            /**
+             * @var File $cover
+             */
+            $cover = $contentUnit->getCover();
+
+            $tempImage = $imagePath . '/temp.jpg';
+            copy($this->channelStorageEndpoint . '/storage?file=' . $cover->getUri(), $tempImage);
+
+            //  COVER MANIPULATION
+            //  create instance of ImageWorkshop from cover
+            $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+
+            //  resize cover width 1280px, height 720px
+            $coverWorkshop->resizeInPixel(1280, null, true);
+            if ($coverWorkshop->getHeight() < 720) {
+                $coverWorkshop->resizeInPixel(null, 720, true);
+            }
+
+            //  crop
+            if ($coverWorkshop->getWidth() == 1280) {
+                $coverWorkshop->cropInPixel(1280, 720, 0, 0, 'LT');
+            } else {
+                $coverWorkshop->cropInPixel(1280, 720, ($coverWorkshop->getWidth() - 1280) / 2, 0, 'LT');
+            }
+
+            //  add main background
+            $backgroundWorkshop = ImageWorkshop::initFromPath($assetsPath . '/background.png');
+            $coverWorkshop->addLayerOnTop($backgroundWorkshop, 24, 24, 'LT');
+        } else {
+            //  COVER MANIPULATION
+            //  create instance of ImageWorkshop for cover
+            $coverWorkshop = ImageWorkshop::initVirginLayer(1280, 218, '3366FF');
+        }
+
+        //  add logo
+        $logoWorkshop = ImageWorkshop::initFromPath($assetsPath . '/logo.png');
+        $coverWorkshop->addLayerOnTop($logoWorkshop, 50, 50, 'RT');
+
+        //  create author name & bio layers
+        $authorNameLayer = ImageWorkshop::initTextLayer($authorName, $font, 32);
+        if ($authorBio) {
+            $authorBioLayer = ImageWorkshop::initTextLayer($authorBio, $font, 22);
+        }
+
+        //  CREATE SOCIAL IMAGE
+        $socialImageName = 'social-' . md5(random_bytes(128)) . '.jpg';
+        if ($author->getImage()) {
+            //  add author name & bio
+            $coverWorkshop->addLayerOnTop($authorNameLayer, 200, 60, 'LT');
+            if (isset($authorBioLayer)) {
+                $coverWorkshop->addLayerOnTop($authorBioLayer, 200, 120, 'LT');
+            }
+
+            $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
+
+            //  AUTHOR IMAGE MANIPULATION
+            $authorImageWorkshop = ImageWorkshop::initFromPath($relativePath . $author->getImage());
+
+            //  resize
+            if ($authorImageWorkshop->getWidth() > $authorImageWorkshop->getHeight()) {
+                $authorImageWorkshop->cropInPixel($authorImageWorkshop->getHeight(), $authorImageWorkshop->getHeight(), ($authorImageWorkshop->getWidth() - $authorImageWorkshop->getHeight()) / 2, 0, 'LT');
+            } else {
+                $authorImageWorkshop->cropInPixel($authorImageWorkshop->getWidth(), $authorImageWorkshop->getWidth(), 0, 0, 'LT');
+            }
+            $authorImageWorkshop->resizeInPixel(130, 130);
+
+            $authorImageName = $author->getId() . '-author.jpg';
+            $authorImageWorkshop->save($imagePath, $authorImageName, false, null, 99);
+
+            $this->imageCreateCorners($imagePath . '/' . $authorImageName, $imagePath . '/' . $socialImageName, 48, 44);
+            unlink($imagePath . '/' . $authorImageName);
+        } else {
+            //  add author name & bio
+            if (isset($authorBioLayer)) {
+                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 66, 'LT');
+                $coverWorkshop->addLayerOnTop($authorBioLayer, 48, 120, 'LT');
+            } else {
+                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 88, 'LT');
+            }
+
+            $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
+        }
+
+        if (isset($tempImage)) {
+            unlink($tempImage);
+        }
+
+        //  delete old image if exist
+        if ($contentUnit->getSocialImage() && file_exists($imagePath . '/' . $contentUnit->getSocialImage())) {
+            unlink($imagePath . '/' . $contentUnit->getSocialImage());
+        }
+
+        $contentUnit->setSocialImage($this->socialImagePath . '/' . $socialImageName);
+        $contentUnit->setUpdateSocialImage(false);
+        $this->em->persist($contentUnit);
+        $this->em->flush();
+
+        return true;
+    }
+
+    function imageCreateCorners($sourceImageFile, $destImageFile, $posX, $posY)
+    {
+        $info = getimagesize($destImageFile);
+
+        // create destination image resource.
+        switch ($info['mime']) {
+            case 'image/jpeg':
+                $dest = imagecreatefromjpeg($destImageFile);
+                break;
+            case 'image/gif':
+                $dest = imagecreatefromgif($destImageFile);
+                break;
+            case 'image/png':
+                $dest = imagecreatefrompng($destImageFile);
+                break;
+            default:
+                return false;
+        }
+
+        // create source image resource and define transparent colour.
+        $info = getimagesize($sourceImageFile);
+        switch ($info['mime']) {
+            case 'image/jpeg':
+                $src = imagecreatefromjpeg($sourceImageFile);
+                break;
+            case 'image/gif':
+                $src = imagecreatefromgif($sourceImageFile);
+                break;
+            case 'image/png':
+                $src = imagecreatefrompng($sourceImageFile);
+                break;
+            default:
+                return false;
+        }
+
+        $src_width = imagesx($src);
+        $src_height = imagesy($src);
+        imagecolortransparent($src, imagecolorallocate($src, 255, 0, 255));
+
+        // create a circular mask and use it to crop the source image.
+        $mask = imagecreatetruecolor($src_width, $src_height);
+        $black = imagecolorallocate($mask, 0, 0, 0);
+        $magenta = imagecolorallocate($mask, 255, 0, 255);
+        imagefill($mask, 0, 0, $magenta);
+        $r = min($src_width, $src_height);
+        imagefilledellipse($mask, ($src_width / 2), ($src_height / 2), $r, $r, $black);
+        imagecolortransparent($mask, $black);
+        imagecopymerge($src, $mask, 0, 0, 0, 0, $src_width, $src_height, 100);
+        imagedestroy($mask);
+
+        imagecopymerge($dest, $src, $posX, $posY, 0, 0, $src_width, $src_height, 100);
+
+        $info = getimagesize($destImageFile);
+        switch ($info['mime']) {
+            case 'image/jpeg':
+                imagejpeg($dest, $destImageFile, 100);
+                break;
+            case 'image/gif':
+                imagegif($dest, $destImageFile);
+                break;
+            case 'image/png':
+                imagepng($dest, $destImageFile, 9);
+                break;
+        }
+
+        return true;
     }
 }

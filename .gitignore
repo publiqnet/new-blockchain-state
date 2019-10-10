@@ -16,3 +16,12 @@
 
 /public/jsons/*
 !/public/jsons/.gitkeep
+
+/public/uploads/accounts/*
+!/public/uploads/accounts/.gitkeep
+
+/public/uploads/publications/*
+!/public/uploads/publications/.gitkeep
+
+/public/uploads/social/*
+!/public/uploads/social/.gitkeep
