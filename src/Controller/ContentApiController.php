@@ -1021,6 +1021,14 @@ class ContentApiController extends Controller
             }
         }
 
+        //  generate short description
+        $description = $contentUnit->getTextWithData();
+        $description = trim(strip_tags($description));
+        if (strlen($description) > 300) {
+            $description = substr($description, 0, strpos($description, ' ', 300)) . '...';
+        }
+        $contentUnit->setDescription($description);
+
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitSeo', 'file', 'accountBase']]);
 
         return new JsonResponse($contentUnit);

@@ -175,6 +175,12 @@ class ContentUnit
      */
     private $updateSocialImage = 1;
 
+    /**
+     * @var string
+     * @Groups({"contentUnitSeo"})
+     */
+    private $description;
+
 
     public function __construct()
     {
@@ -572,5 +578,21 @@ class ContentUnit
     public function setUpdateSocialImage($updateSocialImage)
     {
         $this->updateSocialImage = $updateSocialImage;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @param string $description
+     */
+    public function setDescription(string $description)
+    {
+        $this->description = $description;
     }
 }
