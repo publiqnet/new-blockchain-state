@@ -2,13 +2,13 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 10/9/19
- * Time: 5:52 PM
+ * Date: 10/11/19
+ * Time: 11:40 AM
  */
 
 namespace App\Command;
 
-use App\Entity\ContentUnit;
+use App\Entity\Publication;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -17,11 +17,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class SocialImageCommand extends ContainerAwareCommand
+class PublicationSocialImageCommand extends ContainerAwareCommand
 {
     use LockableTrait;
 
-    protected static $defaultName = 'state:social-images';
+    protected static $defaultName = 'state:publication-social-images';
 
     /** @var \App\Service\Custom $customService */
     private $customService;
@@ -42,7 +42,7 @@ class SocialImageCommand extends ContainerAwareCommand
 
     protected function configure()
     {
-        $this->setDescription('Create social images');
+        $this->setDescription('Create social images for publications');
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
@@ -70,12 +70,12 @@ class SocialImageCommand extends ContainerAwareCommand
         }
 
         /**
-         * @var ContentUnit $contentUnits[]
+         * @var Publication $publications[]
          */
-        $contentUnits = $this->em->getRepository(ContentUnit::class)->findBy(['updateSocialImage' => true]);
-        if ($contentUnits) {
-            foreach ($contentUnits as $contentUnit) {
-                $this->customService->createSocialImageOfArticle($contentUnit, 'public/');
+        $publications = $this->em->getRepository(Publication::class)->findBy(['socialImage' => null]);
+        if ($publications) {
+            foreach ($publications as $publication) {
+                $this->customService->createSocialImageOfPublication($publication, 'public/');
             }
         }
 

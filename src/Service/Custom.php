@@ -481,7 +481,7 @@ class Custom
             $cover = $publication->getCover();
 
             $tempImage = $imagePath . '/temp.jpg';
-            copy($cover, $tempImage);
+            copy($relativePath . $cover, $tempImage);
 
             //  COVER MANIPULATION
             //  create instance of ImageWorkshop from cover
