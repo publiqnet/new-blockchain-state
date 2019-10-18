@@ -23,6 +23,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 class Custom
 {
+    const FB_CLIENT_ID = '1949989915051606';
+    const FB_CLIENT_SECRET = 'e9ea0e9284f61ac66d538ae56bbebab3';
+
     /**
      * @var EntityManager
      */
@@ -34,8 +37,9 @@ class Custom
     private $socialAssetsPath;
     private $socialImagePath;
     private $channelStorageEndpoint;
+    private $frontendEndpoint;
 
-    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $channelStorageEndpoint)
+    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $channelStorageEndpoint, $frontendEndpoint)
     {
         $this->em = $em;
         $this->endpoint = $endpoint;
@@ -44,6 +48,7 @@ class Custom
         $this->socialAssetsPath = $socialAssetsPath;
         $this->socialImagePath = $socialImagePath;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
+        $this->frontendEndpoint = $frontendEndpoint;
     }
 
     /**
@@ -353,7 +358,7 @@ class Custom
         $authorName = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorName);
         $authorBio = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorBio);
 
-        if ($contentUnit->getCover()) {
+        if ($contentUnit->getCover() && $contentUnit->getCover()->getMimeType() != 'image/webp') {
             /**
              * @var File $cover
              */
@@ -400,7 +405,14 @@ class Custom
 
         //  CREATE SOCIAL IMAGE
         $socialImageName = 'article-' . md5(random_bytes(128)) . '.jpg';
+
+        $authorImageMimeType = '';
         if ($author->getImage()) {
+            $authorImage = new \Symfony\Component\HttpFoundation\File\File($relativePath . $author->getImage());
+            $authorImageMimeType = $authorImage->getMimeType();
+        }
+
+        if ($author->getImage() && $authorImageMimeType != 'image/webp') {
             //  add author name & bio
             $coverWorkshop->addLayerOnTop($authorNameLayer, 200, 60, 'LT');
             if (isset($authorBioLayer)) {
@@ -450,6 +462,9 @@ class Custom
         $contentUnit->setUpdateSocialImage(false);
         $this->em->persist($contentUnit);
         $this->em->flush();
+
+        $articleUrl = $this->frontendEndpoint . '/s/' . $contentUnit->getUri();
+        $this->scrapeUrl($articleUrl);
 
         return true;
     }
@@ -640,5 +655,49 @@ class Custom
         }
 
         return true;
+    }
+
+    /**
+     * @param String $link
+     * @return bool
+     */
+    public function scrapeUrl(String $link)
+    {
+        $url = 'https://graph.facebook.com/oauth/access_token?client_id=' . self::FB_CLIENT_ID . '&client_secret=' . self::FB_CLIENT_SECRET . '&grant_type=client_credentials';
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_URL => $url,
+            CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+        ));
+        $resp = curl_exec($curl);
+        curl_close($curl);
+
+        $fbAccessToken = '';
+        if ($resp) {
+            $result = json_decode($resp);
+
+            if ($result->access_token) {
+                $fbAccessToken = $result->access_token;
+            }
+        }
+
+        if (!$fbAccessToken) {
+            return false;
+        }
+
+        $url = 'https://graph.facebook.com/v3.1/';
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_URL => $url,
+            CURLOPT_USERAGENT => 'Codular Sample cURL Request',
+            CURLOPT_POST => 1,
+            CURLOPT_POSTFIELDS => ['scrape' => true, 'access_token' => $fbAccessToken, 'id' => $link]
+        ]);
+        $resp = curl_exec($curl);
+        curl_close($curl);
+
+        return $resp ? true : false;
     }
 }
