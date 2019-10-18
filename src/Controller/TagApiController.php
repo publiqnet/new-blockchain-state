@@ -41,7 +41,7 @@ class TagApiController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
 
-        $tags = $em->getRepository(Tag::class)->getTagsByPopularity();
+        $tags = $em->getRepository(Tag::class)->getTagsByPopularity(40);
         $tags = $this->get('serializer')->normalize($tags, null, ['groups' => ['tag']]);
 
         return new JsonResponse($tags);

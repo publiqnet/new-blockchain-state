@@ -12,6 +12,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Class ContentUnit
@@ -71,7 +72,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $cover;
 
@@ -161,6 +162,24 @@ class ContentUnit
      * @ORM\OneToMany(targetEntity="App\Entity\UserViewLogHistory", mappedBy="contentUnit", cascade={"remove"})
      */
     private $viewLogsHistory;
+
+    /**
+     * @ORM\Column(name="social_image", type="string", nullable=true)
+     * @Assert\File()
+     * @Groups({"contentUnitSeo"})
+     */
+    private $socialImage;
+
+    /**
+     * @ORM\Column(name="update_social_image", type="boolean")
+     */
+    private $updateSocialImage = 1;
+
+    /**
+     * @var string
+     * @Groups({"contentUnitSeo"})
+     */
+    private $description;
 
 
     public function __construct()
@@ -527,5 +546,53 @@ class ContentUnit
     public function getViewLogsHistory()
     {
         return $this->viewLogsHistory;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSocialImage()
+    {
+        return $this->socialImage;
+    }
+
+    /**
+     * @param mixed $socialImage
+     */
+    public function setSocialImage($socialImage)
+    {
+        $this->socialImage = $socialImage;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isUpdateSocialImage()
+    {
+        return $this->updateSocialImage;
+    }
+
+    /**
+     * @param mixed $updateSocialImage
+     */
+    public function setUpdateSocialImage($updateSocialImage)
+    {
+        $this->updateSocialImage = $updateSocialImage;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @param string $description
+     */
+    public function setDescription(string $description)
+    {
+        $this->description = $description;
     }
 }

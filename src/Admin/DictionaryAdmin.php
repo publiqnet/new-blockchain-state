@@ -51,4 +51,10 @@ class DictionaryAdmin extends AbstractAdmin
         $jsonService = $this->getConfigurationPool()->getContainer()->get('json');
         $jsonService->updateJsons($object->getLocale());
     }
+
+    public function postPersist($object)
+    {
+        $jsonService = $this->getConfigurationPool()->getContainer()->get('json');
+        $jsonService->updateJsons($object->getLocale());
+    }
 }

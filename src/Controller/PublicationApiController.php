@@ -24,6 +24,7 @@ use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
+use App\Service\Custom;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -33,7 +34,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Swagger\Annotations as SWG;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Tooleks\Php\AvgColorPicker\Gd\AvgColorPicker;
 use App\Service\ContentUnit as CUService;
 
 /**
@@ -63,9 +63,10 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param Request $request
      * @param ValidatorInterface $validator
+     * @param Custom $customService
      * @return JsonResponse
      */
-    public function createPublication(Request $request, ValidatorInterface $validator)
+    public function createPublication(Request $request, ValidatorInterface $validator, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -137,10 +138,6 @@ class PublicationApiController extends Controller
             $logo = $request->files->get('logo');
             if ($logo instanceof UploadedFile) {
                 $publication->setLogo($moveFile($logo, $currentPublicationPath));
-
-//                $imageAvgRgbColor = (new AvgColorPicker)->getImageAvgRgbByPath($publication->getLogo());
-//                $color = sprintf('%02X%02X%02X', $imageAvgRgbColor[0], $imageAvgRgbColor[1], $imageAvgRgbColor[2]);
-//                $publication->setColor($color);
             }
 
             /**
@@ -165,6 +162,9 @@ class PublicationApiController extends Controller
             $em->persist($publication);
             $em->persist($publicationMember);
             $em->flush();
+
+            //  generate social image
+            $customService->createSocialImageOfPublication($publication);
 
             //  prepare return data
             $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
@@ -200,10 +200,11 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param Request $request
      * @param ValidatorInterface $validator
+     * @param Custom $customService
      * @param $slug
      * @return JsonResponse
      */
-    public function updatePublication(Request $request, ValidatorInterface $validator, $slug)
+    public function updatePublication(Request $request, ValidatorInterface $validator, Custom $customService, $slug)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -296,10 +297,6 @@ class PublicationApiController extends Controller
                     unlink($oldLogo);
                 }
                 $publication->setLogo($moveFile($logo, $currentPublicationPath));
-
-//                $imageAvgRgbColor = (new AvgColorPicker)->getImageAvgRgbByPath($publication->getLogo());
-//                $color = sprintf('%02X%02X%02X', $imageAvgRgbColor[0], $imageAvgRgbColor[1], $imageAvgRgbColor[2]);
-//                $publication->setColor($color);
             } elseif ($deleteLogo) {
                 $oldLogo = $publication->getLogo();
                 if ($oldLogo && file_exists($oldLogo)) {
@@ -334,6 +331,9 @@ class PublicationApiController extends Controller
 
             $em->persist($publication);
             $em->flush();
+
+            //  generate social image
+            $customService->createSocialImageOfPublication($publication);
 
             //  prepare return data
             $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publication', 'tag']]);
@@ -784,6 +784,37 @@ class PublicationApiController extends Controller
         $publication['subscribersCount'] = count($subscribers);
         $publication['membersCount'] = count($publicationMembers);
         $publication['views'] = intval($totalViews[0][1]);
+
+        return new JsonResponse($publication);
+    }
+
+    /**
+     * @Route("-seo/{slug}", methods={"GET"}, name="get_publication_for_seo")
+     * @SWG\Get(
+     *     summary="Get publication",
+     *     consumes={"application/json"}
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param $slug
+     * @return Response
+     */
+    public function getPublicationSeo($slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        $publication = $this->get('serializer')->normalize($publication, null, ['groups' => ['publicationSeo']]);
 
         return new JsonResponse($publication);
     }

@@ -257,6 +257,9 @@ class AccountApiController extends Controller
             $image = $request->files->get('image');
             if ($image instanceof UploadedFile) {
                 $account->setImage($moveFile($image, $currentAccountPath));
+
+                //  set author articles social images as to be updated
+                $em->getRepository(ContentUnit::class)->updateSocialImageStatus($account);
             }
 
             $em->persist($account);

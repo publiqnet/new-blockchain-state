@@ -217,6 +217,49 @@ class NotificationApiController extends Controller
     }
 
     /**
+     * @Route("/delete-all", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Delete all user notifications",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=404, description="Not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Notification")
+     * @return JsonResponse
+     */
+    public function deleteAll()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
+
+        /**
+         * @var UserNotification $userNotifications[]
+         */
+        $userNotifications = $em->getRepository(UserNotification::class)->findBy(['account' => $account]);
+
+        if ($userNotifications) {
+            foreach ($userNotifications as $userNotification) {
+                $em->remove($userNotification);
+            }
+
+            $em->flush();
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
      * @Route("/{count}/{fromId}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get notifications",
