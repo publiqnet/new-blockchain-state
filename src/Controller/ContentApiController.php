@@ -778,7 +778,7 @@ class ContentApiController extends Controller
                 }
             }
         } else {
-            if ($addView || $uri == '8YQaFWrcG8b85Uo6GDgfYNcXjwfhAFBivvhyN9my7ART') {
+            if ($addView) {
                 $removeFilesFromResponse = false;
 
                 //  get files & find storage address
