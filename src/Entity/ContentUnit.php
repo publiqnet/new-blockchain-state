@@ -135,23 +135,10 @@ class ContentUnit
     private $nextVersions;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Publication", inversedBy="contentUnits")
-     * @ORM\JoinColumn(name="publication_id", referencedColumnName="id", onDelete="SET NULL")
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
-     */
-    private $publication;
-
-    /**
      * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit")
      * @Groups({"boost"})
      */
     private $boosts;
-
-    /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
-     */
-    private $tags;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit", cascade={"remove"})
@@ -186,7 +173,6 @@ class ContentUnit
     {
         $this->files = new ArrayCollection();
         $this->boosts = new ArrayCollection();
-        $this->tags = new ArrayCollection();
         $this->viewLogs = new ArrayCollection();
         $this->viewLogsHistory = new ArrayCollection();
     }
@@ -439,22 +425,6 @@ class ContentUnit
     /**
      * @return mixed
      */
-    public function getPublication()
-    {
-        return $this->publication;
-    }
-
-    /**
-     * @param mixed $publication
-     */
-    public function setPublication($publication)
-    {
-        $this->publication = $publication;
-    }
-
-    /**
-     * @return mixed
-     */
     public function getBoosts()
     {
         return $this->boosts;
@@ -522,14 +492,6 @@ class ContentUnit
     public function setNextVersions($nextVersions)
     {
         $this->nextVersions = $nextVersions;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getTags()
-    {
-        return $this->tags;
     }
 
     /**

@@ -8,7 +8,6 @@ parameters:
     channel_private_key: '%env(CHANNEL_PRIVATE_KEY)%'
     channel_storage_endpoint: '%env(CHANNEL_STORAGE_ENDPOINT)%'
     locale: 'en'
-    publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
     social_path: 'uploads/social'
     socialAssetsPath: 'socialAssets'
@@ -45,16 +44,13 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Service\BlockChain:
-        arguments: ['%env(STATE_ENDPOINT)%', '%env(BROADCAST_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(DETECT_LANGUAGE_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT_POST)%']
-
-    App\Service\Oauth:
-        arguments: ['%env(OAUTH_ENDPOINT)%']
+        arguments: ['%env(STATE_ENDPOINT)%', '%env(BROADCAST_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT)%']
 
     App\Service\ContentUnit:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
 
     App\Service\Custom:
-        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%']
+        arguments: ['@doctrine.orm.entity_manager', '%socialAssetsPath%', '%social_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%']
 
     json:
         class: App\Service\Json

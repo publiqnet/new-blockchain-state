@@ -148,36 +148,4 @@ class ContentUnit
 
         return $contentUnits;
     }
-
-    /**
-     * @param $contentUnits
-     * @param bool $list
-     * @return mixed
-     */
-    public function prepareTags($contentUnits, $list = true)
-    {
-        if ($list) {
-            for ($i=0; $i<count($contentUnits); $i++) {
-                if ($contentUnits[$i]['tags']) {
-                    $cuTagsArr = [];
-                    $cuTags = $contentUnits[$i]['tags'];
-                    for ($j=0; $j<count($cuTags); $j++) {
-                        $cuTagsArr[] = $cuTags[$j]['tag'];
-                    }
-                    $contentUnits[$i]['tags'] = $cuTagsArr;
-                }
-            }
-        } else {
-            if ($contentUnits['tags']) {
-                $cuTagsArr = [];
-                $cuTags = $contentUnits['tags'];
-                for ($j=0; $j<count($cuTags); $j++) {
-                    $cuTagsArr[] = $cuTags[$j]['tag'];
-                }
-                $contentUnits['tags'] = $cuTagsArr;
-            }
-        }
-
-        return $contentUnits;
-    }
 }
