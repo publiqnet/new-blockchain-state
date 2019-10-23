@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="account")
- * @ORM\Entity(repositoryClass="App\Repository\AccountRepository")
+ * @ORM\Entity()
  */
 class Account
 {

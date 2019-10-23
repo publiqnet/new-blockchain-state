@@ -12,7 +12,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Class ContentUnit
@@ -151,20 +150,8 @@ class ContentUnit
     private $viewLogsHistory;
 
     /**
-     * @ORM\Column(name="social_image", type="string", nullable=true)
-     * @Assert\File()
-     * @Groups({"contentUnitSeo"})
-     */
-    private $socialImage;
-
-    /**
-     * @ORM\Column(name="update_social_image", type="boolean")
-     */
-    private $updateSocialImage = 1;
-
-    /**
      * @var string
-     * @Groups({"contentUnitSeo"})
+     * @Groups({"contentUnitList"})
      */
     private $description;
 
@@ -508,38 +495,6 @@ class ContentUnit
     public function getViewLogsHistory()
     {
         return $this->viewLogsHistory;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getSocialImage()
-    {
-        return $this->socialImage;
-    }
-
-    /**
-     * @param mixed $socialImage
-     */
-    public function setSocialImage($socialImage)
-    {
-        $this->socialImage = $socialImage;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function isUpdateSocialImage()
-    {
-        return $this->updateSocialImage;
-    }
-
-    /**
-     * @param mixed $updateSocialImage
-     */
-    public function setUpdateSocialImage($updateSocialImage)
-    {
-        $this->updateSocialImage = $updateSocialImage;
     }
 
     /**

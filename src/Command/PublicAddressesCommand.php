@@ -23,7 +23,7 @@ class PublicAddressesCommand extends ContainerAwareCommand
 {
     use LockableTrait;
 
-    protected static $defaultName = 'state:public-addresses';
+    protected static $defaultName = 'state:tracker-public-addresses';
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;

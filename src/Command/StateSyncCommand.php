@@ -11,9 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
-use App\Entity\ContentUnitTag;
 use App\Entity\IndexNumber;
-use App\Entity\PublicationArticle;
 use App\Entity\Reward;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -51,7 +49,7 @@ class StateSyncCommand extends ContainerAwareCommand
 
     use LockableTrait;
 
-    protected static $defaultName = 'state:sync-new-blockchain';
+    protected static $defaultName = 'state:tracker-main';
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;
@@ -266,26 +264,8 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitEntity->setCover($coverFileEntity);
                                 }
 
-                                //  check for related Publication
-                                $publicationArticle = $this->em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
-                                if ($publicationArticle) {
-                                    $contentUnitEntity->setPublication($publicationArticle->getPublication());
-                                    $this->em->remove($publicationArticle);
-                                }
-
                                 $this->em->persist($contentUnitEntity);
                                 $this->em->flush();
-
-                                //  check for related tags
-                                $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-                                if ($contentUnitTags) {
-                                    foreach ($contentUnitTags as $contentUnitTag) {
-                                        $contentUnitTag->setContentUnit($contentUnitEntity);
-                                        $this->em->persist($contentUnitTag);
-                                    }
-
-                                    $this->em->flush();
-                                }
 
                                 //  add transaction record with relation to content unit
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
@@ -742,34 +722,12 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->persist($contentUnitEntity);
                         $this->em->flush();
 
-                        //  check for related tags
-                        $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-                        if ($contentUnitTags) {
-                            foreach ($contentUnitTags as $contentUnitTag) {
-                                $contentUnitTag->setContentUnit($contentUnitEntity);
-                                $this->em->persist($contentUnitTag);
-                            }
-
-                            $this->em->flush();
-                        }
-
                         //  add transaction record with relation to content unit
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                     } else {
-                        //  check for related tags
-                        $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-                        if ($contentUnitTags) {
-                            foreach ($contentUnitTags as $contentUnitTag) {
-                                $contentUnitTag->setContentUnit(null);
-                                $this->em->persist($contentUnitTag);
-                            }
-
-                            $this->em->flush();
-                        }
-
                         //  update account balances
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
                     }

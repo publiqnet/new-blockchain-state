@@ -26,13 +26,6 @@ class UserViewLog
     private $id;
 
     /**
-     * @var Account
-     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="viewLogs")
-     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=true)
-     */
-    private $user;
-
-    /**
      * @var ContentUnit
      * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="viewLogs")
      * @ORM\JoinColumn(name="content_unit_id", referencedColumnName="id", nullable=false)
@@ -57,22 +50,6 @@ class UserViewLog
     public function getId(): int
     {
         return $this->id;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getUser()
-    {
-        return $this->user;
-    }
-
-    /**
-     * @param Account $user
-     */
-    public function setUser(Account $user)
-    {
-        $this->user = $user;
     }
 
     /**

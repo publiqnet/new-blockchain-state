@@ -8,7 +8,6 @@
 
 namespace App\Repository;
 
-use App\Entity\Account;
 use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
@@ -41,23 +40,5 @@ class BoostedContentUnitRepository extends EntityRepository
             ->getResult();
 
         return ($result ? true: false);
-    }
-
-    /**
-     * @param Account $author
-     * @return boolean
-     */
-    public function getAuthorBoostedArticles(Account $author)
-    {
-        return $this->createQueryBuilder('bcu')
-            ->select('bcu, cu, a')
-            ->join('bcu.contentUnit', 'cu')
-            ->join('bcu.sponsor', 'a')
-            ->where('bcu.sponsor = :author')
-            ->orWhere('cu.author = :author')
-            ->andWhere('bcu.cancelled = 0')
-            ->setParameters(['author' => $author])
-            ->getQuery()
-            ->getResult();
     }
 }

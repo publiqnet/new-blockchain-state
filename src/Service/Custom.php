@@ -8,10 +8,8 @@
 
 namespace App\Service;
 
-use App\Entity\Block;
 use App\Entity\File;
 use App\Entity\Account;
-use App\Entity\Transaction;
 use App\Entity\UserViewLog;
 use App\Entity\ContentUnit;
 use App\Entity\UserViewLogHistory;
@@ -21,9 +19,6 @@ use Symfony\Component\HttpFoundation\Request;
 
 class Custom
 {
-    const FB_CLIENT_ID = '1949989915051606';
-    const FB_CLIENT_SECRET = 'e9ea0e9284f61ac66d538ae56bbebab3';
-
     /**
      * @var EntityManager
      */
@@ -66,68 +61,13 @@ class Custom
     }
 
     /**
-     * @return array
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     */
-    public function getFee()
-    {
-        /**
-         * @var Block $block
-         */
-        $block = $this->em->getRepository(Block::class)->getLastBlock();
-        if ($block->getFeeWhole() === null) {
-            $feeWhole = 0;
-            $feeFraction = 0;
-
-            /**
-             * @var Transaction[] $transactions
-             */
-            $transactions = $block->getTransactions();
-            if (count($transactions)) {
-                foreach ($transactions as $transaction) {
-                    $feeWhole += $transaction->getFeeWhole();
-                    $feeFraction += $transaction->getFeeFraction();
-                }
-
-                if ($feeFraction > 99999999) {
-                    while ($feeFraction > 99999999) {
-                        $feeWhole++;
-                        $feeFraction -= 100000000;
-                    }
-                }
-
-                //  calculate average fee
-                $fee = $feeWhole + $feeFraction / 100000000;
-                $transactionsCount = count($transactions);
-                $averageFee = $fee * 100000000 / $transactionsCount;
-
-                $feeWhole = floor($averageFee / 100000000);
-                $feeFraction = $averageFee % 100000000;
-            }
-
-            $block->setFeeWhole(intval($feeWhole));
-            $block->setFeeFraction(intval($feeFraction));
-
-            $this->em->persist($block);
-            $this->em->flush();
-        } else {
-            $feeWhole = $block->getFeeWhole();
-            $feeFraction = $block->getFeeFraction();
-        }
-
-        return [$feeWhole, $feeFraction];
-    }
-
-    /**
      * @param Request $request
      * @param ContentUnit $contentUnit
-     * @param $account
      * @return bool
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function viewLog(Request $request, ContentUnit $contentUnit, $account)
+    public function viewLog(Request $request, ContentUnit $contentUnit)
     {
         //  generate fingerprint by request
         $userInfo = [];
@@ -162,9 +102,6 @@ class Custom
             }
         }
 
-        if ($account) {
-            $viewLog->setUser($account);
-        }
         $this->em->persist($viewLog);
 
         //  insert data into history
@@ -173,9 +110,6 @@ class Custom
         $viewLogHistory->setUserIdentifier($userIdentifier);
         $viewLogHistory->setIp($request->getClientIp());
         $viewLogHistory->setDatetime($date->getTimestamp());
-        if ($account) {
-            $viewLogHistory->setUser($account);
-        }
         $this->em->persist($viewLogHistory);
         $this->em->flush();
 

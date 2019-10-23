@@ -17,8 +17,8 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * Class Block
  * @package App\Entity
  *
- * @ORM\Table(name="block",indexes={@Index(columns={"account_id"})})
- * @ORM\Entity(repositoryClass="App\Repository\BlockRepository")
+ * @ORM\Table(name="block", indexes={@Index(columns={"account_id"})})
+ * @ORM\Entity()
  */
 class Block
 {

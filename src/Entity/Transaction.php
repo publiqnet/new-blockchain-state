@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="transaction",indexes={@Index(columns={"block_id"})})
- * @ORM\Entity(repositoryClass="App\Repository\TransactionRepository")
+ * @ORM\Entity()
  */
 class Transaction
 {

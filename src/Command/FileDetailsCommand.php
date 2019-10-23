@@ -26,7 +26,7 @@ class FileDetailsCommand extends ContainerAwareCommand
 {
     use LockableTrait;
 
-    protected static $defaultName = 'state:file-details';
+    protected static $defaultName = 'state:tracker-file-details';
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;
