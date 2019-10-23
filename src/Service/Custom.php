@@ -364,7 +364,7 @@ class Custom
              */
             $cover = $contentUnit->getCover();
 
-            $tempImage = $imagePath . '/temp.jpg';
+            $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
             copy($this->channelStorageEndpoint . '/storage?file=' . $cover->getUri(), $tempImage);
 
             //  COVER MANIPULATION
@@ -495,7 +495,7 @@ class Custom
         if ($publication->getCover()) {
             $cover = $publication->getCover();
 
-            $tempImage = $imagePath . '/temp.jpg';
+            $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
             copy($relativePath . $cover, $tempImage);
 
             //  COVER MANIPULATION

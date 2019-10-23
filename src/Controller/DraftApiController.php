@@ -42,6 +42,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="headline", type="string"),
      *             @SWG\Property(property="content", type="string"),
      *             @SWG\Property(property="forAdults", type="boolean"),
+     *             @SWG\Property(property="hideCover", type="boolean"),
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
      *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
@@ -82,6 +83,9 @@ class DraftApiController extends Controller
             if (isset($contentArr['forAdults'])) {
                 $forAdults = $contentArr['forAdults'];
             }
+            if (isset($contentArr['hideCover'])) {
+                $hideCover = $contentArr['hideCover'];
+            }
             if (isset($contentArr['reference'])) {
                 $reference = $contentArr['reference'];
             }
@@ -105,6 +109,7 @@ class DraftApiController extends Controller
             $content = $request->request->get('content');
             $headline = $request->request->get('headline');
             $forAdults = $request->request->get('forAdults');
+            $hideCover = $request->request->get('hideCover');
             $reference = $request->request->get('reference');
             $sourceOfMaterial = $request->request->get('sourceOfMaterial');
             $contentUris = $request->request->get('contentUris');
@@ -124,6 +129,9 @@ class DraftApiController extends Controller
             }
             if (isset($forAdults)) {
                 $draft->setForAdults($forAdults);
+            }
+            if (isset($hideCover)) {
+                $draft->setHideCover($hideCover);
             }
             if (isset($reference)) {
                 $draft->setReference($reference);
@@ -172,6 +180,7 @@ class DraftApiController extends Controller
      *             @SWG\Property(property="headline", type="string"),
      *             @SWG\Property(property="content", type="string"),
      *             @SWG\Property(property="forAdults", type="boolean"),
+     *             @SWG\Property(property="hideCover", type="boolean"),
      *             @SWG\Property(property="reference", type="string"),
      *             @SWG\Property(property="sourceOfMaterial", type="string"),
      *             @SWG\Property(property="contentUris", type="array", items={"type": "object"}),
@@ -225,6 +234,9 @@ class DraftApiController extends Controller
             if (isset($contentArr['forAdults'])) {
                 $forAdults = $contentArr['forAdults'];
             }
+            if (isset($contentArr['hideCover'])) {
+                $hideCover = $contentArr['hideCover'];
+            }
             if (isset($contentArr['reference'])) {
                 $reference = $contentArr['reference'];
             }
@@ -248,6 +260,7 @@ class DraftApiController extends Controller
             $content = $request->request->get('content');
             $headline = $request->request->get('headline');
             $forAdults = $request->request->get('forAdults');
+            $hideCover = $request->request->get('hideCover');
             $reference = $request->request->get('reference');
             $sourceOfMaterial = $request->request->get('sourceOfMaterial');
             $contentUris = $request->request->get('contentUris');
@@ -264,6 +277,9 @@ class DraftApiController extends Controller
             }
             if (isset($forAdults)) {
                 $draft->setForAdults($forAdults);
+            }
+            if (isset($hideCover)) {
+                $draft->setHideCover($hideCover);
             }
             if (isset($reference)) {
                 $draft->setReference($reference);
