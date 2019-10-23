@@ -134,6 +134,13 @@ class Draft
     private $publicKey;
 
     /**
+     * @var boolean
+     * @ORM\Column(name="hide_cover", type="boolean", options={"default":0})
+     * @Groups({"draft"})
+     */
+    private $hideCover = 0;
+
+    /**
      * @return int
      */
     public function getId()
@@ -385,5 +392,21 @@ class Draft
     public function setPublicKey($publicKey)
     {
         $this->publicKey = $publicKey;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getHideCover()
+    {
+        return $this->hideCover;
+    }
+
+    /**
+     * @param boolean $hideCover
+     */
+    public function setHideCover($hideCover)
+    {
+        $this->hideCover = $hideCover;
     }
 }

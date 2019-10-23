@@ -24,7 +24,6 @@ class Json
 
     public function updateJsons($locale)
     {
-        //  en
         $jsonArray = [];
 
         $dictionaries = $this->em->getRepository(Dictionary::class)->findAll();
@@ -43,7 +42,6 @@ class Json
             }
         }
         $json = json_encode($jsonArray, JSON_UNESCAPED_UNICODE);
-
         file_put_contents($this->folderPath . $locale . '.json', $json);
     }
 }

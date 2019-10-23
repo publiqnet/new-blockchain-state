@@ -48,13 +48,21 @@ class DictionaryAdmin extends AbstractAdmin
 
     public function postUpdate($object)
     {
+        $requestStack = $this->getConfigurationPool()->getContainer()->get('request_stack');
+        $request = $requestStack->getCurrentRequest();
+        $locale = $request->get('tl');
+
         $jsonService = $this->getConfigurationPool()->getContainer()->get('json');
-        $jsonService->updateJsons($object->getLocale());
+        $jsonService->updateJsons($locale);
     }
 
     public function postPersist($object)
     {
+        $requestStack = $this->getConfigurationPool()->getContainer()->get('request_stack');
+        $request = $requestStack->getCurrentRequest();
+        $locale = $request->get('tl');
+
         $jsonService = $this->getConfigurationPool()->getContainer()->get('json');
-        $jsonService->updateJsons($object->getLocale());
+        $jsonService->updateJsons($locale);
     }
 }

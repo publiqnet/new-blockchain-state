@@ -70,11 +70,15 @@ class ArticleSocialImageCommand extends ContainerAwareCommand
         }
 
         /**
-         * @var ContentUnit $contentUnits[]
+         * @var ContentUnit[] $contentUnits
          */
         $contentUnits = $this->em->getRepository(ContentUnit::class)->findBy(['updateSocialImage' => true]);
         if ($contentUnits) {
             foreach ($contentUnits as $contentUnit) {
+                if (!$contentUnit->getContent() || !$contentUnit->getTransaction()->getBlock()) {
+                    continue;
+                }
+
                 $this->customService->createSocialImageOfArticle($contentUnit, 'public/');
             }
         }
