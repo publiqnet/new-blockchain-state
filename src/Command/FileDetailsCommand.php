@@ -80,11 +80,50 @@ class FileDetailsCommand extends ContainerAwareCommand
             return 0;
         }
 
-        //  GET LAST CONTENT UNIT & ALL CONTENTS WITHOUT DATA CHECKED
-        $contentUnit = $this->em->getRepository(ContentUnit::class)->findBy([], ['id' => 'DESC'], 1);
-        $lastContentUnit = $contentUnit[0];
+        //  GET CONTENT UNITS WITHOUT DETAILS
+        /**
+         * @var ContentUnit[] $contentUnits
+         */
+        $contentUnits = $this->em->getRepository(ContentUnit::class)->findBy(['text' => null]);
+        if ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                /**
+                 * @var Account $channel
+                 */
+                $channel = $contentUnit->getChannel();
+                if ($channel->getUrl()) {
+                    $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
+                    if ($storageData) {
+                        $contentUnitTitle = 'Unknown';
+                        $coverUri = null;
 
-        $contentUnitsToUpdate = $this->em->getRepository(ContentUnit::class)->findBy(['textWithDataChecked' => 0]);
+                        if (strpos($storageData, '</h1>')) {
+                            if (strpos($storageData, '<h1>') > 0) {
+                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                            }
+                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                        } else {
+                            $contentUnitText = $storageData;
+                        }
+
+                        $contentUnit->setTitle($contentUnitTitle);
+                        $contentUnit->setText($contentUnitText);
+                        $contentUnit->setTextWithData($contentUnitText);
+                        if ($coverUri) {
+                            $coverFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                            $contentUnit->setCover($coverFileEntity);
+                        }
+
+                        $this->em->persist($contentUnit);
+                        $this->em->flush();
+                    }
+                }
+            }
+        }
 
         //  GET FILES WITHOUT DETAILS
         $files = $this->em->getRepository(File::class)->findAll();
@@ -102,34 +141,25 @@ class FileDetailsCommand extends ContainerAwareCommand
                     if (count($fileStorages)) {
                         $randomStorage = rand(0, count($fileStorages) - 1);
                         $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                        if ($storageUrl) {
+                            $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
+                            if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                $file->setMimeType($fileDetails->getMimeType());
+                                $file->setSize($fileDetails->getSize());
+                                if ($file->getMimeType() == 'text/html') {
+                                    $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
+                                    $file->setContent($fileText);
+                                }
 
-                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-                            if ($file->getMimeType() == 'text/html') {
-                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-                                $file->setContent($fileText);
+                                $this->em->persist($file);
+                                $this->em->flush();
                             }
-
-                            $this->em->persist($file);
-                            $this->em->flush();
-                        }
-                    } else {
-                        $storageUrl = $this->getContainer()->getParameter('channel_storage_endpoint');
-                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-                            if ($file->getMimeType() == 'text/html') {
-                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-                                $file->setContent($fileText);
-                            }
-
-                            $this->em->persist($file);
-                            $this->em->flush();
                         }
                     }
+                }
+
+                if (!$file->getMimeType()) {
+                    continue;
                 }
 
                 $fileContentUnits = $file->getContentUnits();
@@ -167,16 +197,6 @@ class FileDetailsCommand extends ContainerAwareCommand
                         $this->em->flush();
                     }
                 }
-            }
-
-            if ($contentUnitsToUpdate) {
-                foreach ($contentUnitsToUpdate as $contentUnit) {
-                    if ($contentUnit->getId() < $lastContentUnit->getId()) {
-                        $contentUnit->setTextWithDataChecked(true);
-                        $this->em->persist($contentUnit);
-                    }
-                }
-                $this->em->flush();
             }
         }
 

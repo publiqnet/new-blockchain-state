@@ -24,16 +24,9 @@ class Custom
      */
     private $em;
 
-    private $socialAssetsPath;
-    private $socialImagePath;
-    private $channelStorageEndpoint;
-
-    function __construct(EntityManagerInterface $em, $socialAssetsPath, $socialImagePath, $channelStorageEndpoint)
+    function __construct(EntityManagerInterface $em)
     {
         $this->em = $em;
-        $this->socialAssetsPath = $socialAssetsPath;
-        $this->socialImagePath = $socialImagePath;
-        $this->channelStorageEndpoint = $channelStorageEndpoint;
     }
 
     /**

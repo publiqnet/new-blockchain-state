@@ -20,13 +20,11 @@ class BlockChain
 {
     private $stateEndpoint;
     private $channelEndpoint;
-    private $channelStorageEndpoint;
 
-    function __construct($stateEndpoint, $channelEndpoint, $channelStorageEndpoint)
+    function __construct($stateEndpoint, $channelEndpoint)
     {
         $this->stateEndpoint = $stateEndpoint;
         $this->channelEndpoint = $channelEndpoint;
-        $this->channelStorageEndpoint = $channelStorageEndpoint;
     }
 
     /**
@@ -117,31 +115,6 @@ class BlockChain
     }
 
     /**
-     * @param string $uri
-     * @return bool|string
-     * @throws \Exception
-     */
-    public function getContentUnitData(string $uri)
-    {
-        $header = ['Content-Type:application/json'];
-
-        $body = $this->callJsonRPC($this->channelStorageEndpoint . '/storage?file=' . $uri, $header, null, 'GET');
-
-        $headerStatusCode = $body['status_code'];
-
-        //  check data
-        if ($headerStatusCode == 200) {
-            return $body['data'];
-        }
-
-        if ($headerStatusCode == 404) {
-            return null;
-        }
-
-        throw new \Exception('Issue with getting content unit data');
-    }
-
-    /**
      * @param String $fileUri
      * @param $contentUnitUri
      * @param $peerAddress
@@ -179,7 +152,7 @@ class BlockChain
      * @return bool|string
      * @throws \Exception
      */
-    public function getFileDetails(string $fileUri, string $storageUrl = null)
+    public function getFileDetails(string $fileUri, string $storageUrl)
     {
         $storageFileDetails = New StorageFileDetails();
         $storageFileDetails->setUri($fileUri);
@@ -187,18 +160,14 @@ class BlockChain
         $data = $storageFileDetails->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
 
-        if ($storageUrl) {
-            $body = $this->callJsonRPC($storageUrl . '/api', $header, $data);
-        } else {
-            $body = $this->callJsonRPC($this->channelStorageEndpoint . '/api', $header, $data);
-        }
+        $body = $this->callJsonRPC($storageUrl . '/api', $header, $data);
         $headerStatusCode = $body['status_code'];
 
         $data = json_decode($body['data'], true);
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with getting file details: ' . ($storageUrl ? $storageUrl: $this->channelStorageEndpoint));
+            throw new \Exception('Issue with getting file details: ' . $storageUrl);
         }
 
         $validateRes = Rtt::validate($body['data']);

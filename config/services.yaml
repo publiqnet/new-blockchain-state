@@ -5,11 +5,7 @@
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     channel_address: '%env(CHANNEL_ADDRESS)%'
-    channel_storage_endpoint: '%env(CHANNEL_STORAGE_ENDPOINT)%'
     locale: 'en'
-    accounts_path: 'uploads/accounts'
-    social_path: 'uploads/social'
-    socialAssetsPath: 'socialAssets'
     json_path: '../public/jsons/'
 
 services:
@@ -43,10 +39,10 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\Service\BlockChain:
-        arguments: ['%env(STATE_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ENDPOINT)%']
+        arguments: ['%env(STATE_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%']
 
     App\Service\Custom:
-        arguments: ['@doctrine.orm.entity_manager', '%socialAssetsPath%', '%social_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%']
+        arguments: ['@doctrine.orm.entity_manager']
 
     json:
         class: App\Service\Json

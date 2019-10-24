@@ -220,12 +220,14 @@ class StateSyncCommand extends ContainerAwareCommand
                             $fileUris = $contentUnit->getFileUris();
                             $coverUri = null;
 
+                            $authorAccount = $this->checkAccount($authorAddress);
+                            $channelAccount = $this->checkAccount($channelAddress);
+
                             //  get content unit data from storage
-                            $storageData = $this->blockChainService->getContentUnitData($uri);
-                            if ($storageData === null) {
-                                $contentUnitTitle = 'Mismatch content title';
-                                $contentUnitText = 'Mismatch content text';
-                            } else {
+                            $contentUnitTitle = 'Unknown';
+                            $contentUnitText = null;
+                            if ($channelAccount->getUrl()) {
+                                $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
                                 if (strpos($storageData, '</h1>')) {
                                     if (strpos($storageData, '<h1>') > 0) {
                                         $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
@@ -236,15 +238,11 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
                                     $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
                                 } else {
-                                    $contentUnitTitle = 'Old content without title';
                                     $contentUnitText = $storageData;
                                 }
                             }
 
                             //  create objects
-                            $authorAccount = $this->checkAccount($authorAddress);
-                            $channelAccount = $this->checkAccount($channelAddress);
-
                             if ($appliedReverted) {
                                 //  add file record
                                 $contentUnitEntity = new \App\Entity\ContentUnit();
@@ -680,26 +678,29 @@ class StateSyncCommand extends ContainerAwareCommand
                     $fileUris = $contentUnit->getFileUris();
                     $coverUri = null;
 
-                    //  get content unit data from storage
-                    $storageData = $this->blockChainService->getContentUnitData($uri);
-                    if (strpos($storageData, '</h1>')) {
-                        if (strpos($storageData, '<h1>') > 0) {
-                            $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
-
-                            $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                            $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                        }
-                        $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
-                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                    } else {
-                        $contentUnitTitle = 'Old content without title';
-                        $contentUnitText = $storageData;
-                    }
-
-                    //  create objects
                     $authorAccount = $this->checkAccount($authorAddress);
                     $channelAccount = $this->checkAccount($channelAddress);
 
+                    //  get content unit data from storage
+                    $contentUnitTitle = 'Unknown';
+                    $contentUnitText = null;
+                    if ($channelAccount->getUrl()) {
+                        $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                        if (strpos($storageData, '</h1>')) {
+                            if (strpos($storageData, '<h1>') > 0) {
+                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                            }
+                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                        } else {
+                            $contentUnitText = $storageData;
+                        }
+                    }
+
+                    //  create objects
                     if ($appliedReverted) {
                         //  add file record
                         $contentUnitEntity = new \App\Entity\ContentUnit();

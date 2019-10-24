@@ -48,13 +48,13 @@ class ContentUnit
     private $title;
 
     /**
-     * @ORM\Column(name="text", type="text", nullable=false)
+     * @ORM\Column(name="text", type="text", nullable=true)
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $text;
 
     /**
-     * @ORM\Column(name="text_with_data", type="text", nullable=false)
+     * @ORM\Column(name="text_with_data", type="text", nullable=true)
      */
     private $textWithData;
 
