@@ -19,14 +19,12 @@ use PubliqAPI\Model\StorageFileDetails;
 class BlockChain
 {
     private $stateEndpoint;
-    private $broadcastEndpoint;
     private $channelEndpoint;
     private $channelStorageEndpoint;
 
-    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint)
+    function __construct($stateEndpoint, $channelEndpoint, $channelStorageEndpoint)
     {
         $this->stateEndpoint = $stateEndpoint;
-        $this->broadcastEndpoint = $broadcastEndpoint;
         $this->channelEndpoint = $channelEndpoint;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
     }
