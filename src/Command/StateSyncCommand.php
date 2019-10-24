@@ -228,17 +228,19 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitText = null;
                             if ($channelAccount->getUrl()) {
                                 $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
-                                if (strpos($storageData, '</h1>')) {
-                                    if (strpos($storageData, '<h1>') > 0) {
-                                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                                if ($storageData) {
+                                    if (strpos($storageData, '</h1>')) {
+                                        if (strpos($storageData, '<h1>') > 0) {
+                                            $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
 
-                                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                            $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                            $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                        }
+                                        $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                                    } else {
+                                        $contentUnitText = $storageData;
                                     }
-                                    $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                                } else {
-                                    $contentUnitText = $storageData;
                                 }
                             }
 
@@ -686,17 +688,19 @@ class StateSyncCommand extends ContainerAwareCommand
                     $contentUnitText = null;
                     if ($channelAccount->getUrl()) {
                         $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
-                        if (strpos($storageData, '</h1>')) {
-                            if (strpos($storageData, '<h1>') > 0) {
-                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                        if ($storageData) {
+                            if (strpos($storageData, '</h1>')) {
+                                if (strpos($storageData, '<h1>') > 0) {
+                                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
 
-                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                }
+                                $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                            } else {
+                                $contentUnitText = $storageData;
                             }
-                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                        } else {
-                            $contentUnitText = $storageData;
                         }
                     }
 
