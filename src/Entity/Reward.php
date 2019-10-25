@@ -29,12 +29,12 @@ class Reward
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Block", inversedBy="rewards")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Block", inversedBy="rewards", fetch="EXTRA_LAZY")
      */
     private $block;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="rewards")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="rewards", fetch="EXTRA_LAZY")
      * @Groups({"block"})
      */
     private $to;

@@ -27,12 +27,12 @@ class Transfer
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="fromTransfers")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="fromTransfers", fetch="EXTRA_LAZY")
      */
     private $from;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="toTransfers")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="toTransfers", fetch="EXTRA_LAZY")
      */
     private $to;
 
@@ -52,7 +52,7 @@ class Transfer
     private $message;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="transfer")
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="transfer", fetch="EXTRA_LAZY")
      */
     private $transaction;
 

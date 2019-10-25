@@ -87,19 +87,19 @@ class ContentUnit
     private $channel;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits")
+     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits", fetch="EXTRA_LAZY")
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $files;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Content", inversedBy="contentUnits")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Content", inversedBy="contentUnits", fetch="EXTRA_LAZY")
      * @ORM\JoinColumn(name="content_id", referencedColumnName="id", onDelete="SET NULL")
      */
     private $content;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="contentUnit")
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="contentUnit", fetch="EXTRA_LAZY")
      */
     private $transaction;
 
@@ -140,12 +140,12 @@ class ContentUnit
     private $boosts;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      */
     private $viewLogs;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLogHistory", mappedBy="contentUnit", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLogHistory", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      */
     private $viewLogsHistory;
 

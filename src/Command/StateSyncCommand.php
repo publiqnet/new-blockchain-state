@@ -563,6 +563,7 @@ class StateSyncCommand extends ContainerAwareCommand
                 }
 
                 if (is_array($rewards)) {
+                    echo 'BlockLog(rewards): ' . $blockHash . ': ' . count($rewards) . ': ' . time() . PHP_EOL;
                     /**
                      * @var RewardLog $reward
                      */
@@ -584,6 +585,7 @@ class StateSyncCommand extends ContainerAwareCommand
                 }
 
                 if (is_array($unitUriImpacts)) {
+                    echo 'BlockLog(impacts): ' . $blockHash . ': ' . count($unitUriImpacts) . ': ' . time() . PHP_EOL;
                     /**
                      * @var ContentUnitImpactLog $unitUriImpact
                      */

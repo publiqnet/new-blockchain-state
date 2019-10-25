@@ -70,52 +70,52 @@ class Account
     private $blockchain = 0;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Block", mappedBy="account")
+     * @ORM\OneToMany(targetEntity="App\Entity\Block", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $signedBlocks;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="to")
+     * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="to", fetch="EXTRA_LAZY")
      */
     private $rewards;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\File", mappedBy="author")
+     * @ORM\OneToMany(targetEntity="App\Entity\File", mappedBy="author", fetch="EXTRA_LAZY")
      */
     private $files;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="author")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="author", fetch="EXTRA_LAZY")
      */
     private $authorContentUnits;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="channel")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="channel", fetch="EXTRA_LAZY")
      */
     private $channelContentUnits;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Content", mappedBy="channel")
+     * @ORM\OneToMany(targetEntity="App\Entity\Content", mappedBy="channel", fetch="EXTRA_LAZY")
      */
     private $contents;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="from")
+     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="from", fetch="EXTRA_LAZY")
      */
     private $fromTransfers;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="to")
+     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="to", fetch="EXTRA_LAZY")
      */
     private $toTransfers;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="storages")
+     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="storages", fetch="EXTRA_LAZY")
      */
     private $storageFiles;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="sponsor")
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="sponsor", fetch="EXTRA_LAZY")
      */
     private $boostedContentUnits;
 

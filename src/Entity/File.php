@@ -68,17 +68,17 @@ class File
     private $transaction;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\ContentUnit", mappedBy="files")
+     * @ORM\ManyToMany(targetEntity="App\Entity\ContentUnit", mappedBy="files", fetch="EXTRA_LAZY")
      */
     private $contentUnits;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\Account", mappedBy="storageFiles")
+     * @ORM\ManyToMany(targetEntity="App\Entity\Account", mappedBy="storageFiles", fetch="EXTRA_LAZY")
      */
     private $storages;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="cover")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="cover", fetch="EXTRA_LAZY")
      */
     private $covers;
 

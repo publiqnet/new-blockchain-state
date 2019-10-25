@@ -30,7 +30,7 @@ class Block
     private $id;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="signedBlocks")
+     * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="signedBlocks", fetch="EXTRA_LAZY")
      * @Groups({"block"})
      */
     private $account;
@@ -60,13 +60,13 @@ class Block
     private $size;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="block", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="block", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"block"})
      */
     private $rewards;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transaction", mappedBy="block", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\Transaction", mappedBy="block", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"block"})
      */
     private $transactions;
