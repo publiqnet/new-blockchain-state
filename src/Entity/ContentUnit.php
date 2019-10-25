@@ -88,7 +88,7 @@ class ContentUnit
     private $channel;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits")
+     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits", fetch="EXTRA_LAZY")
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $files;
@@ -142,24 +142,24 @@ class ContentUnit
     private $publication;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit")
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit", fetch="EXTRA_LAZY")
      * @Groups({"boost"})
      */
     private $boosts;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $tags;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      */
     private $viewLogs;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLogHistory", mappedBy="contentUnit", cascade={"remove"})
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLogHistory", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      */
     private $viewLogsHistory;
 

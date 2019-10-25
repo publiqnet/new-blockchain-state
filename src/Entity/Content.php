@@ -38,7 +38,7 @@ class Content
     private $channel;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="content")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="content", fetch="EXTRA_LAZY")
      */
     private $contentUnits;
 
