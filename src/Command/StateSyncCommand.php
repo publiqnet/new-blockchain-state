@@ -136,8 +136,6 @@ class StateSyncCommand extends ContainerAwareCommand
             $index = $loggedTransaction->getIndex();
 
             if ($action instanceof BlockLog) {
-                echo 'BlockLog(block): ' . $action->getBlockHash() . ': ' . time() . PHP_EOL;
-
                 //  get block data
                 $authority = $action->getAuthority();
                 $blockHash = $action->getBlockHash();
@@ -147,8 +145,6 @@ class StateSyncCommand extends ContainerAwareCommand
                 $transactions = $action->getTransactions();
                 $rewards = $action->getRewards();
                 $unitUriImpacts = $action->getUnitUriImpacts();
-
-                echo 'BlockLog(block): ' . $blockHash . ': ' . time() . PHP_EOL;
 
                 //  get authority account
                 $authorityAccount = $this->checkAccount($authority);
@@ -176,8 +172,6 @@ class StateSyncCommand extends ContainerAwareCommand
                         $timeSigned = $transaction->getTimeSigned();
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
-
-                        echo 'BlockLog(transaction): ' . $transactionHash . ': ' . time() . PHP_EOL;
 
                         if ($transaction->getAction() instanceof File) {
                             /**
@@ -563,7 +557,6 @@ class StateSyncCommand extends ContainerAwareCommand
                 }
 
                 if (is_array($rewards)) {
-                    echo 'BlockLog(rewards): ' . $blockHash . ': ' . count($rewards) . ': ' . time() . PHP_EOL;
                     /**
                      * @var RewardLog $reward
                      */
@@ -585,7 +578,6 @@ class StateSyncCommand extends ContainerAwareCommand
                 }
 
                 if (is_array($unitUriImpacts)) {
-                    echo 'BlockLog(impacts): ' . $blockHash . ': ' . count($unitUriImpacts) . ': ' . time() . PHP_EOL;
                     /**
                      * @var ContentUnitImpactLog $unitUriImpact
                      */
@@ -619,8 +611,6 @@ class StateSyncCommand extends ContainerAwareCommand
                 $timeSigned = $action->getTimeSigned();
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
-
-                echo 'TransactionLog: ' . $transactionHash . ': ' . time() . PHP_EOL;
 
                 if ($action->getAction() instanceof File) {
                     /**
