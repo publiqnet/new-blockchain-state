@@ -30,7 +30,7 @@ class Account
 
     /**
      * @var string
-     * @ORM\Column(name="public_key", type="string", length=128, nullable=true)
+     * @ORM\Column(name="public_key", type="string", length=128, nullable=false, unique=true)
      * @Groups({"account", "accountBase"})
      */
     private $publicKey;

@@ -29,6 +29,12 @@ class Transaction
     private $id;
 
     /**
+     * @ORM\Column(name="name", type="string", length=64, nullable=true)
+     * @Groups({"transaction", "transactionLight", "block"})
+     */
+    private $name;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Block", inversedBy="transactions")
      * @Groups({"transaction"})
      */
@@ -106,6 +112,22 @@ class Transaction
     public function getId()
     {
         return $this->id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param mixed $name
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 
     /**

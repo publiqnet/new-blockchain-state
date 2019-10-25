@@ -32,7 +32,6 @@ use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
 use PubliqAPI\Model\SponsorContentUnit;
-use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
 use PubliqAPI\Model\Transfer;
@@ -45,7 +44,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class StateSyncCommand extends ContainerAwareCommand
 {
     const BATCH = 100;
-    const ACTION_COUNT = 5000;
+    const ACTION_COUNT = 500;
 
     use LockableTrait;
 
@@ -147,6 +146,8 @@ class StateSyncCommand extends ContainerAwareCommand
                 $rewards = $action->getRewards();
                 $unitUriImpacts = $action->getUnitUriImpacts();
 
+                echo 'BlockLog(block): ' . $blockHash . ': ' . time() . PHP_EOL;
+
                 //  get authority account
                 $authorityAccount = $this->checkAccount($authority);
 
@@ -173,6 +174,8 @@ class StateSyncCommand extends ContainerAwareCommand
                         $timeSigned = $transaction->getTimeSigned();
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
+
+                        echo 'BlockLog(transaction): ' . $transactionHash . ': ' . time() . PHP_EOL;
 
                         if ($transaction->getAction() instanceof File) {
                             /**
@@ -301,29 +304,6 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
                                     $contentUnitEntity->setContent($contentEntity);
                                     $this->em->persist($contentUnitEntity);
-
-                                    $contentUnitEntityFiles = $contentUnitEntity->getFiles();
-                                    if ($contentUnitEntityFiles && $channelAccount->getUrl()) {
-                                        /**
-                                         * @var \App\Entity\File $contentUnitEntityFile
-                                         */
-                                        foreach ($contentUnitEntityFiles as $contentUnitEntityFile) {
-                                            //  get file details
-                                            if (!$contentUnitEntityFile->getMimeType()) {
-                                                $fileDetails = $this->blockChainService->getFileDetails($contentUnitEntityFile->getUri(), $channelAccount->getUrl());
-                                                if ($fileDetails instanceof StorageFileDetailsResponse) {
-                                                    $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
-                                                    $contentUnitEntityFile->setSize($fileDetails->getSize());
-                                                    if ($fileDetails->getMimeType() == 'text/html') {
-                                                        $fileText = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $contentUnitEntityFile->getUri());
-                                                        $contentUnitEntityFile->setContent($fileText);
-                                                    }
-
-                                                    $this->em->persist($contentUnitEntityFile);
-                                                }
-                                            }
-                                        }
-                                    }
                                 }
                                 $this->em->persist($contentEntity);
                                 $this->em->flush();
@@ -636,6 +616,8 @@ class StateSyncCommand extends ContainerAwareCommand
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
 
+                echo 'TransactionLog: ' . $transactionHash . ': ' . time() . PHP_EOL;
+
                 if ($action->getAction() instanceof File) {
                     /**
                      * @var File $file
@@ -762,29 +744,6 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
                             $contentUnitEntity->setContent($contentEntity);
                             $this->em->persist($contentUnitEntity);
-
-                            $contentUnitEntityFiles = $contentUnitEntity->getFiles();
-                            if ($contentUnitEntityFiles && $channelAccount->getUrl()) {
-                                /**
-                                 * @var \App\Entity\File $contentUnitEntityFile
-                                 */
-                                foreach ($contentUnitEntityFiles as $contentUnitEntityFile) {
-                                    //  get file details
-                                    if (!$contentUnitEntityFile->getMimeType()) {
-                                        $fileDetails = $this->blockChainService->getFileDetails($contentUnitEntityFile->getUri(), $channelAccount->getUrl());
-                                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                                            $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
-                                            $contentUnitEntityFile->setSize($fileDetails->getSize());
-                                            if ($fileDetails->getMimeType() == 'text/html') {
-                                                $fileText = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $contentUnitEntityFile->getUri());
-                                                $contentUnitEntityFile->setContent($fileText);
-                                            }
-
-                                            $this->em->persist($contentUnitEntityFile);
-                                        }
-                                    }
-                                }
-                            }
                         }
                         $this->em->flush();
 
