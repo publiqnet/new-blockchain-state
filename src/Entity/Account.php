@@ -135,47 +135,47 @@ class Account implements UserInterface
     private $blockchain = 0;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Block", mappedBy="account")
+     * @ORM\OneToMany(targetEntity="App\Entity\Block", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $signedBlocks;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="to")
+     * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="to", fetch="EXTRA_LAZY")
      */
     private $rewards;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\File", mappedBy="author")
+     * @ORM\OneToMany(targetEntity="App\Entity\File", mappedBy="author", fetch="EXTRA_LAZY")
      */
     private $files;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="author")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="author", fetch="EXTRA_LAZY")
      */
     private $authorContentUnits;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="channel")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="channel", fetch="EXTRA_LAZY")
      */
     private $channelContentUnits;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Content", mappedBy="channel")
+     * @ORM\OneToMany(targetEntity="App\Entity\Content", mappedBy="channel", fetch="EXTRA_LAZY")
      */
     private $contents;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="from")
+     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="from", fetch="EXTRA_LAZY")
      */
     private $fromTransfers;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="to")
+     * @ORM\OneToMany(targetEntity="App\Entity\Transfer", mappedBy="to", fetch="EXTRA_LAZY")
      */
     private $toTransfers;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Draft", mappedBy="account")
+     * @ORM\OneToMany(targetEntity="App\Entity\Draft", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $drafts;
 
@@ -187,42 +187,42 @@ class Account implements UserInterface
     private $apiKey;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="member")
+     * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="member", fetch="EXTRA_LAZY")
      */
     private $publications;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="inviter")
+     * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="inviter", fetch="EXTRA_LAZY")
      */
     private $publicationInvitees;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Notification", mappedBy="performer")
+     * @ORM\OneToMany(targetEntity="App\Entity\Notification", mappedBy="performer", fetch="EXTRA_LAZY")
      */
     private $performedNotifications;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserNotification", mappedBy="account")
+     * @ORM\OneToMany(targetEntity="App\Entity\UserNotification", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $notifications;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserPreference", mappedBy="account")
+     * @ORM\OneToMany(targetEntity="App\Entity\UserPreference", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $preferences;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="user")
+     * @ORM\OneToMany(targetEntity="App\Entity\UserViewLog", mappedBy="user", fetch="EXTRA_LAZY")
      */
     private $viewLogs;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="subscriber")
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="subscriber", fetch="EXTRA_LAZY")
      */
     private $subscriptions;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="author", cascade="remove")
+     * @ORM\OneToMany(targetEntity="App\Entity\Subscription", mappedBy="author", cascade="remove", fetch="EXTRA_LAZY")
      */
     private $subscribers;
 
@@ -233,12 +233,12 @@ class Account implements UserInterface
     private $memberStatus;
 
     /**
-     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="storages")
+     * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="storages", fetch="EXTRA_LAZY")
      */
     private $storageFiles;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="sponsor")
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="sponsor", fetch="EXTRA_LAZY")
      */
     private $boostedContentUnits;
 
