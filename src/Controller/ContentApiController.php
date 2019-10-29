@@ -723,11 +723,42 @@ class ContentApiController extends Controller
         }
 
         //  if viewer is article author return full data without adding view
-        if ($account && $contentUnit->getAuthor() == $account) {
+        if (($account && $contentUnit->getAuthor() == $account) || !$addView) {
+            $contentUnit->setText($contentUnit->getTextWithData());
+
+            if ($contentUnit->getCover()) {
+                /**
+                 * @var File $file
+                 */
+                $file = $contentUnit->getCover();
+
+                /**
+                 * @var Account[] $fileStorages
+                 */
+                $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
+                if (count($fileStorages)) {
+                    $randomStorage = rand(0, count($fileStorages) - 1);
+                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+
+                    $file->setUrl($fileUrl);
+                } elseif ($contentUnit->getContent()) {
+                    /**
+                     * @var Account $channel
+                     */
+                    $channel = $contentUnit->getContent()->getChannel();
+                    $storageUrl = $channel->getUrl();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+
+                    $file->setUrl($fileUrl);
+                }
+            }
+        } else {
             $removeFilesFromResponse = false;
 
             //  get files & find storage address
             $files = $contentUnit->getFiles();
+            $contentUnitUri = $contentUnit->getUri();
             if ($files) {
                 $fileStorageUrls = [];
 
@@ -743,7 +774,7 @@ class ContentApiController extends Controller
                         $randomStorage = rand(0, count($fileStorages) - 1);
                         $storageUrl = $fileStorages[$randomStorage]->getUrl();
                         $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
 
                         $file->setUrl($fileUrl);
 
@@ -772,99 +803,12 @@ class ContentApiController extends Controller
                         $contentUnitText = $contentUnit->getText();
                         $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
                         $contentUnit->setText($contentUnitText);
+
+                        //  inform Blockchain about served files
+                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
                     }
                 } catch (Exception $e) {
                     $logger->error($e->getMessage());
-                }
-            }
-        } else {
-            if ($addView) {
-                $removeFilesFromResponse = false;
-
-                //  get files & find storage address
-                $files = $contentUnit->getFiles();
-                $contentUnitUri = $contentUnit->getUri();
-                if ($files) {
-                    $fileStorageUrls = [];
-
-                    /**
-                     * @var File $file
-                     */
-                    foreach ($files as $file) {
-                        /**
-                         * @var Account[] $fileStorages
-                         */
-                        $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                        if (count($fileStorages)) {
-                            $randomStorage = rand(0, count($fileStorages) - 1);
-                            $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                            $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                            $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
-
-                            $file->setUrl($fileUrl);
-
-                            $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                        } elseif ($contentUnit->getContent()) {
-                            /**
-                             * @var Account $channel
-                             */
-                            $channel = $contentUnit->getContent()->getChannel();
-
-                            $storageUrl = $channel->getUrl();
-                            $storageAddress = $channel->getPublicKey();
-                            $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                            $file->setUrl($fileUrl);
-
-                            $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                        } else {
-                            $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
-                        }
-                    }
-
-                    //  replace file uri with url
-                    try {
-                        foreach ($fileStorageUrls as $uri => $fileStorageData) {
-                            $contentUnitText = $contentUnit->getText();
-                            $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
-                            $contentUnit->setText($contentUnitText);
-
-                            //  inform Blockchain about served files
-                            $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
-                        }
-                    } catch (Exception $e) {
-                        $logger->error($e->getMessage());
-                    }
-                }
-            } else {
-                $contentUnit->setText($contentUnit->getTextWithData());
-
-                if ($contentUnit->getCover()) {
-                    /**
-                     * @var File $file
-                     */
-                    $file = $contentUnit->getCover();
-
-                    /**
-                     * @var Account[] $fileStorages
-                     */
-                    $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                    if (count($fileStorages)) {
-                        $randomStorage = rand(0, count($fileStorages) - 1);
-                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                        $file->setUrl($fileUrl);
-                    } elseif ($contentUnit->getContent()) {
-                        /**
-                         * @var Account $channel
-                         */
-                        $channel = $contentUnit->getContent()->getChannel();
-                        $storageUrl = $channel->getUrl();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                        $file->setUrl($fileUrl);
-                    }
                 }
             }
         }

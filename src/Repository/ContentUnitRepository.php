@@ -10,6 +10,7 @@ namespace App\Repository;
 
 use App\Entity\Account;
 use App\Entity\ContentUnit;
+use App\Entity\ContentUnitTag;
 use App\Entity\Publication;
 use App\Entity\Tag;
 use Doctrine\ORM\EntityRepository;
@@ -405,13 +406,11 @@ class ContentUnitRepository extends EntityRepository
         if ($previous) {
             $query
                 ->andWhere('cu.id < :id')
-                ->orderBy('cu.id', 'desc')
-            ;
+                ->orderBy('cu.id', 'desc');
         } else {
             $query
                 ->andWhere('cu.id > :id')
-                ->orderBy('cu.id', 'asc')
-            ;
+                ->orderBy('cu.id', 'asc');
         }
 
         return $query
@@ -506,6 +505,21 @@ class ContentUnitRepository extends EntityRepository
      */
     public function getArticleRelatedArticles(ContentUnit $article, int $count = 3)
     {
+        $params = ['user' => $article->getAuthor(), 'contentId' => $article->getContentId()];
+        $tagQueryString = '';
+
+        /**
+         * @var ContentUnitTag[] $tags
+         */
+        $tags = $article->getTags();
+        if ($tags) {
+            $tagIndex = 1;
+            foreach ($tags as $tag) {
+                $params['tag' . $tagIndex] = $tag->getTag();
+                $tagQueryString .= ' or cut.tag = :tag' . $tagIndex;
+            }
+        }
+
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
@@ -517,7 +531,7 @@ class ContentUnitRepository extends EntityRepository
                 select cu3
                 from App:ContentUnit cu3 
                 left join App:ContentUnitTag cut with cut.contentUnit = cu3
-                where cu3.author = :user or cut.tag in (select tg from App:Tag tg join App:ContentUnitTag cut1 with cut1.tag = tg where cut1.contentUnit = :article) 
+                where cu3.author = :user " . $tagQueryString . "
                 group by cu3
             ");
 
@@ -530,9 +544,9 @@ class ContentUnitRepository extends EntityRepository
             ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->andWhere($query->expr()->in('cu', $preferenceQuery->getDQL()))
-            ->setParameters(['user' => $article->getAuthor(), 'article' => $article, 'contentId' => $article->getContentId()])
+            ->setParameters($params)
             ->setMaxResults($count)
-            ->orderBy('cu.id', 'desc')
+            ->orderBy('RAND()')
             ->getQuery()
             ->getResult();
     }
