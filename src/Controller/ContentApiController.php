@@ -724,6 +724,10 @@ class ContentApiController extends Controller
 
         //  if viewer is article author return full data without adding view
         if (($account && $contentUnit->getAuthor() == $account) || !$addView) {
+            if ($account && $contentUnit->getAuthor() == $account) {
+                $removeFilesFromResponse = false;
+            }
+
             $contentUnit->setText($contentUnit->getTextWithData());
 
             if ($contentUnit->getCover()) {
