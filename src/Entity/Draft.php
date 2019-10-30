@@ -136,7 +136,7 @@ class Draft
     /**
      * @var boolean
      * @ORM\Column(name="hide_cover", type="boolean", options={"default":0})
-     * @Groups({"draft"})
+     * @Groups({"draft", "draftList"})
      */
     private $hideCover = 0;
 
