@@ -192,6 +192,7 @@ class AccountApiController extends Controller
      *     @SWG\Parameter(name="lastName", in="formData", type="string", description="Last name"),
      *     @SWG\Parameter(name="bio", in="formData", type="string", description="Biography"),
      *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
+     *     @SWG\Parameter(name="deleteImage", in="formData", type="boolean", description="Delete image"),
      *     @SWG\Parameter(name="image", in="formData", type="file", description="Image"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
      * )
@@ -221,11 +222,13 @@ class AccountApiController extends Controller
             $lastName = $content['lastName'];
             $bio = $content['bio'];
             $listView = $content['listView'];
+            $deleteImage = $content['deleteImage'];
         } else {
             $firstName = $request->request->get('firstName');
             $lastName = $request->request->get('lastName');
             $bio = $request->request->get('bio');
             $listView = $request->request->get('listView');
+            $deleteImage = $request->request->get('deleteImage');
         }
 
         //  get upload path from configs
@@ -260,6 +263,8 @@ class AccountApiController extends Controller
 
                 //  set author articles social images as to be updated
                 $em->getRepository(ContentUnit::class)->updateSocialImageStatus($account);
+            } elseif ($deleteImage) {
+                $account->setImage(null);
             }
 
             $em->persist($account);
