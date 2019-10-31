@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Draft;
+use App\Repository\DraftRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -434,7 +435,7 @@ class DraftApiController extends Controller
     }
 
     /**
-     * @Route("s", methods={"GET"})
+     * @Route("s/{count}/{fromId}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get all drafts",
      *     consumes={"application/json"},
@@ -444,9 +445,11 @@ class DraftApiController extends Controller
      * @SWG\Response(response=401, description="Unauthorized user")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Draft")
+     * @param int $count
+     * @param int $fromId
      * @return Response
      */
-    public function getDrafts()
+    public function getDrafts(int $count, int $fromId)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -455,7 +458,9 @@ class DraftApiController extends Controller
          */
         $account = $this->getUser();
 
-        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account], ['id' => 'DESC']);
+        $fromDraft = $em->getRepository(Draft::class)->find($fromId);
+
+        $drafts = $em->getRepository(Draft::class)->getAuthorDrafts($account, $count + 1, $fromDraft);
         if ($drafts) {
             /**
              * @var Draft $draft
@@ -476,6 +481,12 @@ class DraftApiController extends Controller
         }
         $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList', 'tag', 'accountBase', 'publication']]);
 
-        return new JsonResponse($drafts);
+        $more = false;
+        if (count($drafts) > $count) {
+            unset($drafts[$count]);
+            $more = true;
+        }
+
+        return new JsonResponse(['data' => $drafts, 'more' => $more]);
     }
 }

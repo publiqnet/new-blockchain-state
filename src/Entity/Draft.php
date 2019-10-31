@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 /**
  * @HasLifecycleCallbacks
  * @ORM\Table(name="draft")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\DraftRepository")
  */
 class Draft
 {
