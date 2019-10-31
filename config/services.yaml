@@ -68,3 +68,15 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, label: Dictionary, group: Settings }
         public: true
+    admin.account:
+        class: App\Admin\AccountAdmin
+        arguments: [~, App\Entity\Account, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Users, group: List }
+        public: true
+    admin.publication:
+        class: App\Admin\PublicationAdmin
+        arguments: [~, App\Entity\Publication, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Publications, group: List }
+        public: true
