@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
 /**
  * @HasLifecycleCallbacks
  * @ORM\Table(name="draft")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\DraftRepository")
  */
 class Draft
 {
@@ -98,7 +98,7 @@ class Draft
      * @ORM\Column(name="content_uris", type="array", nullable=true)
      * @Groups({"draft"})
      */
-    private $contentUris = [];
+    private $contentUris;
 
     /**
      * @var array
@@ -299,7 +299,7 @@ class Draft
      */
     public function getContentUris()
     {
-        return $this->contentUris;
+        return ($this->contentUris && count($this->contentUris) ? $this->contentUris : null);
     }
 
     /**
