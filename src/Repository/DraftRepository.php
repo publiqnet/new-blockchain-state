@@ -21,14 +21,14 @@ class DraftRepository extends EntityRepository
      * @param Account $account
      * @param int $count
      * @param Draft|null $fromDraft
-     * @return void
+     * @return array|null
      */
     public function getAuthorDrafts(Account $account, int $count = 10, Draft $fromDraft = null)
     {
         if ($fromDraft) {
             $query = $this->createQueryBuilder('d');
 
-            $query->select('d')
+            return $query->select('d')
                 ->join('d.account', 'a')
                 ->where('a = :author')
                 ->andWhere('d.id < :fromId')
@@ -40,7 +40,7 @@ class DraftRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('d');
 
-            $query->select('d')
+            return $query->select('d')
                 ->join('d.account', 'a')
                 ->where('a = :author')
                 ->setParameters(['author' => $account])
