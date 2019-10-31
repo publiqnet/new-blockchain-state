@@ -10,7 +10,6 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Draft;
-use App\Repository\DraftRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -140,7 +139,7 @@ class DraftApiController extends Controller
             if (isset($sourceOfMaterial)) {
                 $draft->setSourceOfMaterial($sourceOfMaterial);
             }
-            if (isset($contentUris)) {
+            if (isset($contentUris) && count($contentUris) > 0) {
                 $draft->setContentUris($contentUris);
             }
             if (isset($tags)) {
@@ -446,10 +445,10 @@ class DraftApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Draft")
      * @param int $count
-     * @param int $fromId
+     * @param $fromId
      * @return Response
      */
-    public function getDrafts(int $count, int $fromId)
+    public function getDrafts(int $count, $fromId)
     {
         $em = $this->getDoctrine()->getManager();
 

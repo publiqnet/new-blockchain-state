@@ -38,7 +38,7 @@ class DraftRepository extends EntityRepository
                 ->getQuery()
                 ->getResult();
         } else {
-            $query = $this->createQueryBuilder('cu');
+            $query = $this->createQueryBuilder('d');
 
             $query->select('d')
                 ->join('d.account', 'a')
