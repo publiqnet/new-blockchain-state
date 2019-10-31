@@ -1,0 +1,21 @@
+{% set editors = 0 %}
+{% set contributors = 0 %}
+<td>
+    {% for member in object.members %}
+        {% if member.status == 1 %}
+            {% if member.member.firstName or member.member.lastName %}
+                Owner: {{ member.member.firstName ~ ' ' ~ member.member.lastName }}
+            {% else %}
+                Owner: {{ member.member.publicKey }}
+            {% endif %}
+        {% elseif member.status == 2 %}
+            {% set editors = editors + 1 %}
+        {% elseif member.status == 3 %}
+            {% set contributors = contributors + 1 %}
+        {% endif %}
+    {% endfor %}
+
+    <br />
+    Editors: {{ editors }} <br/>
+    Contributors: {{ contributors }}
+</td>
