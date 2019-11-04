@@ -216,7 +216,7 @@ class TrackerApiController extends Controller
         //  get user info & determine if view must be added
         $addView = $customService->viewLog($request, $contentUnit);
 
-        if (1) {
+        if ($addView) {
             $removeFilesFromResponse = false;
 
             //  get files & find storage address
@@ -273,7 +273,7 @@ class TrackerApiController extends Controller
                         $contentUnit->setText($contentUnitText);
 
                         //  inform Blockchain about served files
-//                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
                     }
                 } catch (Exception $e) {
                     $logger->error($e->getMessage());
