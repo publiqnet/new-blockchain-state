@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="reward",indexes={@Index(columns={"block_id"})})
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\RewardRepository")
  */
 class Reward
 {
@@ -30,30 +30,31 @@ class Reward
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Block", inversedBy="rewards", fetch="EXTRA_LAZY")
+     * @Groups({"explorerRewardLight"})
      */
     private $block;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="rewards", fetch="EXTRA_LAZY")
-     * @Groups({"block"})
+     * @Groups({"explorerReward"})
      */
     private $to;
 
     /**
      * @ORM\Column(name="whole", type="integer")
-     * @Groups({"block"})
+     * @Groups({"explorerReward", "explorerRewardLight"})
      */
     private $whole;
 
     /**
      * @ORM\Column(name="fraction", type="integer")
-     * @Groups({"block"})
+     * @Groups({"explorerReward", "explorerRewardLight"})
      */
     private $fraction;
 
     /**
      * @ORM\Column(name="reward_type", type="string", length=32)
-     * @Groups({"block"})
+     * @Groups({"explorerReward", "explorerRewardLight"})
      */
     private $rewardType;
 

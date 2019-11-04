@@ -29,31 +29,30 @@ class BoostedContentUnit
 
     /**
      * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="boostedContentUnit")
-     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $transaction;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="boostedContentUnits")
-     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
+     * @Groups({"explorerBoostedContentUnit"})
      */
     private $sponsor;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="boosts")
-     * @Groups({"boostedContentUnit"})
+     * @Groups({"explorerBoostedContentUnit"})
      */
     private $contentUnit;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
-     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
+     * @Groups({"explorerBoostedContentUnit"})
      */
     private $startTimePoint;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
-     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
+     * @Groups({"explorerBoostedContentUnit"})
      */
     private $hours;
 
@@ -64,19 +63,26 @@ class BoostedContentUnit
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"explorerBoostedContentUnit"})
      */
     private $whole;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"explorerBoostedContentUnit"})
      */
     private $fraction;
 
     /**
      * @var string
-     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $status;
+
+    /**
+     * @ORM\JoinColumn(nullable=true)
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", mappedBy="boostedContentUnit")
+     */
+    private $cancelBoostedContentUnit;
 
 
     /**
@@ -229,5 +235,21 @@ class BoostedContentUnit
     public function setStatus(string $status)
     {
         $this->status = $status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCancelBoostedContentUnit()
+    {
+        return $this->cancelBoostedContentUnit;
+    }
+
+    /**
+     * @param mixed $cancelBoostedContentUnit
+     */
+    public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
+    {
+        $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
     }
 }

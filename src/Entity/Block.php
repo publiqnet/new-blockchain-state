@@ -18,7 +18,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="block", indexes={@Index(columns={"account_id"})})
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass="App\Repository\BlockRepository")
  */
 class Block
 {
@@ -31,58 +31,57 @@ class Block
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="signedBlocks", fetch="EXTRA_LAZY")
-     * @Groups({"block"})
+     * @Groups({"explorerBlock"})
      */
     private $account;
 
     /**
      * @ORM\Column(name="hash", type="string", length=64, unique=true)
-     * @Groups({"block"})
+     * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $hash;
 
     /**
      * @ORM\Column(name="number", type="string", length=16, unique=true)
-     * @Groups({"block"})
+     * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $number;
 
     /**
      * @ORM\Column(name="sign_time", type="integer")
-     * @Groups({"block"})
+     * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $signTime;
 
     /**
      * @ORM\Column(name="size", type="integer")
-     * @Groups({"block"})
+     * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $size;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Reward", mappedBy="block", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"block"})
+     * @Groups({"explorerBlock"})
      */
     private $rewards;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Transaction", mappedBy="block", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"block"})
      */
     private $transactions;
 
     /**
-     * @Groups({"block"})
+     * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $transactionsCount;
 
     /**
-     * @Groups({"block", "transaction"})
+     * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $confirmationsCount;
 
     /**
-     * @Groups({"block"})
+     * @Groups({"explorerBlock"})
      */
     private $previousBlockHash;
 

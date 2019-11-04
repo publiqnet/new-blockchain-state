@@ -10,6 +10,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Content
@@ -29,11 +30,13 @@ class Content
 
     /**
      * @ORM\Column(name="blockchain_content_id", type="string", length=64)
+     * @Groups({"explorerContent"})
      */
     private $contentId;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="contents")
+     * @Groups({"explorerContent"})
      */
     private $channel;
 

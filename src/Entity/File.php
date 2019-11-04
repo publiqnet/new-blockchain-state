@@ -30,35 +30,35 @@ class File
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"file"})
+     * @Groups({"explorerFile", "trackerFile"})
      */
     private $uri;
 
     /**
      * @ORM\Column(name="mime_type", type="string", length=128, nullable=true)
-     * @Groups({"file"})
+     * @Groups({"explorerFile", "trackerFile"})
      */
     private $mimeType;
 
     /**
      * @ORM\Column(name="size", type="integer", nullable=true)
-     * @Groups({"file"})
+     * @Groups({"explorerFile", "trackerFile"})
      */
     private $size;
 
     /**
      * @ORM\Column(name="content", type="text", nullable=true)
-     * @Groups({"file"})
      */
     private $content;
 
     /**
-     * @Groups({"file"})
+     * @Groups({"trackerFile"})
      */
     private $url;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="files")
+     * @Groups({"explorerFile", "trackerFile"})
      */
     private $author;
 
@@ -82,11 +82,18 @@ class File
      */
     private $covers;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\StorageUpdate", mappedBy="file", fetch="EXTRA_LAZY")
+     */
+    private $storageUpdates;
+
 
     public function __construct()
     {
         $this->contentUnits = new ArrayCollection();
         $this->storages = new ArrayCollection();
+        $this->covers = new ArrayCollection();
+        $this->storageUpdates = new ArrayCollection();
     }
 
     /**
@@ -223,5 +230,13 @@ class File
     public function getCovers()
     {
         return $this->covers;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorageUpdates()
+    {
+        return $this->storageUpdates;
     }
 }

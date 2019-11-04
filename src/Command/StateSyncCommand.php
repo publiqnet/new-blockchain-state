@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
+use App\Entity\CancelBoostedContentUnit;
 use App\Entity\IndexNumber;
 use App\Entity\Reward;
 use App\Entity\Transaction;
@@ -19,6 +20,7 @@ use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
+use PubliqAPI\Base\Rtt;
 use PubliqAPI\Base\UpdateType;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\CancelSponsorContentUnit;
@@ -44,7 +46,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class StateSyncCommand extends ContainerAwareCommand
 {
     const BATCH = 100;
-    const ACTION_COUNT = 500;
+    const ACTION_COUNT = 5000;
 
     use LockableTrait;
 
@@ -371,6 +373,13 @@ class StateSyncCommand extends ContainerAwareCommand
                             $nodeAccount = $this->checkAccount($nodeAddress);
 
                             if ($appliedReverted) {
+                                //  add role record
+                                $roleEntity = new \App\Entity\Role();
+                                $roleEntity->setAccount($nodeAccount);
+                                $roleEntity->setType($nodeType);
+                                $this->em->persist($roleEntity);
+                                $this->em->flush();
+
                                 if ($nodeType == NodeType::channel) {
                                     $nodeAccount->setChannel(true);
                                 } elseif ($nodeType == NodeType::storage) {
@@ -382,7 +391,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->em->flush();
 
                                 //  add transaction record without relation
-                                $this->addTransaction('Role', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction('Role', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $roleEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -424,8 +433,16 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->em->persist($storageAddressAccount);
                                 $this->em->flush();
 
+                                //  add storageUpdate record
+                                $storageUpdateEntity = new \App\Entity\StorageUpdate();
+                                $storageUpdateEntity->setAccount($storageAddressAccount);
+                                $storageUpdateEntity->setStatus($status);
+                                $storageUpdateEntity->setFile($fileEntity);
+                                $this->em->persist($storageUpdateEntity);
+                                $this->em->flush();
+
                                 //  add transaction record without relation
-                                $this->addTransaction('StorageUpdate', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction('StorageUpdate', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, $storageUpdateEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -454,8 +471,14 @@ class StateSyncCommand extends ContainerAwareCommand
                             $serverAddressAccount = $this->checkAccount($serverAddress);
 
                             if ($appliedReverted) {
+                                //  add serviceStatistics record
+                                $serviceStatisticsEntity = new \App\Entity\ServiceStatistics();
+                                $serviceStatisticsEntity->setAccount($serverAddressAccount);
+                                $this->em->persist($serviceStatisticsEntity);
+                                $this->em->flush();
+
                                 //  add transaction record without relation
-                                $this->addTransaction('ServiceStatistics', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction('ServiceStatistics', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, $serviceStatisticsEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -528,8 +551,13 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
+                                $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                                $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                                $this->em->persist($cancelBoostedContentUnitEntity);
+                                $this->em->flush();
+
                                 //  add transaction record without relation
-                                $this->addTransaction('CancelSponsorContentUnit', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction('CancelSponsorContentUnit', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -803,6 +831,13 @@ class StateSyncCommand extends ContainerAwareCommand
                     $nodeAccount = $this->checkAccount($nodeAddress);
 
                     if ($appliedReverted) {
+                        //  add role record
+                        $roleEntity = new \App\Entity\Role();
+                        $roleEntity->setAccount($nodeAccount);
+                        $roleEntity->setType($nodeType);
+                        $this->em->persist($roleEntity);
+                        $this->em->flush();
+
                         if ($nodeType == NodeType::channel) {
                             $nodeAccount->setChannel(true);
                         } elseif ($nodeType == NodeType::storage) {
@@ -814,7 +849,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->flush();
 
                         //  add transaction record without relation
-                        $this->addTransaction('Role', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction('Role', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $roleEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, false);
@@ -854,8 +889,16 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->persist($storageAddressAccount);
                         $this->em->flush();
 
+                        //  add storageUpdate record
+                        $storageUpdateEntity = new \App\Entity\StorageUpdate();
+                        $storageUpdateEntity->setAccount($storageAddressAccount);
+                        $storageUpdateEntity->setStatus($status);
+                        $storageUpdateEntity->setFile($fileEntity);
+                        $this->em->persist($storageUpdateEntity);
+                        $this->em->flush();
+
                         //  add transaction record without relation
-                        $this->addTransaction('StorageUpdate', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction('StorageUpdate', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, $storageUpdateEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, false);
@@ -882,8 +925,14 @@ class StateSyncCommand extends ContainerAwareCommand
                     $serverAddressAccount = $this->checkAccount($serverAddress);
 
                     if ($appliedReverted) {
+                        //  add serviceStatistics record
+                        $serviceStatisticsEntity = new \App\Entity\ServiceStatistics();
+                        $serviceStatisticsEntity->setAccount($serverAddressAccount);
+                        $this->em->persist($serviceStatisticsEntity);
+                        $this->em->flush();
+
                         //  add transaction record without relation
-                        $this->addTransaction('ServiceStatistics', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction('ServiceStatistics', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, $serviceStatisticsEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, false);
@@ -952,8 +1001,13 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
+                        $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                        $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                        $this->em->persist($cancelBoostedContentUnitEntity);
+                        $this->em->flush();
+
                         //  add transaction record without relation
-                        $this->addTransaction('CancelSponsorContentUnit', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction('CancelSponsorContentUnit', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
@@ -1074,17 +1128,24 @@ class StateSyncCommand extends ContainerAwareCommand
      * @param null $content
      * @param null $transfer
      * @param null $boostedContentUnit
+     * @param null $role
+     * @param null $storageUpdate
+     * @param null $serviceStatistics
+     * @param null $cancelBoostedContentUnitEntity
      * @return null
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    private function addTransaction($name, $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null)
+    private function addTransaction($name, $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $role = null, $storageUpdate = null, $serviceStatistics = null, $cancelBoostedContentUnitEntity = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
-            $transaction = new Transaction();
+            //  find transaction rtt
+            $rtt = array_search($name, Rtt::types);
 
+            $transaction = new Transaction();
             $transaction->setName($name);
+            $transaction->setRtt($rtt);
             if ($block) {
                 $transaction->setBlock($block);
             }
@@ -1107,6 +1168,18 @@ class StateSyncCommand extends ContainerAwareCommand
             }
             if ($boostedContentUnit) {
                 $transaction->setBoostedContentUnit($boostedContentUnit);
+            }
+            if ($role) {
+                $transaction->setRole($role);
+            }
+            if ($storageUpdate) {
+                $transaction->setStorageUpdate($storageUpdate);
+            }
+            if ($serviceStatistics) {
+                $transaction->setServiceStatistic($serviceStatistics);
+            }
+            if ($cancelBoostedContentUnitEntity) {
+                $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
             }
 
             $this->em->persist($transaction);

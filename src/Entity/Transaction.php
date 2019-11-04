@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="transaction",indexes={@Index(columns={"block_id"})})
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass="App\Repository\TransactionRepository")
  */
 class Transaction
 {
@@ -30,80 +30,113 @@ class Transaction
 
     /**
      * @ORM\Column(name="name", type="string", length=64, nullable=true)
-     * @Groups({"transaction", "transactionLight", "block"})
      */
     private $name;
 
     /**
+     * @ORM\Column(name="rtt", type="integer", nullable=true)
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
+     */
+    private $rtt;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Block", inversedBy="transactions", fetch="EXTRA_LAZY")
-     * @Groups({"transaction"})
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
      */
     private $block;
 
     /**
      * @ORM\Column(name="fee_whole", type="integer")
-     * @Groups({"transaction", "block"})
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
      */
     private $feeWhole;
 
     /**
      * @ORM\Column(name="fee_fraction", type="integer")
-     * @Groups({"transaction", "block"})
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
      */
     private $feeFraction;
 
     /**
      * @ORM\Column(name="transaction_hash", type="string", length=64, nullable=true, unique=true)
-     * @Groups({"transaction", "transactionLight", "block"})
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
      */
     private $transactionHash;
 
     /**
      * @ORM\Column(name="transaction_size", type="integer")
-     * @Groups({"transaction", "transactionLight", "block"})
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
      */
     private $transactionSize;
 
     /**
      * @ORM\Column(name="time_signed", type="integer")
-     * @Groups({"transaction", "transactionLight", "block"})
+     * @Groups({"explorerTransaction", "explorerTransactionLight"})
      */
     private $timeSigned;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"transaction"})
+     * @Groups({"explorerTransaction"})
      */
     private $file;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\ContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"transaction"})
+     * @Groups({"explorerTransaction"})
      */
     private $contentUnit;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"transaction"})
+     * @Groups({"explorerTransaction"})
      */
     private $boostedContentUnit;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransaction"})
+     */
+    private $cancelBoostedContentUnit;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"transaction"})
+     * @Groups({"explorerTransaction"})
      */
     private $content;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\Transfer", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
-     * @Groups({"transaction"})
+     * @Groups({"explorerTransaction"})
      */
     private $transfer;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\Role", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransaction"})
+     */
+    private $role;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\StorageUpdate", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransaction"})
+     */
+    private $storageUpdate;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\ServiceStatistics", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransaction"})
+     */
+    private $serviceStatistic;
 
 
     /**
@@ -128,6 +161,22 @@ class Transaction
     public function setName($name)
     {
         $this->name = $name;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRtt()
+    {
+        return $this->rtt;
+    }
+
+    /**
+     * @param mixed $rtt
+     */
+    public function setRtt($rtt)
+    {
+        $this->rtt = $rtt;
     }
 
     /**
@@ -304,5 +353,69 @@ class Transaction
     public function setBoostedContentUnit($boostedContentUnit)
     {
         $this->boostedContentUnit = $boostedContentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCancelBoostedContentUnit()
+    {
+        return $this->cancelBoostedContentUnit;
+    }
+
+    /**
+     * @param mixed $cancelBoostedContentUnit
+     */
+    public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
+    {
+        $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRole()
+    {
+        return $this->role;
+    }
+
+    /**
+     * @param mixed $role
+     */
+    public function setRole($role)
+    {
+        $this->role = $role;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorageUpdate()
+    {
+        return $this->storageUpdate;
+    }
+
+    /**
+     * @param mixed $storageUpdate
+     */
+    public function setStorageUpdate($storageUpdate)
+    {
+        $this->storageUpdate = $storageUpdate;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getServiceStatistic()
+    {
+        return $this->serviceStatistic;
+    }
+
+    /**
+     * @param mixed $serviceStatistic
+     */
+    public function setServiceStatistic($serviceStatistic)
+    {
+        $this->serviceStatistic = $serviceStatistic;
     }
 }

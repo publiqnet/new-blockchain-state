@@ -31,19 +31,19 @@ class Account
     /**
      * @var string
      * @ORM\Column(name="public_key", type="string", length=128, nullable=false, unique=true)
-     * @Groups({"account", "accountBase"})
+     * @Groups({"explorerAccountLight", "explorerAccount", "trackerAccountLight"})
      */
     private $publicKey;
 
     /**
      * @ORM\Column(name="whole", type="integer")
-     * @Groups({"account"})
+     * @Groups({"explorerAccount"})
      */
     private $whole;
 
     /**
      * @ORM\Column(name="fraction", type="integer")
-     * @Groups({"account"})
+     * @Groups({"explorerAccount"})
      */
     private $fraction;
 
@@ -60,7 +60,6 @@ class Account
     /**
      * @var string
      * @ORM\Column(type="string", length=64, nullable=true)
-     * @Groups({"account"})
      */
     private $url;
 
@@ -119,6 +118,16 @@ class Account
      */
     private $boostedContentUnits;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Role", mappedBy="account", fetch="EXTRA_LAZY")
+     */
+    private $roles;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\StorageUpdate", mappedBy="account", fetch="EXTRA_LAZY")
+     */
+    private $storageUpdates;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -131,6 +140,8 @@ class Account
         $this->toTransfers = new ArrayCollection();
         $this->storageFiles = new ArrayCollection();
         $this->boostedContentUnits = new ArrayCollection();
+        $this->roles = new ArrayCollection();
+        $this->storageUpdates = new ArrayCollection();
     }
 
     public function __toString()
@@ -216,6 +227,22 @@ class Account
     public function getFiles()
     {
         return $this->files;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRoles()
+    {
+        return $this->roles;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getStorageUpdates()
+    {
+        return $this->storageUpdates;
     }
 
     /**

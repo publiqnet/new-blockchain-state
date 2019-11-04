@@ -31,25 +31,25 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo"})
+     * @Groups({"explorerContentUnit", "trackerContentUnitLight", "trackerContentUnit"})
      */
     private $uri;
 
     /**
      * @ORM\Column(name="blockchain_content_id", type="string", length=64)
-     * @Groups({"contentUnitContentId"})
+     * @Groups({"explorerContentUnit", "trackerContentUnitLight", "trackerContentUnit"})
      */
     private $contentId;
 
     /**
      * @ORM\Column(name="title", type="string", length=256, nullable=false)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo"})
+     * @Groups({"trackerContentUnitLight", "trackerContentUnit"})
      */
     private $title;
 
     /**
      * @ORM\Column(name="text", type="text", nullable=true)
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"trackerContentUnit"})
      */
     private $text;
 
@@ -65,30 +65,31 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="views", type="integer", nullable=true)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     * @Groups({"trackerContentUnitLight", "trackerContentUnit"})
      */
     private $views = 0;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     * @Groups({"trackerContentUnitLight", "trackerContentUnit"})
      */
     private $cover;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
-     * @Groups({"contentUnitFull", "contentUnitList"})
+     * @Groups({"explorerContentUnit", "trackerContentUnitLight", "trackerContentUnit"})
      */
     private $author;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="channelContentUnits")
+     * @Groups({"explorerContentUnit", "trackerContentUnitLight", "trackerContentUnit"})
      */
     private $channel;
 
     /**
      * @ORM\ManyToMany(targetEntity="App\Entity\File", inversedBy="contentUnits", fetch="EXTRA_LAZY")
-     * @Groups({"contentUnit", "contentUnitFull"})
+     * @Groups({"trackerContentUnit"})
      */
     private $files;
 
@@ -105,37 +106,36 @@ class ContentUnit
 
     /**
      * @var integer
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     * @Groups({"trackerContentUnitLight", "trackerContentUnit"})
      */
     private $published;
 
     /**
      * @var boolean
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     * @Groups({"trackerContentUnitLight", "trackerContentUnit"})
      */
     private $boosted;
 
     /**
      * @var string
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
+     * @Groups({"trackerContentUnitLight", "trackerContentUnit"})
      */
     private $status;
 
     /**
      * @var mixed
-     * @Groups({"previousVersions"})
+     * @Groups({"trackerContentUnit"})
      */
     private $previousVersions;
 
     /**
      * @var mixed
-     * @Groups({"nextVersions"})
+     * @Groups({"trackerContentUnit"})
      */
     private $nextVersions;
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit")
-     * @Groups({"boost"})
      */
     private $boosts;
 
@@ -151,7 +151,6 @@ class ContentUnit
 
     /**
      * @var string
-     * @Groups({"contentUnitList"})
      */
     private $description;
 

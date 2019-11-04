@@ -9,13 +9,14 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class Transfer
  * @package App\Entity
  *
  * @ORM\Table(name="transfer")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\TransferRepository")
  */
 class Transfer
 {
@@ -28,21 +29,25 @@ class Transfer
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="fromTransfers", fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransfer"})
      */
     private $from;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="toTransfers", fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransfer"})
      */
     private $to;
 
     /**
      * @ORM\Column(name="whole", type="integer")
+     * @Groups({"explorerTransfer"})
      */
     private $whole;
 
     /**
      * @ORM\Column(name="fraction", type="integer")
+     * @Groups({"explorerTransfer"})
      */
     private $fraction;
 
