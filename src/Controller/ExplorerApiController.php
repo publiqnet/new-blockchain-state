@@ -101,7 +101,7 @@ class ExplorerApiController extends Controller
             $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $search]);
             if ($account) {
                 $accountTransactions = $em->getRepository(Transaction::class)->getAccountTransactions($account, null, 11);
-                $accountTransactions = $this->get('serializer')->normalize($accountTransactions, null, ['groups' => ['explorerTransactionLight', 'explorerBlockLight']]);
+                $accountTransactions = $this->get('serializer')->normalize($accountTransactions, null, ['groups' => ['explorerTransaction', 'explorerBlockLight', 'explorerAccountLight', 'explorerFile', 'explorerContentUnit', 'explorerContent', 'explorerTransfer', 'explorerRole', 'explorerStorageUpdate', 'explorerServiceStatistics', 'explorerBoostedContentUnit', 'explorerCancelBoostedContentUnit']]);
                 $moreTransactions = 0;
                 if (count($accountTransactions) > 10) {
                     unset($accountTransactions[10]);
@@ -471,7 +471,7 @@ class ExplorerApiController extends Controller
         }
 
         $accountTransactions = $em->getRepository(Transaction::class)->getAccountTransactions($account, null, 11);
-        $accountTransactions = $this->get('serializer')->normalize($accountTransactions, null, ['groups' => ['explorerTransactionLight', 'explorerBlockLight']]);
+        $accountTransactions = $this->get('serializer')->normalize($accountTransactions, null, ['groups' => ['explorerTransaction', 'explorerBlockLight', 'explorerAccountLight', 'explorerFile', 'explorerContentUnit', 'explorerContent', 'explorerTransfer', 'explorerRole', 'explorerStorageUpdate', 'explorerServiceStatistics', 'explorerBoostedContentUnit', 'explorerCancelBoostedContentUnit']]);
         $moreTransactions = 0;
         if (count($accountTransactions) > 10) {
             unset($accountTransactions[10]);
