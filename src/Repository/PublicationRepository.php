@@ -104,9 +104,6 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
 
     public function fulltextSearch($searchWord, $count = 5, Publication $publication = null)
     {
-//        $searchWord = explode(' ', $searchWord);
-//        $searchWord = '+'.implode(' +', $searchWord);
-
         if ($publication) {
             return $this->createQueryBuilder('p')
                 ->select("p")

@@ -122,6 +122,7 @@ class SearchApiController extends Controller
         $account = $this->getUser();
 
         //  SEARCH IN PUBLICATIONS
+        $publicationsAll = $em->getRepository(Publication::class)->fulltextSearch($word, 1000000);
         $publications = $em->getRepository(Publication::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $publications) {
             /**
@@ -154,6 +155,7 @@ class SearchApiController extends Controller
         }
 
         //  SEARCH IN ARTICLES
+        $articlesAll = $em->getRepository(ContentUnit::class)->fulltextSearch($word, 1000000);
         $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $defaultCount + 1);
         if ($articles) {
             try {
@@ -172,6 +174,7 @@ class SearchApiController extends Controller
         }
 
         //  SEARCH IN AUTHORS
+        $authorsAll = $em->getRepository(Account::class)->fulltextSearch($word, 1000000);
         $authors = $em->getRepository(Account::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $authors) {
             /**
@@ -195,7 +198,7 @@ class SearchApiController extends Controller
             unset($authors[$defaultCount]);
         }
 
-        return new JsonResponse(['publication' => $publications, 'publicationMore' => $publicationsMore, 'article' => $articles, 'articleMore' => $articlesMore, 'authors' => $authors, 'authorsMore' => $authorsMore]);
+        return new JsonResponse(['publication' => $publications, 'publicationMore' => $publicationsMore, 'publicationCount' => count($publicationsAll), 'article' => $articles, 'articleMore' => $articlesMore, 'articleCount' => count($articlesAll), 'authors' => $authors, 'authorsMore' => $authorsMore, 'authorsCount' => count($authorsAll)]);
     }
 
     /**
