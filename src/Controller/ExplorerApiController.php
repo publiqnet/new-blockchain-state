@@ -69,7 +69,7 @@ class ExplorerApiController extends Controller
 
                 //  get block last 10 transactions
                 $transactions = $em->getRepository(Transaction::class)->getBlockTransactions($block, 0, 10);
-                $transactions = $this->get('serializer')->normalize($transactions, null, ['groups' => ['explorerTransactionLight']]);
+                $transactions = $this->get('serializer')->normalize($transactions, null, ['groups' => ['explorerTransaction', 'explorerBlockLight', 'explorerAccountLight', 'explorerFile', 'explorerContentUnit', 'explorerContent', 'explorerTransfer', 'explorerRole', 'explorerStorageUpdate', 'explorerServiceStatistics', 'explorerBoostedContentUnit', 'explorerCancelBoostedContentUnit']]);
 
                 //  format data
                 $block = $this->get('serializer')->normalize($block, null, ['groups' => ['explorerBlock', 'explorerAccountLight', 'explorerReward']]);

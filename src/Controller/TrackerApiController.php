@@ -184,6 +184,101 @@ class TrackerApiController extends Controller
     }
 
     /**
+     * @Route("/contents/{count}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get contents",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Tracker / Content")
+     * @param int $count
+     * @param string $fromUri
+     * @param Custom $customService
+     * @return JsonResponse
+     */
+    public function contents(int $count, string $fromUri, Custom $customService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $fromContentUnit = null;
+        if ($fromUri) {
+            $fromContentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+        }
+
+        /**
+         * @var ContentUnit[] $articles
+         */
+        $articles = $em->getRepository(ContentUnit::class)->getArticles($count + 1, $fromContentUnit);
+
+        if ($articles) {
+            foreach ($articles as $article) {
+                if ($article->getCover()) {
+                    /**
+                     * @var File $file
+                     */
+                    $file = $article->getCover();
+                    if ($article->getContent()) {
+                        /**
+                         * @var Account $channel
+                         */
+                        $channel = $article->getContent()->getChannel();
+                        $storageUrl = $channel->getUrl();
+                        $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
+                    } else {
+                        /**
+                         * @var Account[] $fileStorages
+                         */
+                        $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
+                        if (count($fileStorages)) {
+                            $randomStorage = rand(0, count($fileStorages) - 1);
+                            $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
+                        }
+                    }
+                }
+
+                //  check if transaction confirmed
+                /**
+                 * @var Transaction $transaction
+                 */
+                $transaction = $article->getTransaction();
+                if ($transaction->getBlock()) {
+                    $article->setStatus('confirmed');
+                } else {
+                    $article->setStatus('pending');
+                }
+
+                $article->setPublished($transaction->getTimeSigned());
+
+                //  check if article boosted
+                $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($article);
+                $article->setBoosted($isBoosted);
+
+                //  generate short description
+                $desc = $article->getTextWithData();
+                $desc = trim(strip_tags($desc));
+                if (strlen($desc) > 300) {
+                    $desc = substr($desc, 0, strpos($desc, ' ')) . '...';
+                }
+                $article->setDescription($desc);
+            }
+        }
+        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['trackerContentUnitLight', 'trackerAccountLight', 'trackerFile']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($articles) > $count) {
+            unset($articles[$count]);
+            $more = true;
+        }
+
+        return new JsonResponse(['data' => $articles, 'more' => $more]);
+    }
+
+    /**
      * @Route("/content/{uri}", methods={"GET"}, name="get_content_by_uri")
      * @SWG\Get(
      *     summary="Get content by uri",
@@ -206,7 +301,6 @@ class TrackerApiController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
-        $removeFilesFromResponse = true;
 
         $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
@@ -216,78 +310,16 @@ class TrackerApiController extends Controller
         //  get user info & determine if view must be added
         $addView = $customService->viewLog($request, $contentUnit);
 
-        if ($addView) {
-            $removeFilesFromResponse = false;
+        //  get files & find storage address
+        $files = $contentUnit->getFiles();
+        $contentUnitUri = $contentUnit->getUri();
+        if ($files) {
+            $fileStorageUrls = [];
 
-            //  get files & find storage address
-            $files = $contentUnit->getFiles();
-            $contentUnitUri = $contentUnit->getUri();
-            if ($files) {
-                $fileStorageUrls = [];
-
-                /**
-                 * @var File $file
-                 */
-                foreach ($files as $file) {
-                    /**
-                     * @var Account[] $fileStorages
-                     */
-                    $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                    if (count($fileStorages)) {
-                        $randomStorage = rand(0, count($fileStorages) - 1);
-                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                        $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
-
-                        $file->setUrl($fileUrl);
-
-                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                    } elseif ($contentUnit->getContent()) {
-                        /**
-                         * @var Content $content
-                         */
-                        $content = $contentUnit->getContent();
-
-                        /**
-                         * @var Account $channel
-                         */
-                        $channel = $content->getChannel();
-
-                        $storageUrl = $channel->getUrl();
-                        $storageAddress = $channel->getPublicKey();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                        $file->setUrl($fileUrl);
-
-                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                    } else {
-                        $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
-                    }
-                }
-
-                //  replace file uri with url
-                try {
-                    foreach ($fileStorageUrls as $uri => $fileStorageData) {
-                        $contentUnitText = $contentUnit->getText();
-                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
-                        $contentUnit->setText($contentUnitText);
-
-                        //  inform Blockchain about served files
-                        $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
-                    }
-                } catch (Exception $e) {
-                    $logger->error($e->getMessage());
-                }
-            }
-        } else {
-            $contentUnit->setText($contentUnit->getTextWithData());
-
-            if ($contentUnit->getCover()) {
-                /**
-                 * @var File $file
-                 */
-                $file = $contentUnit->getCover();
-
+            /**
+             * @var File $file
+             */
+            foreach ($files as $file) {
                 /**
                  * @var Account[] $fileStorages
                  */
@@ -295,24 +327,46 @@ class TrackerApiController extends Controller
                 if (count($fileStorages)) {
                     $randomStorage = rand(0, count($fileStorages) - 1);
                     $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+                    $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
 
                     $file->setUrl($fileUrl);
-                } elseif ($contentUnit->getContent()) {
-                    /**
-                     * @var Content $content
-                     */
-                    $content = $contentUnit->getContent();
 
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                } elseif ($contentUnit->getContent()) {
                     /**
                      * @var Account $channel
                      */
-                    $channel = $content->getChannel();
+                    $channel = $contentUnit->getChannel();
+
                     $storageUrl = $channel->getUrl();
+                    $storageAddress = $channel->getPublicKey();
                     $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
                     $file->setUrl($fileUrl);
+
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                } else {
+                    $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
                 }
+
+                if (!$addView && $file->getMimeType() == 'text/html') {
+                    $file->setUrl(null);
+                }
+            }
+
+            //  replace file uri with url
+            try {
+                foreach ($fileStorageUrls as $uri => $fileStorageData) {
+                    $contentUnitText = $contentUnit->getText();
+                    $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
+                    $contentUnit->setText($contentUnitText);
+
+                    //  inform Blockchain about served files
+//                  $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                }
+            } catch (Exception $e) {
+                $logger->error($e->getMessage());
             }
         }
 
@@ -373,11 +427,6 @@ class TrackerApiController extends Controller
         $contentUnit->setBoosted($isBoosted);
 
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['trackerContentUnit', 'trackerAccountLight', 'trackerFile']]);
-
-        //  remove files field if served from local
-        if ($removeFilesFromResponse) {
-            unset($contentUnit['files']);
-        }
 
         return new JsonResponse($contentUnit);
     }

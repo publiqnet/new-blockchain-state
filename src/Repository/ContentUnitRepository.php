@@ -107,4 +107,46 @@ class ContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @param int $count
+     * @param ContentUnit|null $fromContentUnit
+     * @return array|null
+     */
+    public function getArticles(int $count = 10, ContentUnit $fromContentUnit = null)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->groupBy('cu2.contentId');
+
+        if ($fromContentUnit) {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu, a, t')
+                ->join('cu.author', 'a')
+                ->join('cu.transaction', 't')
+                ->where('cu.id < :fromId')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['fromId' => $fromContentUnit->getId()])
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        } else {
+            $query = $this->createQueryBuilder('cu');
+
+            return $query->select('cu, a, t')
+                ->join('cu.author', 'a')
+                ->join('cu.transaction', 't')
+                ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setMaxResults($count)
+                ->orderBy('cu.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        }
+    }
 }

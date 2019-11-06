@@ -48,6 +48,7 @@ class File
 
     /**
      * @ORM\Column(name="content", type="text", nullable=true)
+     * @Groups({"trackerFile"})
      */
     private $content;
 
