@@ -34,10 +34,11 @@ use Symfony\Component\Routing\Annotation\Route;
 class TrackerApiController extends Controller
 {
     /**
-     * @Route("/search/{word}", methods={"POST"})
-     * @SWG\Post(
+     * @Route("/search/{word}", methods={"GET"})
+     * @SWG\Get(
      *     summary="Search for Single Article / Author Articles",
-     *     consumes={"application/json"}
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="Not found")
@@ -363,7 +364,7 @@ class TrackerApiController extends Controller
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files
-//                  $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                  $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
                 }
             } catch (Exception $e) {
                 $logger->error($e->getMessage());
