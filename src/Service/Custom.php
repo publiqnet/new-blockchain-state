@@ -371,17 +371,17 @@ class Custom
             //  create instance of ImageWorkshop from cover
             $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
 
-            //  resize cover width 1280px, height 720px
+            //  resize cover width 1280px, height 670px
             $coverWorkshop->resizeInPixel(1280, null, true);
-            if ($coverWorkshop->getHeight() < 720) {
-                $coverWorkshop->resizeInPixel(null, 720, true);
+            if ($coverWorkshop->getHeight() < 670) {
+                $coverWorkshop->resizeInPixel(null, 670, true);
             }
 
             //  crop
             if ($coverWorkshop->getWidth() == 1280) {
-                $coverWorkshop->cropInPixel(1280, 720, 0, 0, 'LT');
+                $coverWorkshop->cropInPixel(1280, 670, 0, 0, 'LT');
             } else {
-                $coverWorkshop->cropInPixel(1280, 720, ($coverWorkshop->getWidth() - 1280) / 2, 0, 'LT');
+                $coverWorkshop->cropInPixel(1280, 670, ($coverWorkshop->getWidth() - 1280) / 2, 0, 'LT');
             }
 
             //  add main background
@@ -502,17 +502,17 @@ class Custom
             //  create instance of ImageWorkshop from cover
             $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
 
-            //  resize cover width 1280px, height 720px
+            //  resize cover width 1280px, height 670px
             $coverWorkshop->resizeInPixel(1280, null, true);
-            if ($coverWorkshop->getHeight() < 720) {
-                $coverWorkshop->resizeInPixel(null, 720, true);
+            if ($coverWorkshop->getHeight() < 670) {
+                $coverWorkshop->resizeInPixel(null, 670, true);
             }
 
             //  crop
             if ($coverWorkshop->getWidth() == 1280) {
-                $coverWorkshop->cropInPixel(1280, 720, 0, 0, 'LT');
+                $coverWorkshop->cropInPixel(1280, 670, 0, 0, 'LT');
             } else {
-                $coverWorkshop->cropInPixel(1280, 720, ($coverWorkshop->getWidth() - 1280) / 2, 0, 'LT');
+                $coverWorkshop->cropInPixel(1280, 670, ($coverWorkshop->getWidth() - 1280) / 2, 0, 'LT');
             }
 
             //  add main background
