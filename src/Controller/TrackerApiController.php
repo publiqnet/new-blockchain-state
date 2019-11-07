@@ -372,17 +372,13 @@ class TrackerApiController extends Controller
         }
 
         /**
-         * @var Transaction $transaction
+         * @var Transaction $transactionContentUnit
          */
-        $transaction = $contentUnit->getTransaction();
-        $contentUnit->setPublished($transaction->getTimeSigned());
+        $transactionContentUnit = $contentUnit->getTransaction();
+        $contentUnit->setPublished($transactionContentUnit->getTimeSigned());
 
         //  check if transaction confirmed
-        /**
-         * @var Transaction $transaction
-         */
-        $transaction = $contentUnit->getTransaction();
-        if ($transaction->getBlock()) {
+        if ($transactionContentUnit->getBlock()) {
             $contentUnit->setStatus('confirmed');
         } else {
             $contentUnit->setStatus('pending');
@@ -428,6 +424,14 @@ class TrackerApiController extends Controller
         $contentUnit->setBoosted($isBoosted);
 
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['trackerContentUnit', 'trackerAccountLight', 'trackerFile']]);
+
+        //  add transaction and block into return data
+        $contentUnit['transactionHash'] = $transactionContentUnit->getTransactionHash();
+        if ($transactionContentUnit->getBlock()) {
+            $contentUnit['blockHash'] = $transactionContentUnit->getBlock()->getHash();
+        } else {
+            $contentUnit['blockHash'] = null;
+        }
 
         return new JsonResponse($contentUnit);
     }
