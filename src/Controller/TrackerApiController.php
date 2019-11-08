@@ -34,7 +34,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class TrackerApiController extends Controller
 {
     /**
-     * @Route("/search/{word}/{count}/(fromUri)", methods={"GET"})
+     * @Route("/search/{word}/{count}/{fromUri}", methods={"GET"})
      * @SWG\Get(
      *     summary="Search for Single Article / Author Articles",
      *     consumes={"application/json"},
