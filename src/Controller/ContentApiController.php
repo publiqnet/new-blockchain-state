@@ -510,7 +510,7 @@ class ContentApiController extends Controller
         $detectResult = $blockChainService->detectContentLanguage($text);
         if (is_array($detectResult) && count($detectResult)) {
             foreach ($detectResult as $language => $possibility) {
-                return new JsonResponse($language);
+                return new JsonResponse(['code' => $language, 'internationalName' => $possibility[1], 'nativeName' => $possibility[2]]);
             }
         }
 
@@ -752,7 +752,7 @@ class ContentApiController extends Controller
                         /**
                          * @var Account $channel
                          */
-                        $channel = $contentUnit->getContent()->getChannel();
+                        $channel = $contentUnit->getChannel();
 
                         $storageUrl = $channel->getUrl();
                         $storageAddress = $channel->getPublicKey();
@@ -808,7 +808,7 @@ class ContentApiController extends Controller
                             /**
                              * @var Account $channel
                              */
-                            $channel = $contentUnit->getContent()->getChannel();
+                            $channel = $contentUnit->getChannel();
 
                             $storageUrl = $channel->getUrl();
                             $storageAddress = $channel->getPublicKey();
@@ -859,7 +859,7 @@ class ContentApiController extends Controller
                         /**
                          * @var Account $channel
                          */
-                        $channel = $contentUnit->getContent()->getChannel();
+                        $channel = $contentUnit->getChannel();
                         $storageUrl = $channel->getUrl();
                         $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
@@ -1003,7 +1003,7 @@ class ContentApiController extends Controller
                 /**
                  * @var Account $channel
                  */
-                $channel = $contentUnit->getContent()->getChannel();
+                $channel = $contentUnit->getChannel();
                 $storageUrl = $channel->getUrl();
 
                 $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
