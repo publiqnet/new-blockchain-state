@@ -115,7 +115,7 @@ class TrackerApiController extends Controller
             //  normalize to return
             $article = $this->get('serializer')->normalize($article, null, ['groups' => ['trackerContentUnitLight', 'trackerAccountLight', 'trackerFile']]);
 
-            return new JsonResponse(['type' => 'article', 'data' => $article]);
+            return new JsonResponse(['type' => 'article', 'data' => $article, 'more' => false]);
         }
 
         //  SEARCH IN AUTHORS
@@ -125,11 +125,11 @@ class TrackerApiController extends Controller
             if ($fromUri) {
                 $fromArticle = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
             }
-            
+
             /**
              * @var ContentUnit[] $articles
              */
-            $articles = $em->getRepository(ContentUnit::class)->getAuthorArticles($author, $count, $fromArticle);
+            $articles = $em->getRepository(ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromArticle);
             if ($articles) {
                 foreach ($articles as $article) {
                     if ($article->getCover()) {
@@ -185,7 +185,13 @@ class TrackerApiController extends Controller
             }
             $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['trackerContentUnitLight', 'trackerAccountLight', 'trackerFile']]);
 
-            return new JsonResponse(['type' => 'author', 'data' => $articles]);
+            $more = false;
+            if (count($articles) > $count) {
+                unset($articles[$count]);
+                $more = true;
+            }
+
+            return new JsonResponse(['type' => 'author', 'data' => $articles, 'more' => $more]);
         }
 
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
