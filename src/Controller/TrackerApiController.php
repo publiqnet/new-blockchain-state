@@ -34,7 +34,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class TrackerApiController extends Controller
 {
     /**
-     * @Route("/search/{word}", methods={"GET"})
+     * @Route("/search/{word}/{count}/(fromUri)", methods={"GET"})
      * @SWG\Get(
      *     summary="Search for Single Article / Author Articles",
      *     consumes={"application/json"},
@@ -45,10 +45,12 @@ class TrackerApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Tracker / Search")
      * @param string $word
+     * @param int $count
+     * @param $fromUri
      * @param Custom $customService
      * @return Response
      */
-    public function search(string $word, Custom $customService)
+    public function search(string $word, int $count, $fromUri, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -119,10 +121,15 @@ class TrackerApiController extends Controller
         //  SEARCH IN AUTHORS
         $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $word]);
         if ($author) {
+            $fromArticle = null;
+            if ($fromUri) {
+                $fromArticle = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+            }
+            
             /**
              * @var ContentUnit[] $articles
              */
-            $articles = $em->getRepository(ContentUnit::class)->getAuthorArticles($author, 9999);
+            $articles = $em->getRepository(ContentUnit::class)->getAuthorArticles($author, $count, $fromArticle);
             if ($articles) {
                 foreach ($articles as $article) {
                     if ($article->getCover()) {
