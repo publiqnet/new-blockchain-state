@@ -148,6 +148,463 @@ class StateSyncCommand extends ContainerAwareCommand
                 $rewards = $action->getRewards();
                 $unitUriImpacts = $action->getUnitUriImpacts();
 
+                //  get authority account
+                $authorityAccount = $this->checkAccount($authority);
+
+                $block = $this->em->getRepository(Block::class)->findOneBy(['hash' => $blockHash]);
+                if (!$block) {
+                    $block = new Block();
+                    $block->setAccount($authorityAccount);
+                    $block->setHash($blockHash);
+                    $block->setNumber($blockNumber);
+                    $block->setSignTime($signTime);
+                    $block->setSize($size);
+                    $this->em->persist($block);
+                    $this->em->flush();
+                }
+
+                if (is_array($transactions)) {
+                    /**
+                     * @var TransactionLog $transaction
+                     */
+                    foreach ($transactions as $transaction) {
+                        //  get transaction data
+                        $transactionHash = $transaction->getTransactionHash();
+                        $transactionSize = $transaction->getTransactionSize();
+                        $timeSigned = $transaction->getTimeSigned();
+                        $feeWhole = $transaction->getFee()->getWhole();
+                        $feeFraction = $transaction->getFee()->getFraction();
+
+                        if ($transaction->getAction() instanceof File) {
+                            /**
+                             * @var File $file
+                             */
+                            $file = $transaction->getAction();
+
+                            //  get file data
+                            $authorAddress = $file->getAuthorAddresses()[0];
+                            $uri = $file->getUri();
+
+                            //  create objects
+                            $authorAccount = $this->checkAccount($authorAddress);
+
+                            if ($appliedReverted) {
+                                //  add file record
+                                $fileEntity = new \App\Entity\File();
+                                $fileEntity->setAuthor($authorAccount);
+                                $fileEntity->setUri($uri);
+                                $this->em->persist($fileEntity);
+                                $this->em->flush();
+
+                                //  add transaction record with relation to file
+                                $this->addTransaction('File', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $fileEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof ContentUnit) {
+                            /**
+                             * @var ContentUnit $contentUnit
+                             */
+                            $contentUnit = $transaction->getAction();
+
+                            //  get content unit data
+                            $uri = $contentUnit->getUri();
+                            $contentId = $contentUnit->getContentId();
+                            $authorAddress = $contentUnit->getAuthorAddresses()[0];
+                            $channelAddress = $contentUnit->getChannelAddress();
+                            $fileUris = $contentUnit->getFileUris();
+                            $coverUri = null;
+
+                            $authorAccount = $this->checkAccount($authorAddress);
+                            $channelAccount = $this->checkAccount($channelAddress);
+
+                            //  get content unit data from storage
+                            $contentUnitTitle = 'Unknown';
+                            $contentUnitText = null;
+                            if ($channelAccount->getUrl()) {
+                                $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                                if ($storageData) {
+                                    if (strpos($storageData, '</h1>')) {
+                                        if (strpos($storageData, '<h1>') > 0) {
+                                            $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                                            $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                            $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                        }
+                                        $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                                    } else {
+                                        $contentUnitText = $storageData;
+                                    }
+                                }
+                            }
+
+                            //  create objects
+                            if ($appliedReverted) {
+                                //  add file record
+                                $contentUnitEntity = new \App\Entity\ContentUnit();
+                                $contentUnitEntity->setUri($uri);
+                                $contentUnitEntity->setContentId($contentId);
+                                $contentUnitEntity->setAuthor($authorAccount);
+                                $contentUnitEntity->setChannel($channelAccount);
+                                $contentUnitEntity->setTitle($contentUnitTitle);
+                                $contentUnitEntity->setText($contentUnitText);
+                                $contentUnitEntity->setTextWithData($contentUnitText);
+                                foreach ($fileUris as $fileUri) {
+                                    $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                                    $contentUnitEntity->addFile($fileEntity);
+                                }
+                                if ($coverUri) {
+                                    $coverFileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $coverUri]);
+                                    $contentUnitEntity->setCover($coverFileEntity);
+                                }
+
+                                $this->em->persist($contentUnitEntity);
+                                $this->em->flush();
+
+                                //  add transaction record with relation to content unit
+                                $this->addTransaction('ContentUnit', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof Content) {
+                            /**
+                             * @var Content $content
+                             */
+                            $content = $transaction->getAction();
+
+                            //  get content data
+                            $contentId = $content->getContentId();
+                            $channelAddress = $content->getChannelAddress();
+                            $contentUnitUris = $content->getContentUnitUris();
+
+                            //  create channel object
+                            $channelAccount = $this->checkAccount($channelAddress);
+
+                            if ($appliedReverted) {
+                                //  add content record
+                                $contentEntity = new \App\Entity\Content();
+                                $contentEntity->setContentId($contentId);
+                                $contentEntity->setChannel($channelAccount);
+                                foreach ($contentUnitUris as $uri) {
+                                    $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+                                    $contentUnitEntity->setContent($contentEntity);
+                                    $this->em->persist($contentUnitEntity);
+                                }
+                                $this->em->persist($contentEntity);
+                                $this->em->flush();
+
+                                //  add transaction record with relation to content
+                                $this->addTransaction('Content', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, $contentEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($channelAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($channelAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof Transfer) {
+                            /**
+                             * @var Transfer $transfer
+                             */
+                            $transfer = $transaction->getAction();
+
+                            //  get transfer data
+                            $from = $transfer->getFrom();
+                            $to = $transfer->getTo();
+                            $whole = $transfer->getAmount()->getWhole();
+                            $fraction = $transfer->getAmount()->getFraction();
+                            $message = $transfer->getMessage();
+
+                            //  create from/to objects
+                            $fromAccount = $this->checkAccount($from);
+                            $toAccount = $this->checkAccount($to);
+
+                            if ($appliedReverted) {
+                                //  add transfer record
+                                $transferEntity = new \App\Entity\Transfer();
+                                $transferEntity->setFrom($fromAccount);
+                                $transferEntity->setTo($toAccount);
+                                $transferEntity->setWhole($whole);
+                                $transferEntity->setFraction($fraction);
+                                $transferEntity->setMessage($message);
+                                $this->em->persist($transferEntity);
+                                $this->em->flush();
+
+                                //  add transaction record with relation to transfer
+                                $this->addTransaction('Transfer', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, $transferEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($fromAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($fromAccount, $whole, $fraction, false);
+                                $this->updateAccountBalance($toAccount, $whole, $fraction, true);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($fromAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($fromAccount, $whole, $fraction, true);
+                                $this->updateAccountBalance($toAccount, $whole, $fraction, false);
+                            }
+                        } elseif ($transaction->getAction() instanceof Role) {
+                            /**
+                             * @var Role $role
+                             */
+                            $role = $transaction->getAction();
+
+                            //  get role data
+                            $nodeAddress = $role->getNodeAddress();
+                            $nodeType = $role->getNodeType();
+
+                            $nodeAccount = $this->checkAccount($nodeAddress);
+
+                            if ($appliedReverted) {
+                                //  add role record
+                                $roleEntity = new \App\Entity\Role();
+                                $roleEntity->setAccount($nodeAccount);
+                                $roleEntity->setType($nodeType);
+                                $this->em->persist($roleEntity);
+                                $this->em->flush();
+
+                                if ($nodeType == NodeType::channel) {
+                                    $nodeAccount->setChannel(true);
+                                } elseif ($nodeType == NodeType::storage) {
+                                    $nodeAccount->setStorage(true);
+                                } elseif ($nodeType == NodeType::blockchain) {
+                                    $nodeAccount->setBlockchain(true);
+                                }
+                                $this->em->persist($nodeAccount);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction('Role', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $roleEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                if ($nodeType == NodeType::channel) {
+                                    $nodeAccount->setChannel(false);
+                                } elseif ($nodeType == NodeType::storage) {
+                                    $nodeAccount->setStorage(false);
+                                } elseif ($nodeType == NodeType::blockchain) {
+                                    $nodeAccount->setBlockchain(false);
+                                }
+                                $this->em->persist($nodeAccount);
+                                $this->em->flush();
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($nodeAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof StorageUpdate) {
+                            /**
+                             * @var StorageUpdate $storageUpdate
+                             */
+                            $storageUpdate = $transaction->getAction();
+
+                            $status = $storageUpdate->getStatus();
+                            $storageAddress = $storageUpdate->getStorageAddress();
+                            $fileUri = $storageUpdate->getFileUri();
+
+                            $storageAddressAccount = $this->checkAccount($storageAddress);
+
+                            if ($appliedReverted) {
+                                $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                                if ($status == UpdateType::store) {
+                                    $storageAddressAccount->addStorageFile($fileEntity);
+                                } else {
+                                    $storageAddressAccount->removeStorageFile($fileEntity);
+                                }
+                                $this->em->persist($storageAddressAccount);
+                                $this->em->flush();
+
+                                //  add storageUpdate record
+                                $storageUpdateEntity = new \App\Entity\StorageUpdate();
+                                $storageUpdateEntity->setAccount($storageAddressAccount);
+                                $storageUpdateEntity->setStatus($status);
+                                $storageUpdateEntity->setFile($fileEntity);
+                                $this->em->persist($storageUpdateEntity);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction('StorageUpdate', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, $storageUpdateEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
+                                if ($status == UpdateType::store) {
+                                    $storageAddressAccount->removeStorageFile($fileEntity);
+                                } else {
+                                    $storageAddressAccount->addStorageFile($fileEntity);
+                                }
+                                $this->em->persist($storageAddressAccount);
+                                $this->em->flush();
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof ServiceStatistics) {
+                            /**
+                             * @var ServiceStatistics $serviceStatistics
+                             */
+                            $serviceStatistics = $transaction->getAction();
+
+                            $serverAddress = $serviceStatistics->getServerAddress();
+                            $serverAddressAccount = $this->checkAccount($serverAddress);
+
+                            if ($appliedReverted) {
+                                //  add serviceStatistics record
+                                $serviceStatisticsEntity = new \App\Entity\ServiceStatistics();
+                                $serviceStatisticsEntity->setAccount($serverAddressAccount);
+                                $this->em->persist($serviceStatisticsEntity);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction('ServiceStatistics', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, $serviceStatisticsEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($serverAddressAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof SponsorContentUnit) {
+                            /**
+                             * @var SponsorContentUnit $sponsorContentUnit
+                             */
+                            $sponsorContentUnit = $transaction->getAction();
+
+                            $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
+                            $uri = $sponsorContentUnit->getUri();
+                            $startTimePoint = $sponsorContentUnit->getStartTimePoint();
+                            $hours = $sponsorContentUnit->getHours();
+                            $whole = $sponsorContentUnit->getAmount()->getWhole();
+                            $fraction = $sponsorContentUnit->getAmount()->getFraction();
+
+                            $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+
+                            if ($appliedReverted) {
+                                $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+
+                                $boostedContentUnitEntity = new BoostedContentUnit();
+                                $boostedContentUnitEntity->setSponsor($sponsorAddressAccount);
+                                $boostedContentUnitEntity->setContentUnit($contentUnitEntity);
+                                $boostedContentUnitEntity->setStartTimePoint($startTimePoint);
+                                $boostedContentUnitEntity->setHours($hours);
+                                $boostedContentUnitEntity->setWhole($whole);
+                                $boostedContentUnitEntity->setFraction($fraction);
+                                $this->em->persist($boostedContentUnitEntity);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction('SponsorContentUnit', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, $boostedContentUnitEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($sponsorAddressAccount, $whole, $fraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof CancelSponsorContentUnit) {
+                            /**
+                             * @var CancelSponsorContentUnit $cancelSponsorContentUnit
+                             */
+                            $cancelSponsorContentUnit = $transaction->getAction();
+
+                            $boostTransactionHash = $cancelSponsorContentUnit->getTransactionHash();
+                            $sponsorAddress = $cancelSponsorContentUnit->getSponsorAddress();
+
+                            $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+
+                            if ($appliedReverted) {
+                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
+
+                                /**
+                                 * @var BoostedContentUnit $boostedContentUnitEntity
+                                 */
+                                $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+                                $boostedContentUnitEntity->setCancelled(true);
+                                $this->em->persist($boostedContentUnitEntity);
+                                $this->em->flush();
+
+                                $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                                $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                                $this->em->persist($cancelBoostedContentUnitEntity);
+                                $this->em->flush();
+
+                                //  add transaction record without relation
+                                $this->addTransaction('CancelSponsorContentUnit', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, null, $cancelBoostedContentUnitEntity);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
+
+                                /**
+                                 * @var BoostedContentUnit $boostedContentUnitEntity
+                                 */
+                                $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+                                $boostedContentUnitEntity->setCancelled(false);
+                                $this->em->persist($boostedContentUnitEntity);
+                                $this->em->flush();
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } else {
+                            var_dump($transaction->getAction());
+                            exit();
+                        }
+                    }
+                }
+
+                if (is_array($rewards)) {
+                    /**
+                     * @var RewardLog $reward
+                     */
+                    foreach ($rewards as $reward) {
+                        $to = $reward->getTo();
+                        $whole = $reward->getAmount()->getWhole();
+                        $fraction = $reward->getAmount()->getFraction();
+                        $rewardType = $reward->getRewardType();
+
+                        $toAccount = $this->checkAccount($to);
+
+                        if ($appliedReverted) {
+                            $this->addReward($block, $toAccount, $whole, $fraction, $rewardType);
+                            $this->updateAccountBalance($toAccount, $whole, $fraction, true);
+                        } else {
+                            $this->updateAccountBalance($toAccount, $whole, $fraction, false);
+                        }
+                    }
+                }
+
                 if (is_array($unitUriImpacts)) {
                     /**
                      * @var ContentUnitImpactLog $unitUriImpact
@@ -169,9 +626,13 @@ class StateSyncCommand extends ContainerAwareCommand
                         }
                     }
                 }
-            } elseif ($action instanceof TransactionLog) {
-                continue;
 
+                //  delete block with all data
+                if (!$appliedReverted) {
+                    $this->em->remove($block);
+                    $this->em->flush();
+                }
+            } elseif ($action instanceof TransactionLog) {
                 //  get transaction data
                 $transactionHash = $action->getTransactionHash();
                 $transactionSize = $action->getTransactionSize();
