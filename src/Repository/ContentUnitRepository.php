@@ -49,7 +49,7 @@ class ContentUnitRepository extends EntityRepository
 
             return $query->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
                 ->setMaxResults($count)
-                ->orderBy('cu.id', 'desc')
+                ->orderBy('t.timeSigned', 'desc')
                 ->getQuery()
                 ->getResult();
         } else {
@@ -62,7 +62,7 @@ class ContentUnitRepository extends EntityRepository
 
             return $query->setParameters(['author' => $account])
                 ->setMaxResults($count)
-                ->orderBy('cu.id', 'desc')
+                ->orderBy('t.timeSigned', 'desc')
                 ->getQuery()
                 ->getResult();
         }
@@ -122,7 +122,7 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['fromId' => $fromContentUnit->getId()])
                 ->setMaxResults($count)
-                ->orderBy('cu.id', 'desc')
+                ->orderBy('t.timeSigned', 'desc')
                 ->getQuery()
                 ->getResult();
         } else {
@@ -133,7 +133,7 @@ class ContentUnitRepository extends EntityRepository
                 ->join('cu.transaction', 't')
                 ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setMaxResults($count)
-                ->orderBy('cu.id', 'desc')
+                ->orderBy('t.timeSigned', 'desc')
                 ->getQuery()
                 ->getResult();
         }
