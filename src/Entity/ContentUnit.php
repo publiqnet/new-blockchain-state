@@ -296,7 +296,7 @@ class ContentUnit
      */
     public function minusViews($views)
     {
-        $this->views += $views;
+        $this->views -= $views;
     }
 
     /**
