@@ -398,7 +398,7 @@ class ContentApiController extends Controller
 
                 $contentEntity = new \App\Entity\Content();
                 $contentEntity->setContentId($contentId);
-                $contentEntity->setChannel($contentId);
+                $contentEntity->setChannel($channelAccount);
                 $em->persist($contentEntity);
 
                 $contentUnitEntity = new \App\Entity\ContentUnit();
@@ -445,11 +445,24 @@ class ContentApiController extends Controller
                 $datetime = new \DateTime();
                 $datetime->setTimezone($timezone);
 
+                $transactionEntity = new Transaction();
+                $transactionEntity->setTransactionHash('temp-' . md5(random_bytes(128)));
+                $transactionEntity->setContentUnit($contentUnitEntity);
+                $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $transactionEntity->setFeeWhole(0);
+                $transactionEntity->setFeeFraction(0);
+                $transactionEntity->setTransactionSize(0);
+                $em->persist($transactionEntity);
+                $em->flush();
+
                 $transactionHash = $broadcastResult->getTransactionHash();
                 $transactionEntity = new Transaction();
                 $transactionEntity->setTransactionHash($transactionHash);
                 $transactionEntity->setContent($contentEntity);
                 $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $transactionEntity->setFeeWhole(0);
+                $transactionEntity->setFeeFraction(0);
+                $transactionEntity->setTransactionSize(0);
                 $em->persist($transactionEntity);
                 $em->flush();
 
