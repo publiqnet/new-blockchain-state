@@ -1184,15 +1184,7 @@ class StateSyncCommand extends ContainerAwareCommand
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
-            if ($contentUnit) {
-                $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['contentUnit' => $contentUnit]);
-                if (!$transaction) {
-                    $transaction = new Transaction();
-                }
-            } else {
-                $transaction = new Transaction();
-            }
-
+            $transaction = new Transaction();
             $transaction->setTransactionHash($transactionHash);
         }
 
