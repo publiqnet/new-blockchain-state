@@ -396,7 +396,13 @@ class ContentApiController extends Controller
                     $contentUnitText = $storageData;
                 }
 
+                $contentEntity = new \App\Entity\Content();
+                $contentEntity->setContentId($contentId);
+                $contentEntity->setChannel($contentId);
+                $em->persist($contentEntity);
+
                 $contentUnitEntity = new \App\Entity\ContentUnit();
+                $contentUnitEntity->setContent($contentEntity);
                 $contentUnitEntity->setUri($uri);
                 $contentUnitEntity->setContentId($contentId);
                 $contentUnitEntity->setAuthor($account);
@@ -433,6 +439,19 @@ class ContentApiController extends Controller
 
                     $em->flush();
                 }
+
+                //  add temp transaction
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $transactionHash = $broadcastResult->getTransactionHash();
+                $transactionEntity = new Transaction();
+                $transactionEntity->setTransactionHash($transactionHash);
+                $transactionEntity->setContent($contentEntity);
+                $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $em->persist($transactionEntity);
+                $em->flush();
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
