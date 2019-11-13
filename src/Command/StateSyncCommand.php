@@ -191,6 +191,11 @@ class StateSyncCommand extends ContainerAwareCommand
 
                             if ($appliedReverted) {
                                 //  add file record
+                                $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
+                                if ($fileEntity) {
+                                    $this->em->remove($fileEntity);
+                                }
+
                                 $fileEntity = new \App\Entity\File();
                                 $fileEntity->setAuthor($authorAccount);
                                 $fileEntity->setUri($uri);
@@ -671,6 +676,11 @@ class StateSyncCommand extends ContainerAwareCommand
 
                     if ($appliedReverted) {
                         //  add file record
+                        $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
+                        if ($fileEntity) {
+                            $this->em->remove($fileEntity);
+                        }
+
                         $fileEntity = new \App\Entity\File();
                         $fileEntity->setAuthor($authorAccount);
                         $fileEntity->setUri($uri);
@@ -721,7 +731,7 @@ class StateSyncCommand extends ContainerAwareCommand
                     $channelAccount = $this->checkAccount($channelAddress);
 
                     if ($appliedReverted) {
-                        //  add file record
+                        //  add ContentUnit record
                         $contentUnitEntity = new \App\Entity\ContentUnit();
                         $contentUnitEntity->setUri($uri);
                         $contentUnitEntity->setContentId($contentId);

@@ -341,6 +341,8 @@ class ContentApiController extends Controller
      */
     public function publishContent(Request $request, BlockChain $blockChain, Custom $customService)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -365,13 +367,73 @@ class ContentApiController extends Controller
         list($feeWhole, $feeFraction) = $customService->getFee();
 
         try {
+            $channelPublicKey = $this->getParameter('channel_address');
+
             $content = new Content();
             $content->setContentId($contentId);
-            $content->setChannelAddress($this->getParameter('channel_address'));
+            $content->setChannelAddress($channelPublicKey);
             $content->addContentUnitUris($uri);
 
             $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'), $feeWhole, $feeFraction);
             if ($broadcastResult instanceof TransactionDone) {
+                //  add temp data
+                $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
+
+                //  get content unit data from storage
+                $coverUri = null;
+                $storageData = $blockChain->getContentUnitData($uri);
+                if (strpos($storageData, '</h1>')) {
+                    if (strpos($storageData, '<h1>') > 0) {
+                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                    }
+                    $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                } else {
+                    $contentUnitTitle = 'Old content without title';
+                    $contentUnitText = $storageData;
+                }
+
+                $contentUnitEntity = new \App\Entity\ContentUnit();
+                $contentUnitEntity->setUri($uri);
+                $contentUnitEntity->setContentId($contentId);
+                $contentUnitEntity->setAuthor($account);
+                $contentUnitEntity->setChannel($channelAccount);
+                $contentUnitEntity->setTitle($contentUnitTitle);
+                $contentUnitEntity->setText($contentUnitText);
+                $contentUnitEntity->setTextWithData($contentUnitText);
+                if ($coverUri) {
+                    $coverFileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                    if (!$coverFileEntity) {
+                        $coverFileEntity = new File();
+                        $coverFileEntity->setUri($coverUri);
+                        $em->persist($coverFileEntity);
+                    }
+                    $contentUnitEntity->setCover($coverFileEntity);
+                }
+
+                //  check for related Publication
+                $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
+                if ($publicationArticle) {
+                    $contentUnitEntity->setPublication($publicationArticle->getPublication());
+                }
+
+                $em->persist($contentUnitEntity);
+                $em->flush();
+
+                //  check for related tags
+                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                if ($contentUnitTags) {
+                    foreach ($contentUnitTags as $contentUnitTag) {
+                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                        $em->persist($contentUnitTag);
+                    }
+
+                    $em->flush();
+                }
+
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
