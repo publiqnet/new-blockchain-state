@@ -636,6 +636,8 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitViews->setBlock($block);
                                     $contentUnitViews->setViewsCount($views);
                                     $contentUnitViews->setViewsTime($block->getSignTime());
+                                    $this->em->persist($contentUnitViews);
+                                    $this->em->flush();
                                 }
                             }
 
