@@ -71,6 +71,11 @@ class Block
     private $transactions;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitViews", mappedBy="block", cascade={"remove"}, fetch="EXTRA_LAZY")
+     */
+    private $views;
+
+    /**
      * @Groups({"explorerBlockLight", "explorerBlock"})
      */
     private $transactionsCount;
@@ -99,6 +104,7 @@ class Block
     {
         $this->rewards = new ArrayCollection();
         $this->transactions = new ArrayCollection();
+        $this->views = new ArrayCollection();
     }
 
     public function __toString()
@@ -192,6 +198,14 @@ class Block
     public function getTransactions()
     {
         return $this->transactions;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViews()
+    {
+        return $this->views;
     }
 
     /**

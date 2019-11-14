@@ -128,6 +128,11 @@ class Account
      */
     private $storageUpdates;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitViews", mappedBy="channel", fetch="EXTRA_LAZY")
+     */
+    private $views;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -142,6 +147,7 @@ class Account
         $this->boostedContentUnits = new ArrayCollection();
         $this->roles = new ArrayCollection();
         $this->storageUpdates = new ArrayCollection();
+        $this->views = new ArrayCollection();
     }
 
     public function __toString()
@@ -243,6 +249,14 @@ class Account
     public function getStorageUpdates()
     {
         return $this->storageUpdates;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViews()
+    {
+        return $this->views;
     }
 
     /**
