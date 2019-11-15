@@ -12,6 +12,7 @@ use App\Entity\Account;
 use App\Entity\BoostedContentUnit;
 use App\Entity\Content;
 use App\Entity\ContentUnit;
+use App\Entity\ContentUnitViews;
 use App\Entity\File;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -436,7 +437,11 @@ class TrackerApiController extends Controller
         $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
         $contentUnit->setBoosted($isBoosted);
 
+        //  get views by channel
+        $viewsPerChannel = $em->getRepository(ContentUnitViews::class)->getArticleViewsPerChannel($contentUnit);
+
         $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['trackerContentUnit', 'trackerAccountLight', 'trackerFile']]);
+        $contentUnit['viewsPerChannel'] = $viewsPerChannel;
 
         //  add transaction and block into return data
         $contentUnit['transactionHash'] = $transactionContentUnit->getTransactionHash();

@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @package App\Entity
  *
  * @ORM\Table(name="content_unit_views")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\ContentUnitViewsRepository")
  */
 class ContentUnitViews
 {

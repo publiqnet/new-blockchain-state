@@ -133,6 +133,11 @@ class Account
      */
     private $views;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatistics", mappedBy="account", fetch="EXTRA_LAZY")
+     */
+    private $serviceStatistics;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -148,6 +153,7 @@ class Account
         $this->roles = new ArrayCollection();
         $this->storageUpdates = new ArrayCollection();
         $this->views = new ArrayCollection();
+        $this->serviceStatistics = new ArrayCollection();
     }
 
     public function __toString()
@@ -257,6 +263,14 @@ class Account
     public function getViews()
     {
         return $this->views;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getServiceStatistics()
+    {
+        return $this->serviceStatistics;
     }
 
     /**
