@@ -63,23 +63,23 @@ class TempCommand extends ContainerAwareCommand
             return 0;
         }
 
-        /**
-         * @var Block[] $blocks
-         */
-        $blocks = $this->em->getRepository(Block::class)->findAll();
-        foreach ($blocks as $block) {
-            $blockNumber = $block->getNumber();
+        $blockHashData = file_get_contents('https://tracker-api.publiq.network/api/temp/block/' . 0);
+        $blockHashData = json_decode($blockHashData, true);
+        foreach ($blockHashData as $blockHashDataSingle) {
+            $blockNumber = $blockHashDataSingle['number'];
+            $blockHash = $blockHashDataSingle['hash'];
 
-            $blockHashData = file_get_contents('https://tracker-api.publiq.network/api/temp/block/' . $blockNumber);
-            $blockHashData = json_decode($blockHashData, true);
+            /**
+             * @var Block $block
+             */
+            $block = $this->em->getRepository(Block::class)->findOneBy(['number' => $blockNumber]);
+            if ($block) {
+                $block->setHash($blockHash);
+                $this->em->persist($block);
+                $this->em->flush();
 
-            $blockHash = $blockHashData['hash'];
-            $block->setHash($blockHash);
-
-            $this->em->persist($block);
-            $this->em->flush();
-
-            $this->io->writeln($blockNumber . ': ' . $blockHash);
+                $this->io->writeln($blockNumber . ': ' . $blockHash);
+            }
         }
 
         $this->io->success('Done');
