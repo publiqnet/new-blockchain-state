@@ -9,6 +9,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class ContentUnitViews
@@ -28,6 +29,7 @@ class ContentUnitViews
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Block", inversedBy="views")
+     * @Groups({"contentUnitViews"})
      */
     private $block;
 
@@ -38,16 +40,19 @@ class ContentUnitViews
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="views")
+     * @Groups({"contentUnitViews"})
      */
     private $channel;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"contentUnitViews"})
      */
     private $viewsTime;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"contentUnitViews"})
      */
     private $viewsCount;
 
