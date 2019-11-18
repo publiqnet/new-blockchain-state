@@ -26,19 +26,20 @@ use Symfony\Component\Routing\Annotation\Route;
 class TempApiController extends Controller
 {
     /**
-     * @Route("/block/{number}", methods={"GET"})
+     * @Route("/block/{page}", methods={"GET"})
      * @SWG\Get(
-     *     summary="Get block hash by number",
+     *     summary="Get blocks hashes",
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=401, description="Unauthorized user")
      * @SWG\Tag(name="Temp")
-     * @param int $number
+     * @param int $page
      * @return JsonResponse
+     * @internal param int $number
      */
-    public function getBlockHashByNumber(int $number)
+    public function getBlocksHashes(int $page)
     {
         /**
          * @var EntityManager $em
@@ -46,14 +47,12 @@ class TempApiController extends Controller
         $em = $this->getDoctrine()->getManager();
 
         /**
-         * @var Block $block
+         * @var Block[] $blocks
          */
-        $block = $em->getRepository(Block::class)->findOneBy(['number' => $number]);
-        if (!$block) {
-            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
-        }
+        $blocks = $em->getRepository(Block::class)->findBy([], [], 1000, $page * 1000);
+        $blocks = $this->get('serializer')->normalize($blocks, null, ['groups' => ['explorerBlockLight']]);
 
-        return new JsonResponse(['hash' => $block->getHash()]);
+        return new JsonResponse($blocks);
     }
 
     /**
