@@ -243,6 +243,11 @@ class Account implements UserInterface
     private $boostedContentUnits;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitViews", mappedBy="channel", fetch="EXTRA_LAZY")
+     */
+    private $views;
+
+    /**
      * @var boolean
      * @Groups({"accountSubscribed"})
      */
@@ -269,6 +274,7 @@ class Account implements UserInterface
         $this->subscribers = new ArrayCollection();
         $this->storageFiles = new ArrayCollection();
         $this->boostedContentUnits = new ArrayCollection();
+        $this->views = new ArrayCollection();
     }
 
     public function __toString()
@@ -708,6 +714,14 @@ class Account implements UserInterface
     public function getBoostedContentUnits()
     {
         return $this->boostedContentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViews()
+    {
+        return $this->views;
     }
 
     /**
