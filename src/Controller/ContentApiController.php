@@ -185,6 +185,7 @@ class ContentApiController extends Controller
             }
             $feeWhole = intval($content['feeWhole']);
             $feeFraction = intval($content['feeFraction']);
+            $currentTransactionHash = $content['currentTransactionHash'];
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
@@ -196,6 +197,7 @@ class ContentApiController extends Controller
             $tags = $request->request->get('tags');
             $feeWhole = intval($request->request->get('feeWhole'));
             $feeFraction = intval($request->request->get('feeFraction'));
+            $currentTransactionHash = $request->request->get('currentTransactionHash');
         }
 
         //  get public key
@@ -303,6 +305,80 @@ class ContentApiController extends Controller
                 return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
 
+            //  add data
+            $channelPublicKey = $this->getParameter('channel_address');
+            $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
+
+            //  get content unit data from storage
+            $coverUri = null;
+            $storageData = $blockChain->getContentUnitData($uri);
+            if (strpos($storageData, '</h1>')) {
+                if (strpos($storageData, '<h1>') > 0) {
+                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                }
+                $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+            } else {
+                $contentUnitTitle = 'Old content without title';
+                $contentUnitText = $storageData;
+            }
+
+            $contentUnitEntity = new \App\Entity\ContentUnit();
+            $contentUnitEntity->setUri($uri);
+            $contentUnitEntity->setContentId($contentId);
+            $contentUnitEntity->setAuthor($account);
+            $contentUnitEntity->setChannel($channelAccount);
+            $contentUnitEntity->setTitle($contentUnitTitle);
+            $contentUnitEntity->setText($contentUnitText);
+            $contentUnitEntity->setTextWithData($contentUnitText);
+            if ($coverUri) {
+                $coverFileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                if (!$coverFileEntity) {
+                    $coverFileEntity = new File();
+                    $coverFileEntity->setUri($coverUri);
+                    $em->persist($coverFileEntity);
+                }
+                $contentUnitEntity->setCover($coverFileEntity);
+            }
+
+            //  check for related Publication
+            $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
+            if ($publicationArticle) {
+                $contentUnitEntity->setPublication($publicationArticle->getPublication());
+            }
+
+            $em->persist($contentUnitEntity);
+            $em->flush();
+
+            //  check for related tags
+            $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+            if ($contentUnitTags) {
+                foreach ($contentUnitTags as $contentUnitTag) {
+                    $contentUnitTag->setContentUnit($contentUnitEntity);
+                    $em->persist($contentUnitTag);
+                }
+
+                $em->flush();
+            }
+
+            //  add transaction
+            $timezone = new \DateTimeZone('UTC');
+            $datetime = new \DateTime();
+            $datetime->setTimezone($timezone);
+
+            $transactionEntity = new Transaction();
+            $transactionEntity->setTransactionHash($currentTransactionHash);
+            $transactionEntity->setContentUnit($contentUnitEntity);
+            $transactionEntity->setTimeSigned($datetime->getTimestamp());
+            $transactionEntity->setFeeWhole($feeWhole);
+            $transactionEntity->setFeeFraction($feeFraction);
+            $transactionEntity->setTransactionSize(0);
+            $em->persist($transactionEntity);
+            $em->flush();
+
             return new JsonResponse('', Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
@@ -341,6 +417,8 @@ class ContentApiController extends Controller
      */
     public function publishContent(Request $request, BlockChain $blockChain, Custom $customService)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -365,13 +443,56 @@ class ContentApiController extends Controller
         list($feeWhole, $feeFraction) = $customService->getFee();
 
         try {
+            $channelPublicKey = $this->getParameter('channel_address');
+
             $content = new Content();
             $content->setContentId($contentId);
-            $content->setChannelAddress($this->getParameter('channel_address'));
+            $content->setChannelAddress($channelPublicKey);
             $content->addContentUnitUris($uri);
 
             $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'), $feeWhole, $feeFraction);
             if ($broadcastResult instanceof TransactionDone) {
+                //  add temp data
+                $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
+
+                $contentEntity = new \App\Entity\Content();
+                $contentEntity->setContentId($contentId);
+                $contentEntity->setChannel($channelAccount);
+                $em->persist($contentEntity);
+                $em->flush();
+
+                $contentUnitEntity = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+                $contentUnitEntity->setContent($contentEntity);
+                $em->persist($contentUnitEntity);
+                $em->flush();
+
+                //  check for related tags
+                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                if ($contentUnitTags) {
+                    foreach ($contentUnitTags as $contentUnitTag) {
+                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                        $em->persist($contentUnitTag);
+                    }
+
+                    $em->flush();
+                }
+
+                //  add temp transaction
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $transactionHash = $broadcastResult->getTransactionHash();
+                $transactionEntity = new Transaction();
+                $transactionEntity->setTransactionHash($transactionHash);
+                $transactionEntity->setContent($contentEntity);
+                $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $transactionEntity->setFeeWhole(0);
+                $transactionEntity->setFeeFraction(0);
+                $transactionEntity->setTransactionSize(0);
+                $em->persist($transactionEntity);
+                $em->flush();
+
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
@@ -1207,10 +1328,10 @@ class ContentApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Content")
+     * @param CUService $contentUnitService
      * @return JsonResponse
-     * @throws Exception
      */
-    public function getBoosts()
+    public function getBoosts(CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -1222,27 +1343,43 @@ class ContentApiController extends Controller
             return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
         }
 
-        $boostedContentUnits = $em->getRepository(BoostedContentUnit::class)->getAuthorBoostedArticles($account);
+        $active = [];
+        $passive = [];
+
+        /**
+         * @var \App\Entity\ContentUnit[] $boostedContentUnits
+         */
+        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
         if ($boostedContentUnits) {
-            /**
-             * @var BoostedContentUnit $boostedContentUnit
-             */
             foreach ($boostedContentUnits as $boostedContentUnit) {
-                /**
-                 * @var \App\Entity\ContentUnit $contentUnit
-                 */
-                $contentUnit = $boostedContentUnit->getContentUnit();
-
-                /**
-                 * @var Transaction $transaction
-                 */
-                $transaction = $contentUnit->getTransaction();
-
-                $contentUnit->setPublished($transaction->getTimeSigned());
+                $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($boostedContentUnit);
+                if ($isBoostActive) {
+                    $active[] = $boostedContentUnit;
+                } else {
+                    $passive[] = $boostedContentUnit;
+                }
             }
         }
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['boostedContentUnit', 'contentUnitList', 'tag', 'accountBase', 'publication', 'transactionLight']]);
 
-        return new JsonResponse($boostedContentUnits);
+        //  prepare data to return
+        if ($active) {
+            try {
+                $active = $contentUnitService->prepare($active);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        if ($passive) {
+            try {
+                $passive = $contentUnitService->prepare($passive);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $active = $this->get('serializer')->normalize($active, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
+        $passive = $this->get('serializer')->normalize($passive, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
+
+        return new JsonResponse(['active' => $active, 'passive' => $passive]);
     }
 }

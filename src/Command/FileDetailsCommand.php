@@ -80,78 +80,65 @@ class FileDetailsCommand extends ContainerAwareCommand
             return 0;
         }
 
-        //  GET LAST CONTENT UNIT & ALL CONTENTS WITHOUT DATA CHECKED
-        $contentUnit = $this->em->getRepository(ContentUnit::class)->findBy([], ['id' => 'DESC'], 1);
-        $lastContentUnit = $contentUnit[0];
-
-        $contentUnitsToUpdate = $this->em->getRepository(ContentUnit::class)->findBy(['textWithDataChecked' => 0]);
-
-        //  GET FILES WITHOUT DETAILS
-        $files = $this->em->getRepository(File::class)->findAll();
-        if ($files) {
-            /**
-             * @var File $file
-             */
-            foreach ($files as $file) {
-                //  get file details
-                if (!$file->getMimeType()) {
-                    /**
-                     * @var Account[] $fileStorages
-                     */
-                    $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
-                    if (count($fileStorages)) {
-                        $randomStorage = rand(0, count($fileStorages) - 1);
-                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
-
-                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-                            if ($file->getMimeType() == 'text/html') {
-                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-                                $file->setContent($fileText);
-                            }
-
-                            $this->em->persist($file);
-                            $this->em->flush();
-                        }
-                    } else {
-                        $storageUrl = $this->getContainer()->getParameter('channel_storage_endpoint');
-                        $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
-                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                            $file->setMimeType($fileDetails->getMimeType());
-                            $file->setSize($fileDetails->getSize());
-                            if ($file->getMimeType() == 'text/html') {
-                                $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-                                $file->setContent($fileText);
-                            }
-
-                            $this->em->persist($file);
-                            $this->em->flush();
-                        }
-                    }
+        //  GET CONTENT UNITS WITHOUT DETAILED DATA
+        /**
+         * @var ContentUnit[] $contentUnits
+         */
+        $contentUnits = $this->em->getRepository(ContentUnit::class)->findBy(['textWithDataChecked' => false]);
+        if ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                if (!$contentUnit->getText()) {
+                    continue;
                 }
 
-                $fileContentUnits = $file->getContentUnits();
-                if ($fileContentUnits) {
-                    /**
-                     * @var \App\Entity\ContentUnit $fileContentUnit
-                     */
-                    foreach ($fileContentUnits as $fileContentUnit) {
-                        if ($fileContentUnit->isTextWithDataChecked()) {
+                /**
+                 * @var File[] $files
+                 */
+                $files = $contentUnit->getFiles();
+                if ($files) {
+                    $allFilesKnown = true;
+                    foreach ($files as $file) {
+                        //  get file details
+                        if (!$file->getMimeType()) {
+                            /**
+                             * @var Account[] $fileStorages
+                             */
+                            $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
+                            if (count($fileStorages)) {
+                                $randomStorage = rand(0, count($fileStorages) - 1);
+                                $storageUrl = $fileStorages[$randomStorage]->getUrl();
+                                if ($storageUrl) {
+                                    $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
+                                    if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                        $file->setMimeType($fileDetails->getMimeType());
+                                        $file->setSize($fileDetails->getSize());
+                                        if ($file->getMimeType() == 'text/html') {
+                                            $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
+                                            $file->setContent($fileText);
+                                        }
+
+                                        $this->em->persist($file);
+                                        $this->em->flush();
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!$file->getMimeType()) {
+                            $allFilesKnown = false;
                             continue;
                         }
 
-                        $contentUnitText = $fileContentUnit->getTextWithData();
+                        $contentUnitText = $contentUnit->getTextWithData();
 
                         if ($file->getMimeType() == 'text/html') {
                             $fileText = $file->getContent();
                             $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
-                        } elseif ($fileContentUnit->getContent()) {
+                        } elseif ($contentUnit->getContent()) {
                             /**
                              * @var Content $fileContent
                              */
-                            $fileContent = $fileContentUnit->getContent();
+                            $fileContent = $contentUnit->getContent();
 
                             /**
                              * @var Account $channel
@@ -162,21 +149,17 @@ class FileDetailsCommand extends ContainerAwareCommand
                             $contentUnitText = str_replace('src="' . $file->getUri() . '"', 'src="' . $fileUrl . '"', $contentUnitText);
                         }
 
-                        $fileContentUnit->setTextWithData($contentUnitText);
-                        $this->em->persist($fileContentUnit);
+                        $contentUnit->setTextWithData($contentUnitText);
+                        $this->em->persist($contentUnit);
+                        $this->em->flush();
+                    }
+
+                    if ($allFilesKnown) {
+                        $contentUnit->setTextWithDataChecked(true);
+                        $this->em->persist($contentUnit);
                         $this->em->flush();
                     }
                 }
-            }
-
-            if ($contentUnitsToUpdate) {
-                foreach ($contentUnitsToUpdate as $contentUnit) {
-                    if ($contentUnit->getId() < $lastContentUnit->getId()) {
-                        $contentUnit->setTextWithDataChecked(true);
-                        $this->em->persist($contentUnit);
-                    }
-                }
-                $this->em->flush();
             }
         }
 

@@ -191,9 +191,13 @@ class StateSyncCommand extends ContainerAwareCommand
 
                             if ($appliedReverted) {
                                 //  add file record
-                                $fileEntity = new \App\Entity\File();
+                                $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
+                                if (!$fileEntity) {
+                                    $fileEntity = new \App\Entity\File();
+                                    $fileEntity->setUri($uri);
+                                }
                                 $fileEntity->setAuthor($authorAccount);
-                                $fileEntity->setUri($uri);
+
                                 $this->em->persist($fileEntity);
                                 $this->em->flush();
 
@@ -248,9 +252,12 @@ class StateSyncCommand extends ContainerAwareCommand
                             $channelAccount = $this->checkAccount($channelAddress);
 
                             if ($appliedReverted) {
-                                //  add file record
-                                $contentUnitEntity = new \App\Entity\ContentUnit();
-                                $contentUnitEntity->setUri($uri);
+                                //  add content unit record
+                                $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+                                if (!$contentUnitEntity) {
+                                    $contentUnitEntity = new \App\Entity\ContentUnit();
+                                    $contentUnitEntity->setUri($uri);
+                                }
                                 $contentUnitEntity->setContentId($contentId);
                                 $contentUnitEntity->setAuthor($authorAccount);
                                 $contentUnitEntity->setChannel($channelAccount);
@@ -671,9 +678,12 @@ class StateSyncCommand extends ContainerAwareCommand
 
                     if ($appliedReverted) {
                         //  add file record
-                        $fileEntity = new \App\Entity\File();
+                        $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $uri]);
+                        if (!$fileEntity) {
+                            $fileEntity = new \App\Entity\File();
+                            $fileEntity->setUri($uri);
+                        }
                         $fileEntity->setAuthor($authorAccount);
-                        $fileEntity->setUri($uri);
                         $this->em->persist($fileEntity);
                         $this->em->flush();
 
@@ -721,9 +731,12 @@ class StateSyncCommand extends ContainerAwareCommand
                     $channelAccount = $this->checkAccount($channelAddress);
 
                     if ($appliedReverted) {
-                        //  add file record
-                        $contentUnitEntity = new \App\Entity\ContentUnit();
-                        $contentUnitEntity->setUri($uri);
+                        //  add ContentUnit record
+                        $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+                        if (!$contentUnitEntity) {
+                            $contentUnitEntity = new \App\Entity\ContentUnit();
+                            $contentUnitEntity->setUri($uri);
+                        }
                         $contentUnitEntity->setContentId($contentId);
                         $contentUnitEntity->setAuthor($authorAccount);
                         $contentUnitEntity->setChannel($channelAccount);
@@ -1172,34 +1185,40 @@ class StateSyncCommand extends ContainerAwareCommand
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
             $transaction = new Transaction();
-
-            if ($block) {
-                $transaction->setBlock($block);
-            }
             $transaction->setTransactionHash($transactionHash);
-            $transaction->setTransactionSize($transactionSize);
-            $transaction->setTimeSigned($timeSigned);
-            $transaction->setFeeWhole($feeWhole);
-            $transaction->setFeeFraction($feeFraction);
-            if ($file) {
-                $transaction->setFile($file);
-            }
-            if ($contentUnit) {
-                $transaction->setContentUnit($contentUnit);
-            }
-            if ($content) {
-                $transaction->setContent($content);
-            }
-            if ($transfer) {
-                $transaction->setTransfer($transfer);
-            }
-            if ($boostedContentUnit) {
-                $transaction->setBoostedContentUnit($boostedContentUnit);
-            }
-
-            $this->em->persist($transaction);
-            $this->em->flush();
         }
+
+        $transaction->setFile(null);
+        $transaction->setContentUnit(null);
+        $transaction->setContent(null);
+        $transaction->setTransfer(null);
+        $transaction->setBoostedContentUnit(null);
+
+        if ($block) {
+            $transaction->setBlock($block);
+        }
+        $transaction->setTransactionSize($transactionSize);
+        $transaction->setTimeSigned($timeSigned);
+        $transaction->setFeeWhole($feeWhole);
+        $transaction->setFeeFraction($feeFraction);
+        if ($file) {
+            $transaction->setFile($file);
+        }
+        if ($contentUnit) {
+            $transaction->setContentUnit($contentUnit);
+        }
+        if ($content) {
+            $transaction->setContent($content);
+        }
+        if ($transfer) {
+            $transaction->setTransfer($transfer);
+        }
+        if ($boostedContentUnit) {
+            $transaction->setBoostedContentUnit($boostedContentUnit);
+        }
+
+        $this->em->persist($transaction);
+        $this->em->flush();
 
         return null;
     }

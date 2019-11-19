@@ -148,6 +148,11 @@ class ContentUnit
     private $boosts;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitViews", mappedBy="contentUnit")
+     */
+    private $viewsPerChannel;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
@@ -186,6 +191,7 @@ class ContentUnit
     {
         $this->files = new ArrayCollection();
         $this->boosts = new ArrayCollection();
+        $this->viewsPerChannel = new ArrayCollection();
         $this->tags = new ArrayCollection();
         $this->viewLogs = new ArrayCollection();
         $this->viewLogsHistory = new ArrayCollection();
@@ -458,6 +464,14 @@ class ContentUnit
     public function getBoosts()
     {
         return $this->boosts;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getViewsPerChannel()
+    {
+        return $this->viewsPerChannel;
     }
 
     /**
