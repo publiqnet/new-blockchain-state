@@ -12,6 +12,7 @@ use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
 use App\Entity\ContentUnitTag;
+use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
 use App\Entity\PublicationArticle;
 use App\Entity\Reward;
@@ -26,6 +27,7 @@ use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\CancelSponsorContentUnit;
 use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\ContentUnitImpactLog;
+use PubliqAPI\Model\ContentUnitImpactPerChannel;
 use PubliqAPI\Model\File;
 use PubliqAPI\Model\LoggedTransaction;
 use PubliqAPI\Model\LoggedTransactions;
@@ -634,10 +636,34 @@ class StateSyncCommand extends ContainerAwareCommand
                      */
                     foreach ($unitUriImpacts as $unitUriImpact) {
                         $contentUnitUri = $unitUriImpact->getContentUnitUri();
-                        $viewCount = $unitUriImpact->getViewCount();
-
                         $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $contentUnitUri]);
                         if ($contentUnitEntity) {
+                            $viewCount = 0;
+                            /**
+                             * @var ContentUnitImpactPerChannel[] $viewsPerChannels
+                             */
+                            $viewsPerChannels = $unitUriImpact->getViewsPerChannel();
+                            foreach ($viewsPerChannels as $viewsPerChannel) {
+                                $viewCount += $viewsPerChannel->getViewCount();
+
+                                $views = $viewsPerChannel->getViewCount();
+                                $channelAddress = $viewsPerChannel->getChannelAddress();
+
+                                //  create channel object
+                                $channelAccount = $this->checkAccount($channelAddress);
+
+                                if ($appliedReverted) {
+                                    $contentUnitViews = new ContentUnitViews();
+                                    $contentUnitViews->setChannel($channelAccount);
+                                    $contentUnitViews->setContentUnit($contentUnitEntity);
+                                    $contentUnitViews->setBlock($block);
+                                    $contentUnitViews->setViewsCount($views);
+                                    $contentUnitViews->setViewsTime($block->getSignTime());
+                                    $this->em->persist($contentUnitViews);
+                                    $this->em->flush();
+                                }
+                            }
+
                             if ($appliedReverted) {
                                 $contentUnitEntity->plusViews($viewCount);
                             } else {
