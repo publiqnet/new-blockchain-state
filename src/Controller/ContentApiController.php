@@ -1328,10 +1328,10 @@ class ContentApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Content")
+     * @param CUService $contentUnitService
      * @return JsonResponse
-     * @throws Exception
      */
-    public function getBoosts()
+    public function getBoosts(CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -1343,27 +1343,43 @@ class ContentApiController extends Controller
             return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
         }
 
-        $boostedContentUnits = $em->getRepository(BoostedContentUnit::class)->getAuthorBoostedArticles($account);
+        $active = [];
+        $passive = [];
+
+        /**
+         * @var \App\Entity\ContentUnit[] $boostedContentUnits
+         */
+        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
         if ($boostedContentUnits) {
-            /**
-             * @var BoostedContentUnit $boostedContentUnit
-             */
             foreach ($boostedContentUnits as $boostedContentUnit) {
-                /**
-                 * @var \App\Entity\ContentUnit $contentUnit
-                 */
-                $contentUnit = $boostedContentUnit->getContentUnit();
-
-                /**
-                 * @var Transaction $transaction
-                 */
-                $transaction = $contentUnit->getTransaction();
-
-                $contentUnit->setPublished($transaction->getTimeSigned());
+                $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($boostedContentUnit);
+                if ($isBoostActive) {
+                    $active[] = $boostedContentUnit;
+                } else {
+                    $passive[] = $boostedContentUnit;
+                }
             }
         }
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['boostedContentUnit', 'contentUnitList', 'tag', 'accountBase', 'publication', 'transactionLight']]);
 
-        return new JsonResponse($boostedContentUnits);
+        //  prepare data to return
+        if ($active) {
+            try {
+                $active = $contentUnitService->prepare($active);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        if ($passive) {
+            try {
+                $passive = $contentUnitService->prepare($passive);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $active = $this->get('serializer')->normalize($active, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
+        $passive = $this->get('serializer')->normalize($passive, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
+
+        return new JsonResponse(['active' => $active, 'passive' => $passive]);
     }
 }

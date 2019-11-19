@@ -16,11 +16,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class TempCommand extends ContainerAwareCommand
+class TempCommandBlocks extends ContainerAwareCommand
 {
     use LockableTrait;
 
-    protected static $defaultName = 'state:temp';
+    protected static $defaultName = 'state:temp-blocks';
 
     /** @var EntityManager $em */
     private $em;
