@@ -74,6 +74,7 @@ class TempCommandViews extends ContainerAwareCommand
             $viewsData = file_get_contents('https://tracker-api.publiq.network/api/temp/article/' . $contentUnit->getUri());
             $viewsData = json_decode($viewsData, true);
 
+            $views = 0;
             if ($viewsData) {
                 foreach ($viewsData as $viewsDataSingle) {
                     $blockHash = $viewsDataSingle['block']['hash'];
@@ -101,9 +102,15 @@ class TempCommandViews extends ContainerAwareCommand
 
                         $this->em->persist($contentUnitViews);
                         $this->em->flush();
+
+                        $views += $viewsCount;
                     }
                 }
             }
+
+            $contentUnit->setViews($views);
+            $this->em->persist($contentUnit);
+            $this->em->flush();
         }
 
         $this->io->success('Done');
