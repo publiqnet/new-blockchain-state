@@ -81,7 +81,7 @@ class TempApiController extends Controller
          */
         $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
-            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
 
         $contentUnitViews = $contentUnit->getViewsPerChannel();
