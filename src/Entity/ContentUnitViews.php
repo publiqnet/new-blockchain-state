@@ -35,6 +35,7 @@ class ContentUnitViews
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="viewsPerChannel")
+     * @Groups({"contentUnitViews"})
      */
     private $contentUnit;
 

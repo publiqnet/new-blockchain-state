@@ -37,13 +37,13 @@ class Block
 
     /**
      * @ORM\Column(name="hash", type="string", length=64, unique=true)
-     * @Groups({"explorerBlockLight", "explorerBlock"})
+     * @Groups({"explorerBlockLight", "explorerBlock", "hash"})
      */
     private $hash;
 
     /**
      * @ORM\Column(name="number", type="string", length=16, unique=true)
-     * @Groups({"explorerBlockLight", "explorerBlock"})
+     * @Groups({"explorerBlockLight", "explorerBlock", "number"})
      */
     private $number;
 

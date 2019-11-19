@@ -31,7 +31,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"explorerContentUnit", "trackerContentUnitLight", "trackerContentUnit"})
+     * @Groups({"explorerContentUnit", "trackerContentUnitLight", "trackerContentUnit", "uri"})
      */
     private $uri;
 

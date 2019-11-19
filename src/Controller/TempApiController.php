@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Block;
 use App\Entity\ContentUnit;
+use App\Entity\ContentUnitViews;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -85,6 +86,35 @@ class TempApiController extends Controller
 
         $contentUnitViews = $contentUnit->getViewsPerChannel();
         $contentUnitViews = $this->get('serializer')->normalize($contentUnitViews, null, ['groups' => ['contentUnitViews', 'explorerBlockLight', 'explorerAccountLight']]);
+
+        return new JsonResponse($contentUnitViews);
+    }
+
+    /**
+     * @Route("/views/{page}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get article views history",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Tag(name="Temp")
+     * @param int $page
+     * @return JsonResponse
+     */
+    public function getViewsHistory(int $page)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var ContentUnit $contentUnit
+         */
+        $contentUnitViews = $em->getRepository(ContentUnitViews::class)->findBy([], [], 1000, $page * 1000);
+        $contentUnitViews = $this->get('serializer')->normalize($contentUnitViews, null, ['groups' => ['contentUnitViews', 'number', 'hash', 'explorerAccountLight', 'uri']]);
 
         return new JsonResponse($contentUnitViews);
     }
