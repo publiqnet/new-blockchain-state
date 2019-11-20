@@ -64,11 +64,13 @@ class BoostedContentUnit
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"boostedContentUnitMain"})
      */
     private $whole;
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"boostedContentUnitMain"})
      */
     private $fraction;
 
