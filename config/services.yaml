@@ -13,6 +13,8 @@ parameters:
     social_path: 'uploads/social'
     socialAssetsPath: 'socialAssets'
     json_path: '../public/jsons/'
+    router.request_context.host: '%env(MAIN_DOMAIN_HOST)%'
+    router.request_context.scheme: '%env(MAIN_DOMAIN_SCHEME)%'
 
 services:
     # default configuration for services in *this* file
