@@ -43,6 +43,8 @@ class SitemapSubscriber implements EventSubscriberInterface
      */
     public function __construct(UrlGeneratorInterface $urlGenerator, ManagerRegistry $doctrine, ContainerInterface $container)
     {
+        ini_set('memory_limit', '256M');
+
         $this->urlGenerator = $urlGenerator;
         $this->doctrine = $doctrine;
         $this->container = $container;
@@ -102,6 +104,9 @@ class SitemapSubscriber implements EventSubscriberInterface
          */
         $contentUnits = $this->doctrine->getRepository(ContentUnit::class)->findAll();
         foreach ($contentUnits as $contentUnit) {
+            if (!$contentUnit->getContent()) {
+                continue;
+            }
             $timestamp = $contentUnit->getTransaction()->getTimeSigned();
             $time->setTimestamp($timestamp);
 
