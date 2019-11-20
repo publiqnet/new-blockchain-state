@@ -358,7 +358,7 @@ class Custom
         $authorName = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorName);
         $authorBio = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorBio);
 
-        if ($contentUnit->getCover() && $contentUnit->getCover()->getMimeType() != 'image/webp') {
+        if ($contentUnit->getCover() && $contentUnit->getCover()->getMimeType() != 'image/webp' && $contentUnit->getCover()->getMimeType() != 'image/gif') {
             /**
              * @var File $cover
              */

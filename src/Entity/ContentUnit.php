@@ -153,7 +153,7 @@ class ContentUnit
     private $viewsPerChannel;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", fetch="EXTRA_LAZY")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $tags;

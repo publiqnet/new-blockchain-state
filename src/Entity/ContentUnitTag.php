@@ -38,7 +38,7 @@ class ContentUnitTag
     /**
      * @var ContentUnit
      * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="tags")
-     * @ORM\JoinColumn(name="content_unit_id", referencedColumnName="id", nullable=true)
+     * @ORM\JoinColumn(name="content_unit_id", referencedColumnName="id", nullable=true, onDelete="SET NULL")
      */
     private $contentUnit;
 
