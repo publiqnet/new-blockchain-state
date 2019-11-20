@@ -8,8 +8,6 @@
 
 namespace App\Command;
 
-use App\Entity\Account;
-use App\Entity\Block;
 use App\Entity\ContentUnit;
 use App\Entity\ContentUnitViews;
 use Doctrine\ORM\EntityManager;
@@ -71,46 +69,14 @@ class TempCommandViews extends ContainerAwareCommand
          */
         $contentUnits = $this->em->getRepository(ContentUnit::class)->findAll();
         foreach ($contentUnits as $contentUnit) {
-            $viewsData = file_get_contents('https://tracker-api.publiq.network/api/temp/article/' . $contentUnit->getUri());
-            $viewsData = json_decode($viewsData, true);
-
-            $views = 0;
-            if ($viewsData) {
-                foreach ($viewsData as $viewsDataSingle) {
-                    $blockHash = $viewsDataSingle['block']['hash'];
-                    $channelPublicKey = $viewsDataSingle['channel']['publicKey'];
-                    $viewsTime = $viewsDataSingle['viewsTime'];
-                    $viewsCount = $viewsDataSingle['viewsCount'];
-
-                    /**
-                     * @var Block $block
-                     */
-                    $block = $this->em->getRepository(Block::class)->findOneBy(['hash' => $blockHash]);
-
-                    /**
-                     * @var Account $channel
-                     */
-                    $channel = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
-
-                    if ($block && $channel) {
-                        $contentUnitViews = new ContentUnitViews();
-                        $contentUnitViews->setContentUnit($contentUnit);
-                        $contentUnitViews->setBlock($block);
-                        $contentUnitViews->setChannel($channel);
-                        $contentUnitViews->setViewsTime($viewsTime);
-                        $contentUnitViews->setViewsCount($viewsCount);
-
-                        $this->em->persist($contentUnitViews);
-                        $this->em->flush();
-
-                        $views += $viewsCount;
-                    }
-                }
-            }
+            $views = $this->em->getRepository(ContentUnitViews::class)->getArticleViews($contentUnit);
+            $views = intval($views[0]['views']);
 
             $contentUnit->setViews($views);
             $this->em->persist($contentUnit);
             $this->em->flush();
+
+            echo $contentUnit->getUri() . ': ' . $views . PHP_EOL;
         }
 
         $this->io->success('Done');

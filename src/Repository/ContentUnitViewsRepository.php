@@ -30,4 +30,14 @@ class ContentUnitViewsRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getArticleViews(ContentUnit $article)
+    {
+        return $this->createQueryBuilder('cuv')
+            ->select('SUM(cuv.viewsCount) as views')
+            ->where('cuv.contentUnit = :contentUnit')
+            ->setParameters(['contentUnit' => $article])
+            ->getQuery()
+            ->getResult();
+    }
 }
