@@ -125,6 +125,9 @@
     "phpdocumentor/type-resolver": {
         "version": "0.4.0"
     },
+    "presta/sitemap-bundle": {
+        "version": "v1.7.2"
+    },
     "psr/cache": {
         "version": "1.0.1"
     },

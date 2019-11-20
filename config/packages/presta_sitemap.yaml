@@ -1,0 +1,10 @@
+presta_sitemap:
+    defaults:
+        priority: 0.1
+        changefreq: yearly
+        lastmod: now
+    timetolive: 86400
+    route_annotation_listener: false
+    items_by_set: 50000
+    generator: presta_sitemap.generator_default
+    dumper: presta_sitemap.dumper_default
