@@ -231,6 +231,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->where('vpc.viewsTime > :currentTimestamp')
             ->setParameters(['currentTimestamp' => $date->getTimestamp() - 7 * 86400])
             ->setMaxResults($count)
+            ->groupBy('a')
             ->orderBy('totalViews', 'DESC')
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
