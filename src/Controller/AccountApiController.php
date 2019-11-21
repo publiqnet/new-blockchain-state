@@ -635,6 +635,27 @@ class AccountApiController extends Controller
         }
         $trendingPublications = $this->get('serializer')->normalize($trendingPublications, null, ['groups' => ['trending', 'publicationSubscribed']]);
 
-        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more, 'firstArticle' => $firstArticle, 'trending' => ['publications' => $trendingPublications]]);
+        $trendingAuthors = $em->getRepository(Account::class)->getTrendingAuthors();
+        if ($trendingAuthors) {
+            /**
+             * @var Account $author
+             */
+            foreach ($trendingAuthors as $author) {
+                //  get subscribers
+                $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author);
+                $author->setSubscribersCount(count($subscribers));
+
+                //  check if user subscribed to author
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                if ($subscribed) {
+                    $author->setSubscribed(true);
+                } else {
+                    $author->setSubscribed(false);
+                }
+            }
+        }
+        $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more, 'firstArticle' => $firstArticle, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors]]);
     }
 }

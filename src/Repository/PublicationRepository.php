@@ -153,7 +153,7 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->join('p.contentUnits', 'cu')
             ->join('cu.viewsPerChannel', 'vpc')
             ->where('vpc.viewsTime > :currentTimestamp')
-            ->setParameters(['currentTimestamp' => $date->getTimestamp()])
+            ->setParameters(['currentTimestamp' => $date->getTimestamp() - 7 * 86400])
             ->setMaxResults($count)
             ->groupBy('p')
             ->orderBy('totalViews', 'DESC')
