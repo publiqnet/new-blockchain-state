@@ -595,10 +595,6 @@ class Custom
      * @param File $cover
      * @param string $relativePath
      * @return bool|string
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     * @throws \PHPImageWorkshop\Core\Exception\ImageWorkshopLayerException
-     * @throws \PHPImageWorkshop\Exception\ImageWorkshopException
      */
     function createThumbnail(File $cover, $relativePath = '')
     {
