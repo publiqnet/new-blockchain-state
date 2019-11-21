@@ -253,6 +253,12 @@ class Account implements UserInterface
      */
     private $subscribed;
 
+    /**
+     * @var int
+     * @Groups({"accountBase"})
+     */
+    private $subscribersCount;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -770,5 +776,21 @@ class Account implements UserInterface
     public function setSubscribed(bool $subscribed)
     {
         $this->subscribed = $subscribed;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSubscribersCount()
+    {
+        return $this->subscribersCount;
+    }
+
+    /**
+     * @param int $subscribersCount
+     */
+    public function setSubscribersCount(int $subscribersCount)
+    {
+        $this->subscribersCount = $subscribersCount;
     }
 }

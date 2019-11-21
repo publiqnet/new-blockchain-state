@@ -24,3 +24,6 @@
 
 /public/uploads/social/*
 !/public/uploads/social/.gitkeep
+
+/public/uploads/thumbnails/*
+!/public/uploads/thumbnails/.gitkeep

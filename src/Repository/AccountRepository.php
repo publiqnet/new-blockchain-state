@@ -156,6 +156,17 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
+    public function getAuthorSubscribers(Account $author)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a')
+            ->join('a.subscriptions', 's')
+            ->where('s.author = :author')
+            ->setParameters(['author' => $author])
+            ->getQuery()
+            ->getResult();
+    }
+
     public function fulltextSearch($searchWord, $count = 5, Account $fromAccount = null)
     {
         if ($fromAccount) {
@@ -205,5 +216,24 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->getQuery()
                 ->getResult('AGGREGATES_HYDRATOR');
         }
+    }
+
+    public function getTrendingAuthors($count = 18)
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        return $this->createQueryBuilder('a')
+            ->select("a, SUM(vpc.viewsCount) as totalViews")
+            ->join('a.authorContentUnits', 'cu')
+            ->join('cu.viewsPerChannel', 'vpc')
+            ->where('vpc.viewsTime > :currentTimestamp')
+            ->setParameters(['currentTimestamp' => $date->getTimestamp() - 7 * 86400])
+            ->setMaxResults($count)
+            ->groupBy('a')
+            ->orderBy('totalViews', 'DESC')
+            ->getQuery()
+            ->getResult('AGGREGATES_HYDRATOR');
     }
 }

@@ -142,6 +142,25 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getResult('AGGREGATES_HYDRATOR');
     }
 
+    public function getTrendingPublications($count = 18)
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        return $this->createQueryBuilder('p')
+            ->select("p, SUM(vpc.viewsCount) as totalViews")
+            ->join('p.contentUnits', 'cu')
+            ->join('cu.viewsPerChannel', 'vpc')
+            ->where('vpc.viewsTime > :currentTimestamp')
+            ->setParameters(['currentTimestamp' => $date->getTimestamp() - 7 * 86400])
+            ->setMaxResults($count)
+            ->groupBy('p')
+            ->orderBy('totalViews', 'DESC')
+            ->getQuery()
+            ->getResult('AGGREGATES_HYDRATOR');
+    }
+
     public function getUserRecommendedPublications(Account $user, $count = 5, Publication $publication = null)
     {
         $subscriptionQuery = $this->getEntityManager()

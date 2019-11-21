@@ -36,10 +36,11 @@ class Custom
     private $oldBackendEndpoint;
     private $socialAssetsPath;
     private $socialImagePath;
+    private $thumbnailPath;
     private $channelStorageEndpoint;
     private $frontendEndpoint;
 
-    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $channelStorageEndpoint, $frontendEndpoint)
+    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint)
     {
         $this->em = $em;
         $this->endpoint = $endpoint;
@@ -47,6 +48,7 @@ class Custom
         $this->oldBackendEndpoint = $oldBackendEndpoint;
         $this->socialAssetsPath = $socialAssetsPath;
         $this->socialImagePath = $socialImagePath;
+        $this->thumbnailPath = $thumbnailPath;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->frontendEndpoint = $frontendEndpoint;
     }
@@ -585,6 +587,41 @@ class Custom
         $publication->setSocialImage($this->socialImagePath . '/' . $socialImageName);
         $this->em->persist($publication);
         $this->em->flush();
+
+        return true;
+    }
+
+    /**
+     * @param File $cover
+     * @param string $relativePath
+     * @return bool|string
+     */
+    function createThumbnail(File $cover, $relativePath = '')
+    {
+        $imagePath = $relativePath . $this->thumbnailPath;
+        $imageName = $cover->getUri() . '-thumbnail.jpg';
+
+        try {
+            $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
+            copy($this->channelStorageEndpoint . '/storage?file=' . $cover->getUri(), $tempImage);
+
+            //  create instance of ImageWorkshop from cover
+            $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+            $coverWorkshop->resizeInPixel(300, null, true);
+            $coverWorkshop->save($imagePath, $imageName, false, null, 60);
+
+            if (isset($tempImage)) {
+                unlink($tempImage);
+            }
+
+            $cover->setThumbnail($this->thumbnailPath . '/' . $imageName);
+            $cover->setThumbnailWidth($coverWorkshop->getWidth());
+            $cover->setThumbnailHeight($coverWorkshop->getHeight());
+            $this->em->persist($cover);
+            $this->em->flush();
+        } catch (\Exception $e) {
+            return false;
+        }
 
         return true;
     }

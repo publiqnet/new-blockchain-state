@@ -602,7 +602,6 @@ class AccountApiController extends Controller
                 $publication->setStoriesCount(intval($storiesCount[0][1]));
             }
         }
-
         $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed', 'tag']]);
 
         $more = false;
@@ -617,6 +616,46 @@ class AccountApiController extends Controller
             $firstArticle = true;
         }
 
-        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more, 'firstArticle' => $firstArticle]);
+        //  GET TRENDING PUBLICATIONS & AUTHORS
+        $trendingPublications = $em->getRepository(Publication::class)->getTrendingPublications();
+        if ($trendingPublications) {
+            foreach ($trendingPublications as $publication) {
+                //  get subscribers
+                $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
+                $publication->setSubscribersCount(count($subscribers));
+
+                //  check if user subscribed to Publication
+                $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+                if ($subscription) {
+                    $publication->setSubscribed(true);
+                } else {
+                    $publication->setSubscribed(false);
+                }
+            }
+        }
+        $trendingPublications = $this->get('serializer')->normalize($trendingPublications, null, ['groups' => ['trending', 'publicationSubscribed']]);
+
+        $trendingAuthors = $em->getRepository(Account::class)->getTrendingAuthors();
+        if ($trendingAuthors) {
+            /**
+             * @var Account $author
+             */
+            foreach ($trendingAuthors as $author) {
+                //  get subscribers
+                $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author);
+                $author->setSubscribersCount(count($subscribers));
+
+                //  check if user subscribed to author
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                if ($subscribed) {
+                    $author->setSubscribed(true);
+                } else {
+                    $author->setSubscribed(false);
+                }
+            }
+        }
+        $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more, 'firstArticle' => $firstArticle, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors]]);
     }
 }
