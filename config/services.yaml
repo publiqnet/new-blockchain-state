@@ -8,6 +8,7 @@ parameters:
     channel_private_key: '%env(CHANNEL_PRIVATE_KEY)%'
     channel_storage_endpoint: '%env(CHANNEL_STORAGE_ENDPOINT)%'
     locale: 'en'
+    thumbnail_path: 'uploads/thumbnails'
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
     social_path: 'uploads/social'
@@ -56,7 +57,7 @@ services:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
 
     App\Service\Custom:
-        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%']
+        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_ENDPOINT)%', '%env(OLD_DS_ENDPOINT)%', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%thumbnail_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%']
 
     json:
         class: App\Service\Json
