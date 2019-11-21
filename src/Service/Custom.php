@@ -615,6 +615,8 @@ class Custom
             }
 
             $cover->setThumbnail($this->thumbnailPath . '/' . $imageName);
+            $cover->setThumbnailWidth($coverWorkshop->getWidth());
+            $cover->setThumbnailHeight($coverWorkshop->getHeight());
             $this->em->persist($cover);
             $this->em->flush();
         } catch (\Exception $e) {

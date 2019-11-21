@@ -90,6 +90,18 @@ class File
      */
     private $thumbnail;
 
+    /**
+     * @ORM\Column(name="thumbnail_width", type="integer", nullable=true)
+     * @Groups({"file"})
+     */
+    private $thumbnailWidth;
+
+    /**
+     * @ORM\Column(name="thumbnail_height", type="integer", nullable=true)
+     * @Groups({"file"})
+     */
+    private $thumbnailHeight;
+
 
     public function __construct()
     {
@@ -247,5 +259,37 @@ class File
     public function setThumbnail($thumbnail)
     {
         $this->thumbnail = $thumbnail;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnailWidth()
+    {
+        return $this->thumbnailWidth;
+    }
+
+    /**
+     * @param mixed $thumbnailWidth
+     */
+    public function setThumbnailWidth($thumbnailWidth)
+    {
+        $this->thumbnailWidth = $thumbnailWidth;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnailHeight()
+    {
+        return $this->thumbnailHeight;
+    }
+
+    /**
+     * @param mixed $thumbnailHeight
+     */
+    public function setThumbnailHeight($thumbnailHeight)
+    {
+        $this->thumbnailHeight = $thumbnailHeight;
     }
 }
