@@ -102,7 +102,7 @@ class SitemapSubscriber implements EventSubscriberInterface
         /**
          * @var ContentUnit[] $contentUnits
          */
-        $contentUnits = $this->doctrine->getRepository(ContentUnit::class)->findAll();
+        $contentUnits = $this->doctrine->getRepository(ContentUnit::class)->getArticles(1000000);
         foreach ($contentUnits as $contentUnit) {
             if (!$contentUnit->getContent()) {
                 continue;
