@@ -242,6 +242,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
         return $this->createQueryBuilder('a')
             ->select("a")
             ->where('a.thumbnail is null')
+            ->andWhere('a.image is not null')
             ->getQuery()
             ->getResult();
     }
