@@ -626,6 +626,43 @@ class Custom
         return true;
     }
 
+    /**
+     * @param Account $author
+     * @param string $relativePath
+     * @return bool|string
+     */
+    function createThumbnailAuthor(Account $author, $relativePath = '')
+    {
+        $imagePath = $relativePath . $this->thumbnailPath;
+        $imageName = $author->getPublicKey() . '-thumbnail.jpg';
+
+        if (!$author->getImage()) {
+            return false;
+        }
+
+        try {
+            $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
+            copy($relativePath . $author->getImage(), $tempImage);
+
+            //  create instance of ImageWorkshop from cover
+            $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+            $coverWorkshop->resizeInPixel(80, null, true);
+            $coverWorkshop->save($imagePath, $imageName, false, null, 80);
+
+            if (isset($tempImage)) {
+                unlink($tempImage);
+            }
+
+            $author->setThumbnail($this->thumbnailPath . '/' . $imageName);
+            $this->em->persist($author);
+            $this->em->flush();
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return true;
+    }
+
     function imageCreateCorners($sourceImageFile, $destImageFile, $posX, $posY)
     {
         $info = getimagesize($destImageFile);

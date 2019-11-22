@@ -89,6 +89,13 @@ class Account implements UserInterface
     private $image;
 
     /**
+     * @ORM\Column(name="thumbnail", type="string", nullable=true)
+     * @Assert\File()
+     * @Groups({"account", "accountBase"})
+     */
+    private $thumbnail;
+
+    /**
      * @var string
      * @ORM\Column(type="string", length=16, nullable=true)
      * @Groups({"account"})
@@ -390,6 +397,22 @@ class Account implements UserInterface
     public function setImage($image)
     {
         $this->image = $image;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnail()
+    {
+        return $this->thumbnail;
+    }
+
+    /**
+     * @param mixed $thumbnail
+     */
+    public function setThumbnail($thumbnail)
+    {
+        $this->thumbnail = $thumbnail;
     }
 
     /**

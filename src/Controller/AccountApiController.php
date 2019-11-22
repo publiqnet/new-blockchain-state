@@ -265,6 +265,7 @@ class AccountApiController extends Controller
                 $em->getRepository(ContentUnit::class)->updateSocialImageStatus($account);
             } elseif ($deleteImage) {
                 $account->setImage(null);
+                $account->setThumbnail(null);
             }
 
             $em->persist($account);
