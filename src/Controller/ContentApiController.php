@@ -1353,6 +1353,19 @@ class ContentApiController extends Controller
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
         if ($boostedContentUnits) {
             foreach ($boostedContentUnits as $boostedContentUnit) {
+                $viewsSummary = $em->getRepository(ContentUnitViews::class)->getBoostedArticleSummary($boostedContentUnit);
+                if (!isset($viewsSummary[0])) {
+                    $viewsSummary[0] = ['views' => 0, 'channels' => 0];
+                }
+
+                $summary = $em->getRepository(BoostedContentUnit::class)->getBoostedArticleSummary($boostedContentUnit);
+                if (!isset($summary[0])) {
+                    $summary[0] = [];
+                }
+
+                $summary = array_merge($summary[0], $viewsSummary[0]);
+                $boostedContentUnit->setBoostSummary($summary);
+
                 $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($boostedContentUnit);
                 if ($isBoostActive) {
                     $active[] = $boostedContentUnit;
@@ -1379,10 +1392,20 @@ class ContentApiController extends Controller
         }
 
         //  get boost summary
-        $boostSummary = $em->getRepository(ContentUnitViews::class)->getAuthorBoostedArticlesSummary($account);
+        $boostSummaryViews = $em->getRepository(ContentUnitViews::class)->getAuthorBoostedArticlesSummary($account);
+        if (!isset($boostSummaryViews[0])) {
+            $boostSummaryViews[0] = ['views' => 0, 'channels' => 0];
+        }
+
+        $boostSummary = $em->getRepository(BoostedContentUnit::class)->getAuthorBoostedArticlesSummary($account);
+        if (!isset($boostSummary[0])) {
+            $boostSummary[0] = [];
+        }
 
         $active = $this->get('serializer')->normalize($active, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
         $passive = $this->get('serializer')->normalize($passive, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
+
+        $boostSummary = array_merge($boostSummary[0], $boostSummaryViews[0]);
 
         return new JsonResponse(['active' => $active, 'passive' => $passive, 'summary' => $boostSummary]);
     }

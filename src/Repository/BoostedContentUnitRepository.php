@@ -60,4 +60,37 @@ class BoostedContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @param Account $author
+     * @return array
+     */
+    public function getAuthorBoostedArticlesSummary(Account $author)
+    {
+        return $this->createQueryBuilder('bcu')
+            ->select('SUM(bcu.whole) as whole, SUM(bcu.fraction) as fraction')
+            ->join('bcu.contentUnit', 'cu')
+            ->join('bcu.sponsor', 'a')
+            ->where('bcu.sponsor = :author')
+            ->orWhere('cu.author = :author')
+            ->setParameters(['author' => $author])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param ContentUnit $article
+     * @return array
+     */
+    public function getBoostedArticleSummary(ContentUnit $article)
+    {
+        return $this->createQueryBuilder('bcu')
+            ->select('SUM(bcu.whole) as whole, SUM(bcu.fraction) as fraction')
+            ->join('bcu.contentUnit', 'cu')
+            ->join('bcu.sponsor', 'a')
+            ->where('cu = :article')
+            ->setParameters(['article' => $article])
+            ->getQuery()
+            ->getResult();
+    }
 }

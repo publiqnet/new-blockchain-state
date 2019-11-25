@@ -186,6 +186,12 @@ class ContentUnit
      */
     private $description;
 
+    /**
+     * @var mixed
+     * @Groups({"boost"})
+     */
+    private $boostSummary;
+
 
     public function __construct()
     {
@@ -608,5 +614,21 @@ class ContentUnit
     public function setDescription(string $description)
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostSummary()
+    {
+        return $this->boostSummary;
+    }
+
+    /**
+     * @param mixed $boostSummary
+     */
+    public function setBoostSummary($boostSummary)
+    {
+        $this->boostSummary = $boostSummary;
     }
 }

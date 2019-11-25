@@ -588,7 +588,7 @@ class ContentUnitRepository extends EntityRepository
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.sponsor = :sponsor')
-            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+//            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameters(['sponsor' => $account])
             ->groupBy('cu')
             ->getQuery()

@@ -35,13 +35,28 @@ class ContentUnitViewsRepository extends EntityRepository
     public function getAuthorBoostedArticlesSummary(Account $author)
     {
         return $this->createQueryBuilder('cuv')
-            ->select('SUM(cuv.viewsCount) as views, ch.publicKey as publicKey')
+            ->select('SUM(cuv.viewsCount) as views, COUNT(ch) as channels')
             ->join('cuv.contentUnit', 'cu')
             ->join('cuv.channel', 'ch')
             ->join('cu.boosts', 'bcu')
             ->where('cu.author = :author')
             ->andWhere('(cuv.viewsTime >= bcu.startTimePoint and cuv.viewsTime <= (bcu.startTimePoint + bcu.hours * 3600))')
             ->setParameters(['author' => $author])
+            ->groupBy('cuv.channel')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getBoostedArticleSummary(ContentUnit $article)
+    {
+        return $this->createQueryBuilder('cuv')
+            ->select('SUM(cuv.viewsCount) as views, COUNT(ch) as channels')
+            ->join('cuv.contentUnit', 'cu')
+            ->join('cuv.channel', 'ch')
+            ->join('cu.boosts', 'bcu')
+            ->where('cu = :article')
+            ->andWhere('(cuv.viewsTime >= bcu.startTimePoint and cuv.viewsTime <= (bcu.startTimePoint + bcu.hours * 3600))')
+            ->setParameters(['article' => $article])
             ->groupBy('cuv.channel')
             ->getQuery()
             ->getResult();
