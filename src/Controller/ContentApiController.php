@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\BoostedContentUnit;
 use App\Entity\ContentUnitTag;
+use App\Entity\ContentUnitViews;
 use App\Entity\File;
 use App\Entity\Publication;
 use App\Entity\PublicationArticle;
@@ -1377,9 +1378,12 @@ class ContentApiController extends Controller
             }
         }
 
+        //  get boost summary
+        $boostSummary = $em->getRepository(ContentUnitViews::class)->getAuthorBoostedArticlesSummary($account);
+
         $active = $this->get('serializer')->normalize($active, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
         $passive = $this->get('serializer')->normalize($passive, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
 
-        return new JsonResponse(['active' => $active, 'passive' => $passive]);
+        return new JsonResponse(['active' => $active, 'passive' => $passive, 'summary' => $boostSummary]);
     }
 }

@@ -8,6 +8,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Account;
 use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
@@ -26,6 +27,19 @@ class ContentUnitViewsRepository extends EntityRepository
             ->join('cuv.channel', 'ch')
             ->where('cuv.contentUnit = :contentUnit')
             ->setParameters(['contentUnit' => $article])
+            ->groupBy('cuv.channel')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getAuthorBoostedArticlesSummary(Account $author)
+    {
+        return $this->createQueryBuilder('cuv')
+            ->select('SUM(cuv.viewsCount) as views, ch.publicKey as publicKey')
+            ->join('cuv.contentUnit', 'cu')
+            ->join('cuv.channel', 'ch')
+            ->where('cu.author = :author')
+            ->setParameters(['author' => $author])
             ->groupBy('cuv.channel')
             ->getQuery()
             ->getResult();
