@@ -579,14 +579,15 @@ class StateSyncCommand extends ContainerAwareCommand
                                  * @var BoostedContentUnit $boostedContentUnitEntity
                                  */
                                 $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
-                                $boostedContentUnitEntity->setCancelled(true);
-                                $boostedContentUnitEntity->setEndTimePoint($timeSigned);
-                                $this->em->persist($boostedContentUnitEntity);
-                                $this->em->flush();
 
                                 $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
                                 $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
                                 $this->em->persist($cancelBoostedContentUnitEntity);
+
+                                $boostedContentUnitEntity->setCancelled(true);
+                                $boostedContentUnitEntity->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                                $boostedContentUnitEntity->setEndTimePoint($timeSigned);
+                                $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
                                 //  add transaction record without relation
@@ -1089,14 +1090,15 @@ class StateSyncCommand extends ContainerAwareCommand
                          * @var BoostedContentUnit $boostedContentUnitEntity
                          */
                         $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
-                        $boostedContentUnitEntity->setCancelled(true);
-                        $boostedContentUnitEntity->setEndTimePoint($timeSigned);
-                        $this->em->persist($boostedContentUnitEntity);
-                        $this->em->flush();
 
                         $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
                         $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
                         $this->em->persist($cancelBoostedContentUnitEntity);
+
+                        $boostedContentUnitEntity->setCancelled(true);
+                        $boostedContentUnitEntity->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                        $boostedContentUnitEntity->setEndTimePoint($timeSigned);
+                        $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
                         //  add transaction record without relation

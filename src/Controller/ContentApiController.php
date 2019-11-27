@@ -1357,15 +1357,17 @@ class ContentApiController extends Controller
                  * @var BoostedContentUnit $boostedContentUnit
                  */
                 $boostedContentUnit = $boostTransaction->getBoostedContentUnit();
-                $boostedContentUnit->setCancelled(true);
-                $boostedContentUnit->setEndTimePoint($datetime->getTimestamp());
-                $em->persist($boostedContentUnit);
-                $em->flush();
+
 
                 //  add cancelled boosted content unit
                 $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
                 $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnit);
                 $em->persist($cancelBoostedContentUnitEntity);
+
+                $boostedContentUnit->setCancelled(true);
+                $boostedContentUnit->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                $boostedContentUnit->setEndTimePoint($datetime->getTimestamp());
+                $em->persist($boostedContentUnit);
                 $em->flush();
 
                 //  add transaction
