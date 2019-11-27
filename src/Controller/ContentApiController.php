@@ -1256,7 +1256,7 @@ class ContentApiController extends Controller
 
                 $transaction = new Transaction();
                 $transaction->setTransactionHash($currentTransactionHash);
-                $transaction->setBoostedContentUnit($contentUnit);
+                $transaction->setBoostedContentUnit($boostedContentUnit);
                 $transaction->setTimeSigned($datetime->getTimestamp());
                 $transaction->setFeeWhole($feeWhole);
                 $transaction->setFeeFraction($feeFraction);
@@ -1371,7 +1371,7 @@ class ContentApiController extends Controller
                 //  add transaction
                 $transaction = new Transaction();
                 $transaction->setTransactionHash($currentTransactionHash);
-                $transaction->setCancelBoostedContentUnit($boostedContentUnit);
+                $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
                 $transaction->setTimeSigned($datetime->getTimestamp());
                 $transaction->setFeeWhole($feeWhole);
                 $transaction->setFeeFraction($feeFraction);
