@@ -210,9 +210,6 @@ class TempCommand extends ContainerAwareCommand
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
                             }
-                        } else {
-                            var_dump($transaction->getAction());
-                            exit();
                         }
                     }
                 }
@@ -304,9 +301,6 @@ class TempCommand extends ContainerAwareCommand
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
                     }
-                } else {
-                    var_dump($action->getAction());
-                    exit();
                 }
 
                 //  delete transaction with all data
