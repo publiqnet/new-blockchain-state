@@ -113,6 +113,10 @@ class TempCommand extends ContainerAwareCommand
 
             $appliedReverted = $loggedTransaction->getLoggingType() === LoggingType::apply;
             $index = $loggedTransaction->getIndex();
+            if ($index > 55209) {
+                $this->io->writeln('Reached synced index');
+                break;
+            }
 
             if ($action instanceof BlockLog) {
                 //  get block data
