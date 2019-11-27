@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\BoostedContentUnit;
+use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
 use App\Entity\File;
@@ -1192,6 +1193,8 @@ class ContentApiController extends Controller
      */
     public function boostContent(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -1215,6 +1218,7 @@ class ContentApiController extends Controller
             $expiryTime = $content['expiryTime'];
             $feeWhole = $content['feeWhole'];
             $feeFraction = $content['feeFraction'];
+            $currentTransactionHash = $content['currentTransactionHash'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
@@ -1225,11 +1229,41 @@ class ContentApiController extends Controller
             $expiryTime = $request->request->get('expiryTime');
             $feeWhole = $request->request->get('feeWhole');
             $feeFraction = $request->request->get('feeFraction');
+            $currentTransactionHash = $request->request->get('currentTransactionHash');
         }
 
         try {
             $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
+                $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+
+                //  add boosted content unit
+                $boostedContentUnit = new BoostedContentUnit();
+                $boostedContentUnit->setSponsor($account);
+                $boostedContentUnit->setContentUnit($contentUnit);
+                $boostedContentUnit->setStartTimePoint($startTimePoint);
+                $boostedContentUnit->setHours($hours);
+                $boostedContentUnit->setWhole($amount);
+                $boostedContentUnit->setFraction(0);
+                $boostedContentUnit->setEndTimePoint($startTimePoint + $hours * 3600);
+                $em->persist($boostedContentUnit);
+                $em->flush();
+
+                //  add transaction
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $transaction = new Transaction();
+                $transaction->setTransactionHash($currentTransactionHash);
+                $transaction->setBoostedContentUnit($contentUnit);
+                $transaction->setTimeSigned($datetime->getTimestamp());
+                $transaction->setFeeWhole($feeWhole);
+                $transaction->setFeeFraction($feeFraction);
+                $transaction->setTransactionSize(0);
+                $em->persist($transaction);
+                $em->flush();
+
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
                 return new JsonResponse(['type' => 'boost_not_enough_balance'], Response::HTTP_CONFLICT);
@@ -1275,6 +1309,8 @@ class ContentApiController extends Controller
      */
     public function cancelBoostContent(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -1296,6 +1332,7 @@ class ContentApiController extends Controller
             $expiryTime = $content['expiryTime'];
             $feeWhole = $content['feeWhole'];
             $feeFraction = $content['feeFraction'];
+            $currentTransactionHash = $content['currentTransactionHash'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
@@ -1304,11 +1341,44 @@ class ContentApiController extends Controller
             $expiryTime = $request->request->get('expiryTime');
             $feeWhole = $request->request->get('feeWhole');
             $feeFraction = $request->request->get('feeFraction');
+            $currentTransactionHash = $request->request->get('currentTransactionHash');
         }
 
         try {
             $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $boostTransaction = $em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+
+                /**
+                 * @var BoostedContentUnit $boostedContentUnit
+                 */
+                $boostedContentUnit = $boostTransaction->getBoostedContentUnit();
+                $boostedContentUnit->setCancelled(true);
+                $boostedContentUnit->setEndTimePoint($datetime->getTimestamp());
+                $em->persist($boostedContentUnit);
+                $em->flush();
+
+                //  add cancelled boosted content unit
+                $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnit);
+                $em->persist($cancelBoostedContentUnitEntity);
+                $em->flush();
+
+                //  add transaction
+                $transaction = new Transaction();
+                $transaction->setTransactionHash($currentTransactionHash);
+                $transaction->setCancelBoostedContentUnit($boostedContentUnit);
+                $transaction->setTimeSigned($datetime->getTimestamp());
+                $transaction->setFeeWhole($feeWhole);
+                $transaction->setFeeFraction($feeFraction);
+                $transaction->setTransactionSize(0);
+                $em->persist($transaction);
+                $em->flush();
+
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
