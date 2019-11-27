@@ -87,6 +87,13 @@ class Transaction
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransaction"})
+     */
+    private $cancelBoostedContentUnit;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"})
      * @Groups({"transaction"})
      */
@@ -282,5 +289,21 @@ class Transaction
     public function setBoostedContentUnit($boostedContentUnit)
     {
         $this->boostedContentUnit = $boostedContentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCancelBoostedContentUnit()
+    {
+        return $this->cancelBoostedContentUnit;
+    }
+
+    /**
+     * @param mixed $cancelBoostedContentUnit
+     */
+    public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
+    {
+        $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
     }
 }

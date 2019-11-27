@@ -64,6 +64,12 @@ class BoostedContentUnit
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
+     */
+    private $endTimePoint;
+
+    /**
+     * @ORM\Column(type="integer", nullable=false)
      * @Groups({"boostedContentUnitMain"})
      */
     private $whole;
@@ -79,6 +85,12 @@ class BoostedContentUnit
      * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
      */
     private $status;
+
+    /**
+     * @ORM\JoinColumn(nullable=true)
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", mappedBy="boostedContentUnit")
+     */
+    private $cancelBoostedContentUnit;
 
 
     /**
@@ -188,6 +200,22 @@ class BoostedContentUnit
     /**
      * @return mixed
      */
+    public function getEndTimePoint()
+    {
+        return $this->endTimePoint;
+    }
+
+    /**
+     * @param mixed $endTimePoint
+     */
+    public function setEndTimePoint($endTimePoint)
+    {
+        $this->endTimePoint = $endTimePoint;
+    }
+
+    /**
+     * @return mixed
+     */
     public function getWhole()
     {
         return $this->whole;
@@ -231,5 +259,21 @@ class BoostedContentUnit
     public function setStatus(string $status)
     {
         $this->status = $status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCancelBoostedContentUnit()
+    {
+        return $this->cancelBoostedContentUnit;
+    }
+
+    /**
+     * @param mixed $cancelBoostedContentUnit
+     */
+    public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
+    {
+        $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
     }
 }

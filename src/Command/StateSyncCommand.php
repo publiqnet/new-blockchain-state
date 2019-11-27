@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
+use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
@@ -543,6 +544,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $boostedContentUnitEntity->setHours($hours);
                                 $boostedContentUnitEntity->setWhole($whole);
                                 $boostedContentUnitEntity->setFraction($fraction);
+                                $boostedContentUnitEntity->setEndTimePoint($startTimePoint + $hours * 3600);
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
@@ -578,11 +580,17 @@ class StateSyncCommand extends ContainerAwareCommand
                                  */
                                 $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
                                 $boostedContentUnitEntity->setCancelled(true);
+                                $boostedContentUnitEntity->setEndTimePoint($timeSigned);
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
+                                $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                                $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                                $this->em->persist($cancelBoostedContentUnitEntity);
+                                $this->em->flush();
+
                                 //  add transaction record without relation
-                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -595,6 +603,9 @@ class StateSyncCommand extends ContainerAwareCommand
                                  */
                                 $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
                                 $boostedContentUnitEntity->setCancelled(false);
+
+                                $endTime = $boostedContentUnitEntity->getStartTimePoint() + $boostedContentUnitEntity->getHours() * 3600;
+                                $boostedContentUnitEntity->setEndTimePoint($endTime);
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
@@ -1045,6 +1056,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $boostedContentUnitEntity->setHours($hours);
                         $boostedContentUnitEntity->setWhole($whole);
                         $boostedContentUnitEntity->setFraction($fraction);
+                        $boostedContentUnitEntity->setEndTimePoint($startTimePoint + $hours * 3600);
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
@@ -1078,11 +1090,17 @@ class StateSyncCommand extends ContainerAwareCommand
                          */
                         $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
                         $boostedContentUnitEntity->setCancelled(true);
+                        $boostedContentUnitEntity->setEndTimePoint($timeSigned);
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
+                        $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                        $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                        $this->em->persist($cancelBoostedContentUnitEntity);
+                        $this->em->flush();
+
                         //  add transaction record without relation
-                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
@@ -1094,6 +1112,9 @@ class StateSyncCommand extends ContainerAwareCommand
                          */
                         $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
                         $boostedContentUnitEntity->setCancelled(false);
+
+                        $endTime = $boostedContentUnitEntity->getStartTimePoint() + $boostedContentUnitEntity->getHours() * 3600;
+                        $boostedContentUnitEntity->setEndTimePoint($endTime);
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
@@ -1202,11 +1223,12 @@ class StateSyncCommand extends ContainerAwareCommand
      * @param null $content
      * @param null $transfer
      * @param null $boostedContentUnit
+     * @param null $cancelBoostedContentUnit
      * @return null
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null)
+    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
@@ -1219,6 +1241,7 @@ class StateSyncCommand extends ContainerAwareCommand
         $transaction->setContent(null);
         $transaction->setTransfer(null);
         $transaction->setBoostedContentUnit(null);
+        $transaction->setCancelBoostedContentUnit(null);
 
         if ($block) {
             $transaction->setBlock($block);
@@ -1241,6 +1264,9 @@ class StateSyncCommand extends ContainerAwareCommand
         }
         if ($boostedContentUnit) {
             $transaction->setBoostedContentUnit($boostedContentUnit);
+        }
+        if ($cancelBoostedContentUnit) {
+            $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnit);
         }
 
         $this->em->persist($transaction);

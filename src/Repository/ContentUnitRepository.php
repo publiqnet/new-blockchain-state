@@ -325,7 +325,7 @@ class ContentUnitRepository extends EntityRepository
             ->join('cu.boosts', 'bcu')
             ->where('bcu.startTimePoint <= :date')
             ->andWhere('bcu.cancelled = 0')
-            ->andWhere('(bcu.startTimePoint + bcu.hours * 3600) >= :date')
+            ->andWhere('bcu.endTimePoint >= :date')
             ->andWhere('cu NOT IN (:excludes)')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
