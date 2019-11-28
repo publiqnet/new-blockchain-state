@@ -8,6 +8,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -88,10 +89,20 @@ class BoostedContentUnit
 
     /**
      * @ORM\JoinColumn(nullable=true)
-     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", mappedBy="boostedContentUnit")
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", mappedBy="boostedContentUnit", cascade={"remove"})
      */
     private $cancelBoostedContentUnit;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnitSpending", mappedBy="boostedContentUnit", cascade={"remove"})
+     */
+    private $boostedContentUnitSpendings;
+
+
+    public function __construct()
+    {
+        $this->boostedContentUnitSpendings = new ArrayCollection();
+    }
 
     /**
      * @return mixed
@@ -275,5 +286,13 @@ class BoostedContentUnit
     public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
     {
         $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostedContentUnitSpendings()
+    {
+        return $this->boostedContentUnitSpendings;
     }
 }

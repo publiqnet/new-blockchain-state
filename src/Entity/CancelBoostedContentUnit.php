@@ -33,6 +33,7 @@ class CancelBoostedContentUnit
 
     /**
      * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="cancelBoostedContentUnit")
+     * @ORM\JoinColumn(name="cancel_boosted_content_unit_id", referencedColumnName="id", onDelete="SET NULL")
      */
     private $boostedContentUnit;
 

@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
+use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
@@ -37,6 +38,7 @@ use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
 use PubliqAPI\Model\SponsorContentUnit;
+use PubliqAPI\Model\SponsorContentUnitApplied;
 use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
@@ -151,6 +153,7 @@ class StateSyncCommand extends ContainerAwareCommand
                 $transactions = $action->getTransactions();
                 $rewards = $action->getRewards();
                 $unitUriImpacts = $action->getUnitUriImpacts();
+                $appliedSponsorItems = $action->getAppliedSponsorItems();
 
                 //  get authority account
                 $authorityAccount = $this->checkAccount($authority);
@@ -683,6 +686,31 @@ class StateSyncCommand extends ContainerAwareCommand
                             }
 
                             $this->em->persist($contentUnitEntity);
+                            $this->em->flush();
+                        }
+                    }
+                }
+
+                if (is_array($appliedSponsorItems)) {
+                    /**
+                     * @var SponsorContentUnitApplied $appliedSponsorItem
+                     */
+                    foreach ($appliedSponsorItems as $appliedSponsorItem) {
+                        $transactionHash = $appliedSponsorItem->getTransactionHash();
+                        $amount = $appliedSponsorItem->getAmount();
+                        $whole = $amount->getWhole();
+                        $fraction = $amount->getFraction();
+
+                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transactionEntity) {
+                            $boostedContentUnitEntity = $transactionEntity->getBoostedContentUnit();
+
+                            $boostedContentUnitSpending = new BoostedContentUnitSpending();
+                            $boostedContentUnitSpending->setBlock($block);
+                            $boostedContentUnitSpending->setBoostedContentUnit($boostedContentUnitEntity);
+                            $boostedContentUnitSpending->setWhole($whole);
+                            $boostedContentUnitSpending->setFraction($fraction);
+                            $this->em->persist($boostedContentUnitSpending);
                             $this->em->flush();
                         }
                     }
@@ -1233,7 +1261,7 @@ class StateSyncCommand extends ContainerAwareCommand
     private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-        if (!$transaction) {
+        if ($transaction) {
             $this->em->remove($transaction);
         }
 

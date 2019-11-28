@@ -77,6 +77,11 @@ class Block
     private $views;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnitSpending", mappedBy="block", cascade={"remove"}, fetch="EXTRA_LAZY")
+     */
+    private $spendings;
+
+    /**
      * @Groups({"block"})
      */
     private $transactionsCount;
@@ -106,6 +111,7 @@ class Block
         $this->rewards = new ArrayCollection();
         $this->transactions = new ArrayCollection();
         $this->views = new ArrayCollection();
+        $this->spendings = new ArrayCollection();
     }
 
     public function __toString()
@@ -207,6 +213,14 @@ class Block
     public function getViews()
     {
         return $this->views;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSpendings()
+    {
+        return $this->spendings;
     }
 
     /**

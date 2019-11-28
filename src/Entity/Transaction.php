@@ -86,7 +86,7 @@ class Transaction
     private $boostedContentUnit;
 
     /**
-     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id", onDelete="SET NULL")
      * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"explorerTransaction"})
      */

@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\BoostedContentUnit;
+use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
@@ -308,78 +309,80 @@ class ContentApiController extends Controller
             }
 
             //  add data
-            $channelPublicKey = $this->getParameter('channel_address');
-            $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
+            if ($currentTransactionHash) {
+                $channelPublicKey = $this->getParameter('channel_address');
+                $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
 
-            //  get content unit data from storage
-            $coverUri = null;
-            $storageData = $blockChain->getContentUnitData($uri);
-            if (strpos($storageData, '</h1>')) {
-                if (strpos($storageData, '<h1>') > 0) {
-                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                //  get content unit data from storage
+                $coverUri = null;
+                $storageData = $blockChain->getContentUnitData($uri);
+                if (strpos($storageData, '</h1>')) {
+                    if (strpos($storageData, '<h1>') > 0) {
+                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
 
-                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                }
-                $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
-                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-            } else {
-                $contentUnitTitle = 'Old content without title';
-                $contentUnitText = $storageData;
-            }
-
-            $contentUnitEntity = new \App\Entity\ContentUnit();
-            $contentUnitEntity->setUri($uri);
-            $contentUnitEntity->setContentId($contentId);
-            $contentUnitEntity->setAuthor($account);
-            $contentUnitEntity->setChannel($channelAccount);
-            $contentUnitEntity->setTitle($contentUnitTitle);
-            $contentUnitEntity->setText($contentUnitText);
-            $contentUnitEntity->setTextWithData($contentUnitText);
-            if ($coverUri) {
-                $coverFileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
-                if (!$coverFileEntity) {
-                    $coverFileEntity = new File();
-                    $coverFileEntity->setUri($coverUri);
-                    $em->persist($coverFileEntity);
-                }
-                $contentUnitEntity->setCover($coverFileEntity);
-            }
-
-            //  check for related Publication
-            $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
-            if ($publicationArticle) {
-                $contentUnitEntity->setPublication($publicationArticle->getPublication());
-            }
-
-            $em->persist($contentUnitEntity);
-            $em->flush();
-
-            //  check for related tags
-            $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-            if ($contentUnitTags) {
-                foreach ($contentUnitTags as $contentUnitTag) {
-                    $contentUnitTag->setContentUnit($contentUnitEntity);
-                    $em->persist($contentUnitTag);
+                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                    }
+                    $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                } else {
+                    $contentUnitTitle = 'Old content without title';
+                    $contentUnitText = $storageData;
                 }
 
+                $contentUnitEntity = new \App\Entity\ContentUnit();
+                $contentUnitEntity->setUri($uri);
+                $contentUnitEntity->setContentId($contentId);
+                $contentUnitEntity->setAuthor($account);
+                $contentUnitEntity->setChannel($channelAccount);
+                $contentUnitEntity->setTitle($contentUnitTitle);
+                $contentUnitEntity->setText($contentUnitText);
+                $contentUnitEntity->setTextWithData($contentUnitText);
+                if ($coverUri) {
+                    $coverFileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                    if (!$coverFileEntity) {
+                        $coverFileEntity = new File();
+                        $coverFileEntity->setUri($coverUri);
+                        $em->persist($coverFileEntity);
+                    }
+                    $contentUnitEntity->setCover($coverFileEntity);
+                }
+
+                //  check for related Publication
+                $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
+                if ($publicationArticle) {
+                    $contentUnitEntity->setPublication($publicationArticle->getPublication());
+                }
+
+                $em->persist($contentUnitEntity);
+                $em->flush();
+
+                //  check for related tags
+                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                if ($contentUnitTags) {
+                    foreach ($contentUnitTags as $contentUnitTag) {
+                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                        $em->persist($contentUnitTag);
+                    }
+
+                    $em->flush();
+                }
+
+                //  add transaction
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $transactionEntity = new Transaction();
+                $transactionEntity->setTransactionHash($currentTransactionHash);
+                $transactionEntity->setContentUnit($contentUnitEntity);
+                $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $transactionEntity->setFeeWhole($feeWhole);
+                $transactionEntity->setFeeFraction($feeFraction);
+                $transactionEntity->setTransactionSize(0);
+                $em->persist($transactionEntity);
                 $em->flush();
             }
-
-            //  add transaction
-            $timezone = new \DateTimeZone('UTC');
-            $datetime = new \DateTime();
-            $datetime->setTimezone($timezone);
-
-            $transactionEntity = new Transaction();
-            $transactionEntity->setTransactionHash($currentTransactionHash);
-            $transactionEntity->setContentUnit($contentUnitEntity);
-            $transactionEntity->setTimeSigned($datetime->getTimestamp());
-            $transactionEntity->setFeeWhole($feeWhole);
-            $transactionEntity->setFeeFraction($feeFraction);
-            $transactionEntity->setTransactionSize(0);
-            $em->persist($transactionEntity);
-            $em->flush();
 
             return new JsonResponse('', Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
@@ -1235,34 +1238,36 @@ class ContentApiController extends Controller
         try {
             $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
-                $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+                if ($currentTransactionHash) {
+                    $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
 
-                //  add boosted content unit
-                $boostedContentUnit = new BoostedContentUnit();
-                $boostedContentUnit->setSponsor($account);
-                $boostedContentUnit->setContentUnit($contentUnit);
-                $boostedContentUnit->setStartTimePoint($startTimePoint);
-                $boostedContentUnit->setHours($hours);
-                $boostedContentUnit->setWhole($amount);
-                $boostedContentUnit->setFraction(0);
-                $boostedContentUnit->setEndTimePoint($startTimePoint + $hours * 3600);
-                $em->persist($boostedContentUnit);
-                $em->flush();
+                    //  add boosted content unit
+                    $boostedContentUnit = new BoostedContentUnit();
+                    $boostedContentUnit->setSponsor($account);
+                    $boostedContentUnit->setContentUnit($contentUnit);
+                    $boostedContentUnit->setStartTimePoint($startTimePoint);
+                    $boostedContentUnit->setHours($hours);
+                    $boostedContentUnit->setWhole($amount);
+                    $boostedContentUnit->setFraction(0);
+                    $boostedContentUnit->setEndTimePoint($startTimePoint + $hours * 3600);
+                    $em->persist($boostedContentUnit);
+                    $em->flush();
 
-                //  add transaction
-                $timezone = new \DateTimeZone('UTC');
-                $datetime = new \DateTime();
-                $datetime->setTimezone($timezone);
+                    //  add transaction
+                    $timezone = new \DateTimeZone('UTC');
+                    $datetime = new \DateTime();
+                    $datetime->setTimezone($timezone);
 
-                $transaction = new Transaction();
-                $transaction->setTransactionHash($currentTransactionHash);
-                $transaction->setBoostedContentUnit($boostedContentUnit);
-                $transaction->setTimeSigned($datetime->getTimestamp());
-                $transaction->setFeeWhole($feeWhole);
-                $transaction->setFeeFraction($feeFraction);
-                $transaction->setTransactionSize(0);
-                $em->persist($transaction);
-                $em->flush();
+                    $transaction = new Transaction();
+                    $transaction->setTransactionHash($currentTransactionHash);
+                    $transaction->setBoostedContentUnit($boostedContentUnit);
+                    $transaction->setTimeSigned($datetime->getTimestamp());
+                    $transaction->setFeeWhole($feeWhole);
+                    $transaction->setFeeFraction($feeFraction);
+                    $transaction->setTransactionSize(0);
+                    $em->persist($transaction);
+                    $em->flush();
+                }
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
@@ -1435,7 +1440,25 @@ class ContentApiController extends Controller
                     $summary[0] = [];
                 }
 
-                $summary = array_merge($summary[0], $viewsSummary[0]);
+                $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostedArticleSummary($boostedContentUnit);
+                if (!isset($spendingSummary[0])) {
+                    $spendingSummary[0] = ['spentWhole' => 0, 'spentFraction' => 0];
+                } else {
+                    $spentWhole = intval($spendingSummary[0]['spentWhole']);
+                    $spentFraction = intval($spendingSummary[0]['spentFraction']);
+
+                    if ($spentFraction > 99999999) {
+                        while ($spentFraction > 99999999) {
+                            $spentWhole++;
+                            $spentFraction -= 100000000;
+                        }
+                    }
+
+                    $spendingSummary[0]['spentWhole'] = $spentWhole;
+                    $spendingSummary[0]['spentFraction'] = $spentFraction;
+                }
+
+                $summary = array_merge($summary[0], $viewsSummary[0], $spendingSummary[0]);
                 $boostedContentUnit->setBoostSummary($summary);
 
                 $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($boostedContentUnit);
@@ -1474,10 +1497,28 @@ class ContentApiController extends Controller
             $boostSummary[0] = [];
         }
 
+        $boostSummarySpending = $em->getRepository(BoostedContentUnitSpending::class)->getAuthorBoostedArticlesSummary($account);
+        if (!isset($boostSummarySpending[0])) {
+            $boostSummarySpending[0] = ['spentWhole' => 0, 'spentFraction' => 0];
+        } else {
+            $spentWhole = intval($boostSummarySpending[0]['spentWhole']);
+            $spentFraction = intval($boostSummarySpending[0]['spentFraction']);
+
+            if ($spentFraction > 99999999) {
+                while ($spentFraction > 99999999) {
+                    $spentWhole++;
+                    $spentFraction -= 100000000;
+                }
+            }
+
+            $boostSummarySpending[0]['spentWhole'] = $spentWhole;
+            $boostSummarySpending[0]['spentFraction'] = $spentFraction;
+        }
+
         $active = $this->get('serializer')->normalize($active, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
         $passive = $this->get('serializer')->normalize($passive, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
 
-        $boostSummary = array_merge($boostSummary[0], $boostSummaryViews[0]);
+        $boostSummary = array_merge($boostSummary[0], $boostSummaryViews[0], $boostSummarySpending[0]);
 
         return new JsonResponse(['active' => $active, 'passive' => $passive, 'summary' => $boostSummary]);
     }

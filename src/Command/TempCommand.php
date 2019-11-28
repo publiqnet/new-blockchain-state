@@ -11,7 +11,10 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
+use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
+use App\Entity\ContentUnitViews;
+use App\Entity\IndexNumber;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
 use App\Service\Custom;
@@ -19,9 +22,12 @@ use Doctrine\ORM\EntityManager;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\CancelSponsorContentUnit;
+use PubliqAPI\Model\ContentUnitImpactLog;
+use PubliqAPI\Model\ContentUnitImpactPerChannel;
 use PubliqAPI\Model\LoggedTransaction;
 use PubliqAPI\Model\LoggedTransactions;
 use PubliqAPI\Model\SponsorContentUnit;
+use PubliqAPI\Model\SponsorContentUnitApplied;
 use PubliqAPI\Model\TransactionLog;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Command\LockableTrait;
@@ -96,6 +102,15 @@ class TempCommand extends ContainerAwareCommand
         $this->em->beginTransaction();
 
         $index = 0;
+        /**
+         * get the last index number - if not exist set default as 0
+         * @var IndexNumber $indexNumber
+         */
+        $indexNumber = $this->em->getRepository(IndexNumber::class)->findOneBy([], ['id' => 'DESC']);
+        if ($indexNumber) {
+            $index = $indexNumber->getId();
+        }
+
         $this->io->writeln(sprintf('Started at with index=%s: %s', ($index ? $index + 1 : $index), date('Y-m-d H:i:s')));
 
         /**
@@ -113,15 +128,13 @@ class TempCommand extends ContainerAwareCommand
 
             $appliedReverted = $loggedTransaction->getLoggingType() === LoggingType::apply;
             $index = $loggedTransaction->getIndex();
-            if ($index > 55209) {
-                $this->io->writeln('Reached synced index');
-                break;
-            }
 
             if ($action instanceof BlockLog) {
                 //  get block data
                 $blockHash = $action->getBlockHash();
                 $transactions = $action->getTransactions();
+                $unitUriImpacts = $action->getUnitUriImpacts();
+                $appliedSponsorItems = $action->getAppliedSponsorItems();
 
                 $block = $this->em->getRepository(Block::class)->findOneBy(['hash' => $blockHash]);
                 if (!$block) {
@@ -214,6 +227,77 @@ class TempCommand extends ContainerAwareCommand
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
                             }
+                        }
+                    }
+                }
+
+                if (is_array($unitUriImpacts)) {
+                    /**
+                     * @var ContentUnitImpactLog $unitUriImpact
+                     */
+                    foreach ($unitUriImpacts as $unitUriImpact) {
+                        $contentUnitUri = $unitUriImpact->getContentUnitUri();
+                        $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $contentUnitUri]);
+                        if ($contentUnitEntity) {
+                            $viewCount = 0;
+                            /**
+                             * @var ContentUnitImpactPerChannel[] $viewsPerChannels
+                             */
+                            $viewsPerChannels = $unitUriImpact->getViewsPerChannel();
+                            foreach ($viewsPerChannels as $viewsPerChannel) {
+                                $viewCount += $viewsPerChannel->getViewCount();
+
+                                $views = $viewsPerChannel->getViewCount();
+                                $channelAddress = $viewsPerChannel->getChannelAddress();
+
+                                //  create channel object
+                                $channelAccount = $this->checkAccount($channelAddress);
+
+                                if ($appliedReverted) {
+                                    $contentUnitViews = new ContentUnitViews();
+                                    $contentUnitViews->setChannel($channelAccount);
+                                    $contentUnitViews->setContentUnit($contentUnitEntity);
+                                    $contentUnitViews->setBlock($block);
+                                    $contentUnitViews->setViewsCount($views);
+                                    $contentUnitViews->setViewsTime($block->getSignTime());
+                                    $this->em->persist($contentUnitViews);
+                                    $this->em->flush();
+                                }
+                            }
+
+                            if ($appliedReverted) {
+                                $contentUnitEntity->plusViews($viewCount);
+                            } else {
+                                $contentUnitEntity->minusViews($viewCount);
+                            }
+
+                            $this->em->persist($contentUnitEntity);
+                            $this->em->flush();
+                        }
+                    }
+                }
+
+                if (is_array($appliedSponsorItems)) {
+                    /**
+                     * @var SponsorContentUnitApplied $appliedSponsorItem
+                     */
+                    foreach ($appliedSponsorItems as $appliedSponsorItem) {
+                        $transactionHash = $appliedSponsorItem->getTransactionHash();
+                        $amount = $appliedSponsorItem->getAmount();
+                        $whole = $amount->getWhole();
+                        $fraction = $amount->getFraction();
+
+                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transactionEntity) {
+                            $boostedContentUnitEntity = $transactionEntity->getBoostedContentUnit();
+
+                            $boostedContentUnitSpending = new BoostedContentUnitSpending();
+                            $boostedContentUnitSpending->setBlock($block);
+                            $boostedContentUnitSpending->setBoostedContentUnit($boostedContentUnitEntity);
+                            $boostedContentUnitSpending->setWhole($whole);
+                            $boostedContentUnitSpending->setFraction($fraction);
+                            $this->em->persist($boostedContentUnitSpending);
+                            $this->em->flush();
                         }
                     }
                 }
@@ -324,6 +408,17 @@ class TempCommand extends ContainerAwareCommand
         $this->em->flush();
         $this->em->clear();
 
+        /**
+         * @var IndexNumber $indexNumber
+         */
+        $indexNumber = $this->em->getRepository(IndexNumber::class)->findOneBy([], ['id' => 'DESC']);
+        if (!$indexNumber) {
+            $indexNumber = new IndexNumber();
+        }
+        $indexNumber->setId($index);
+        $this->em->persist($indexNumber);
+        $this->em->flush();
+
         $this->em->commit();
 
         $this->io->writeln(sprintf('Finished at with index=%s: %s', $index, date('Y-m-d H:i:s')));
@@ -376,8 +471,9 @@ class TempCommand extends ContainerAwareCommand
     private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-        if (!$transaction) {
+        if ($transaction) {
             $this->em->remove($transaction);
+            $this->em->flush();
         }
 
         $transaction = new Transaction();
