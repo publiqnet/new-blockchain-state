@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\BoostedContentUnit;
 use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
@@ -38,6 +39,17 @@ class BoostedContentUnitSpendingRepository extends EntityRepository
             ->join('bcus.boostedContentUnit', 'bcu')
             ->where('bcu.contentUnit = :article')
             ->setParameters(['article' => $article])
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getBoostSummary(BoostedContentUnit $boostedContentUnit)
+    {
+        return $this->createQueryBuilder('bcus')
+            ->select('SUM(bcus.whole) as spentWhole, SUM(bcus.fraction) as spentFraction')
+            ->join('bcus.boostedContentUnit', 'bcu')
+            ->where('bcu = :article')
+            ->setParameters(['article' => $boostedContentUnit])
             ->getQuery()
             ->getResult();
     }

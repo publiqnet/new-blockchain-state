@@ -307,6 +307,17 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                             } else {
+                                //  check for related tags
+                                $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                                if ($contentUnitTags) {
+                                    foreach ($contentUnitTags as $contentUnitTag) {
+                                        $contentUnitTag->setContentUnit(null);
+                                        $this->em->persist($contentUnitTag);
+                                    }
+
+                                    $this->em->flush();
+                                }
+
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
@@ -1263,6 +1274,7 @@ class StateSyncCommand extends ContainerAwareCommand
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if ($transaction) {
             $this->em->remove($transaction);
+            $this->em->flush();
         }
 
         $transaction = new Transaction();

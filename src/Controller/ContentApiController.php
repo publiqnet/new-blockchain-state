@@ -1425,22 +1425,22 @@ class ContentApiController extends Controller
         $passive = [];
 
         /**
-         * @var \App\Entity\ContentUnit[] $boostedContentUnits
+         * @var \App\Entity\ContentUnit[] $contentUnits
          */
-        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
-        if ($boostedContentUnits) {
-            foreach ($boostedContentUnits as $boostedContentUnit) {
-                $viewsSummary = $em->getRepository(ContentUnitViews::class)->getBoostedArticleSummary($boostedContentUnit);
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
+        if ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                $viewsSummary = $em->getRepository(ContentUnitViews::class)->getBoostedArticleSummary($contentUnit);
                 if (!isset($viewsSummary[0])) {
                     $viewsSummary[0] = ['views' => 0, 'channels' => 0];
                 }
 
-                $summary = $em->getRepository(BoostedContentUnit::class)->getBoostedArticleSummary($boostedContentUnit);
+                $summary = $em->getRepository(BoostedContentUnit::class)->getBoostedArticleSummary($contentUnit);
                 if (!isset($summary[0])) {
                     $summary[0] = [];
                 }
 
-                $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostedArticleSummary($boostedContentUnit);
+                $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostedArticleSummary($contentUnit);
                 if (!isset($spendingSummary[0])) {
                     $spendingSummary[0] = ['spentWhole' => 0, 'spentFraction' => 0];
                 } else {
@@ -1459,13 +1459,39 @@ class ContentApiController extends Controller
                 }
 
                 $summary = array_merge($summary[0], $viewsSummary[0], $spendingSummary[0]);
-                $boostedContentUnit->setBoostSummary($summary);
+                $contentUnit->setBoostSummary($summary);
 
-                $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($boostedContentUnit);
+                /**
+                 * @var BoostedContentUnit[] $boosts
+                 */
+                $boosts = $contentUnit->getBoosts();
+                foreach ($boosts as $boost) {
+                    $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostSummary($boost);
+                    if (!isset($spendingSummary[0])) {
+                        $spendingSummary[0] = ['spentWhole' => 0, 'spentFraction' => 0];
+                    } else {
+                        $spentWhole = intval($spendingSummary[0]['spentWhole']);
+                        $spentFraction = intval($spendingSummary[0]['spentFraction']);
+
+                        if ($spentFraction > 99999999) {
+                            while ($spentFraction > 99999999) {
+                                $spentWhole++;
+                                $spentFraction -= 100000000;
+                            }
+                        }
+
+                        $spendingSummary[0]['spentWhole'] = $spentWhole;
+                        $spendingSummary[0]['spentFraction'] = $spentFraction;
+                    }
+
+                    $boost->setSummary($spendingSummary);
+                }
+
+                $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
                 if ($isBoostActive) {
-                    $active[] = $boostedContentUnit;
+                    $active[] = $contentUnit;
                 } else {
-                    $passive[] = $boostedContentUnit;
+                    $passive[] = $contentUnit;
                 }
             }
         }

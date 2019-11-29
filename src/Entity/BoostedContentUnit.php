@@ -98,6 +98,12 @@ class BoostedContentUnit
      */
     private $boostedContentUnitSpendings;
 
+    /**
+     * @var mixed
+     * @Groups({"boost"})
+     */
+    private $summary;
+
 
     public function __construct()
     {
@@ -294,5 +300,21 @@ class BoostedContentUnit
     public function getBoostedContentUnitSpendings()
     {
         return $this->boostedContentUnitSpendings;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSummary()
+    {
+        return $this->summary;
+    }
+
+    /**
+     * @param mixed $summary
+     */
+    public function setSummary($summary)
+    {
+        $this->summary = $summary;
     }
 }
