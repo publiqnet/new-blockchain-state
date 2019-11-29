@@ -182,9 +182,9 @@ class StateSyncCommand extends ContainerAwareCommand
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
 
-                        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                        if ($transaction) {
-                            $this->em->remove($transaction);
+                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transactionEntity) {
+                            $this->em->remove($transactionEntity);
                             $this->em->flush();
                         }
 
@@ -746,9 +746,9 @@ class StateSyncCommand extends ContainerAwareCommand
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
 
-                $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                if ($transaction) {
-                    $this->em->remove($transaction);
+                $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                if ($transactionEntity) {
+                    $this->em->remove($transactionEntity);
                     $this->em->flush();
                 }
 

@@ -34,13 +34,18 @@ class ContentUnitViewsRepository extends EntityRepository
 
     public function getAuthorBoostedArticlesSummary(Account $author)
     {
-        return $this->createQueryBuilder('cuv')
-            ->select('SUM(cuv.viewsCount) as views, COUNT(ch) as channels')
-            ->join('cuv.contentUnit', 'cu')
-            ->join('cuv.channel', 'ch')
+        $subQuery = $this->createQueryBuilder('cuv2');
+        $subQuery
+            ->select('cuv2.id')
+            ->join('cuv2.contentUnit', 'cu')
             ->join('cu.boosts', 'bcu')
             ->where('cu.author = :author')
-            ->andWhere('(cuv.viewsTime >= bcu.startTimePoint and cuv.viewsTime <= bcu.endTimePoint)')
+            ->andWhere('(cuv2.viewsTime >= bcu.startTimePoint and cuv2.viewsTime <= bcu.endTimePoint)')
+            ->setParameters(['author' => $author]);
+
+        $query = $this->createQueryBuilder('cuv');
+        return $query->select('SUM(cuv.viewsCount) as views')
+            ->where($query->expr()->in('cuv.id', $subQuery->getDQL()))
             ->setParameters(['author' => $author])
             ->groupBy('cuv.channel')
             ->getQuery()
@@ -49,13 +54,18 @@ class ContentUnitViewsRepository extends EntityRepository
 
     public function getBoostedArticleSummary(ContentUnit $article)
     {
-        return $this->createQueryBuilder('cuv')
-            ->select('SUM(cuv.viewsCount) as views, COUNT(ch) as channels')
-            ->join('cuv.contentUnit', 'cu')
-            ->join('cuv.channel', 'ch')
+        $subQuery = $this->createQueryBuilder('cuv2');
+        $subQuery
+            ->select('cuv2.id')
+            ->join('cuv2.contentUnit', 'cu')
             ->join('cu.boosts', 'bcu')
             ->where('cu = :article')
-            ->andWhere('(cuv.viewsTime >= bcu.startTimePoint and cuv.viewsTime <= bcu.endTimePoint)')
+            ->andWhere('(cuv2.viewsTime >= bcu.startTimePoint and cuv2.viewsTime <= bcu.endTimePoint)')
+            ->setParameters(['article' => $article]);
+
+        $query = $this->createQueryBuilder('cuv');
+        return $query->select('SUM(cuv.viewsCount) as views')
+            ->where($query->expr()->in('cuv.id', $subQuery->getDQL()))
             ->setParameters(['article' => $article])
             ->groupBy('cuv.channel')
             ->getQuery()

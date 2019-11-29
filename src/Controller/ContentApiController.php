@@ -1430,10 +1430,14 @@ class ContentApiController extends Controller
         $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
         if ($contentUnits) {
             foreach ($contentUnits as $contentUnit) {
+                $views = 0;
+                $channels = 0;
                 $viewsSummary = $em->getRepository(ContentUnitViews::class)->getBoostedArticleSummary($contentUnit);
-                if (!isset($viewsSummary[0])) {
-                    $viewsSummary[0] = ['views' => 0, 'channels' => 0];
+                foreach ($viewsSummary as $viewsSummarySingle) {
+                    $views += $viewsSummarySingle['views'];
+                    $channels++;
                 }
+                $viewsSummary[0] = ['views' => $views, 'channels' => $channels];
 
                 $summary = $em->getRepository(BoostedContentUnit::class)->getBoostedArticleSummary($contentUnit);
                 if (!isset($summary[0])) {
@@ -1513,10 +1517,14 @@ class ContentApiController extends Controller
         }
 
         //  get boost summary
+        $views = 0;
+        $channels = 0;
         $boostSummaryViews = $em->getRepository(ContentUnitViews::class)->getAuthorBoostedArticlesSummary($account);
-        if (!isset($boostSummaryViews[0])) {
-            $boostSummaryViews[0] = ['views' => 0, 'channels' => 0];
+        foreach ($boostSummaryViews as $boostSummaryViewsSingle) {
+            $views += $boostSummaryViewsSingle['views'];
+            $channels++;
         }
+        $boostSummaryViews[0] = ['views' => $views, 'channels' => $channels];
 
         $boostSummary = $em->getRepository(BoostedContentUnit::class)->getAuthorBoostedArticlesSummary($account);
         if (!isset($boostSummary[0])) {
