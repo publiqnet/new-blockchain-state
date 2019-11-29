@@ -1488,7 +1488,7 @@ class ContentApiController extends Controller
                         $spendingSummary[0]['spentFraction'] = $spentFraction;
                     }
 
-                    $boost->setSummary($spendingSummary);
+                    $boost->setSummary($spendingSummary[0]);
                 }
 
                 $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
