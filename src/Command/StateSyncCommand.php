@@ -182,6 +182,12 @@ class StateSyncCommand extends ContainerAwareCommand
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
 
+                        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transaction) {
+                            $this->em->remove($transaction);
+                            $this->em->flush();
+                        }
+
                         if ($transaction->getAction() instanceof File) {
                             /**
                              * @var File $file
@@ -740,6 +746,12 @@ class StateSyncCommand extends ContainerAwareCommand
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
 
+                $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                if ($transaction) {
+                    $this->em->remove($transaction);
+                    $this->em->flush();
+                }
+
                 if ($action->getAction() instanceof File) {
                     /**
                      * @var File $file
@@ -1271,12 +1283,6 @@ class StateSyncCommand extends ContainerAwareCommand
      */
     private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
-        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-        if ($transaction) {
-            $this->em->remove($transaction);
-            $this->em->flush();
-        }
-
         $transaction = new Transaction();
         $transaction->setTransactionHash($transactionHash);
         $transaction->setFile(null);
