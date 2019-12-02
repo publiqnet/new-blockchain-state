@@ -357,7 +357,7 @@ class BlockChain
 
         //  check data
         if ($headerStatusCode == 200) {
-            return $body['data'];
+            return json_decode($body['data'], true);
         }
 
         if ($headerStatusCode == 404) {
