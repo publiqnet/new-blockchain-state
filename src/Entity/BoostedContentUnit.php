@@ -88,7 +88,7 @@ class BoostedContentUnit
     private $status;
 
     /**
-     * @ORM\JoinColumn(nullable=true)
+     * @ORM\JoinColumn(nullable=true, onDelete="SET NULL")
      * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", mappedBy="boostedContentUnit", cascade={"remove"})
      */
     private $cancelBoostedContentUnit;

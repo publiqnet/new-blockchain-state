@@ -66,27 +66,27 @@ class Transaction
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $file;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\ContentUnit", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\ContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $contentUnit;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $boostedContentUnit;
 
     /**
-     * @ORM\JoinColumn(nullable=true, referencedColumnName="id", onDelete="SET NULL")
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
      * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"explorerTransaction"})
      */
@@ -94,14 +94,14 @@ class Transaction
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $content;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\Transfer", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\Transfer", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $transfer;

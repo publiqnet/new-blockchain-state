@@ -591,10 +591,9 @@ class StateSyncCommand extends ContainerAwareCommand
                             $sponsorAddress = $cancelSponsorContentUnit->getSponsorAddress();
 
                             $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+                            $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
 
                             if ($appliedReverted) {
-                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
-
                                 /**
                                  * @var BoostedContentUnit $boostedContentUnitEntity
                                  */
@@ -617,8 +616,6 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
                             } else {
-                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
-
                                 /**
                                  * @var BoostedContentUnit $boostedContentUnitEntity
                                  */
