@@ -66,7 +66,7 @@ class Custom
             $fileStoragesSelected = [];
 
             foreach ($fileStorages as $fileStorage) {
-                if ($fileStorage->getUrl()) {
+                if ($fileStorage->getUrl() && $fileStorage->isStorage()) {
                     $fileStoragesSelected[] = $fileStorage;
                 }
             }
