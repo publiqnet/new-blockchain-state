@@ -912,7 +912,7 @@ class ContentApiController extends Controller
                                 $storageUrl = $storageOrderAccount->getUrl();
                             }
 
-                            $fileUrl = $storageUrl . '/storage?storage_order=' . $storageOrderToken;
+                            $fileUrl = $storageUrl . '/storage?storage_order_token=' . $storageOrderToken;
                             $file->setUrl($fileUrl);
 
                             $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'storageOrderToken' => $storageOrderToken];
