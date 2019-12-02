@@ -72,7 +72,8 @@ class Custom
             }
 
             if (count($fileStoragesSelected) > 0) {
-                $randomStorage = rand(0, count($fileStoragesSelected) - 1);
+                $randomStorageIndex = rand(0, count($fileStoragesSelected) - 1);
+                $randomStorage = $fileStoragesSelected[$randomStorageIndex];
             }
         }
 
