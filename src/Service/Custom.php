@@ -31,8 +31,6 @@ class Custom
      */
     private $em;
 
-    private $endpoint;
-    private $dsEndpoint;
     private $oldBackendEndpoint;
     private $socialAssetsPath;
     private $socialImagePath;
@@ -40,11 +38,9 @@ class Custom
     private $channelStorageEndpoint;
     private $frontendEndpoint;
 
-    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint)
+    function __construct(EntityManagerInterface $em, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint)
     {
         $this->em = $em;
-        $this->endpoint = $endpoint;
-        $this->dsEndpoint = $dsEndpoint;
         $this->oldBackendEndpoint = $oldBackendEndpoint;
         $this->socialAssetsPath = $socialAssetsPath;
         $this->socialImagePath = $socialImagePath;
@@ -57,9 +53,9 @@ class Custom
      * @param File $file
      * @return array
      */
-    public function getFileStoragesWithPublicAccess(File $file)
+    public function getRandomFileStorage(File $file)
     {
-        $fileStoragesWithPublicAccess = [];
+        $randomStorage = null;
 
         /**
          * @var Account[] $fileStorages
@@ -67,14 +63,20 @@ class Custom
         $fileStorages = $file->getStorages();
 
         if (count($fileStorages)) {
+            $fileStoragesSelected = [];
+
             foreach ($fileStorages as $fileStorage) {
                 if ($fileStorage->getUrl()) {
-                    $fileStoragesWithPublicAccess[] = $fileStorage;
+                    $fileStoragesSelected[] = $fileStorage;
                 }
+            }
+
+            if (count($fileStoragesSelected) > 0) {
+                $randomStorage = rand(0, count($fileStoragesSelected) - 1);
             }
         }
 
-        return $fileStoragesWithPublicAccess;
+        return $randomStorage;
     }
 
     /**
@@ -108,112 +110,6 @@ class Custom
         }
 
         return false;
-    }
-
-    /**
-     * @param string $from
-     * @return bool|string
-     * @throws \Exception
-     */
-    public function searchAuthors($from = '0.0.0')
-    {
-        $dataString = sprintf('{"id":1, "method":"call", "params":[0, "search_accounts", ["PBQ","","%s",1000]]}', $from);
-
-        $ch = curl_init($this->endpoint);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER,
-            ['Content-Type:application/json', 'Content-Length: ' . strlen($dataString)]
-        );
-
-        $response = curl_exec($ch);
-
-        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $headerSize);
-
-        curl_close($ch);
-
-        $data = json_decode($body, true);
-
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Connection failed: searchAuthors');
-        }
-
-        return $data['result'];
-    }
-
-    /**
-     * @param $publicKey
-     * @return bool|string
-     * @throws \Exception
-     * @return array
-     */
-    public function getAuthorArticles($publicKey)
-    {
-        $dataString = sprintf('{"id":1, "method":"call", "params":[0, "search_content", ["","",[],"","%s","","","-1"]]}', $publicKey);
-
-        $ch = curl_init($this->endpoint);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER,
-            ['Content-Type:application/json', 'Content-Length: ' . strlen($dataString)]
-        );
-
-        $response = curl_exec($ch);
-
-        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $headerSize);
-
-        curl_close($ch);
-
-        $data = json_decode($body, true);
-
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Connection failed: getAuthorArticles');
-        }
-
-        return $data['result'];
-    }
-
-    /**
-     * @param $articleId
-     * @return array|string
-     * @throws \Exception
-     * @return array
-     */
-    public function getArticle($articleId)
-    {
-        $ch = curl_init($this->dsEndpoint . '/' . $articleId);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER,
-            ['Content-Type:application/json']
-        );
-
-        $response = curl_exec($ch);
-
-        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $headerSize);
-
-        curl_close($ch);
-
-        $data = json_decode($body, true);
-
-        //  check for errors
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Connection failed: getArticle');
-        }
-
-        return $data['content']['data'];
     }
 
     /**
@@ -274,7 +170,7 @@ class Custom
      * @param Request $request
      * @param ContentUnit $contentUnit
      * @param $account
-     * @return bool
+     * @return string
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
@@ -301,15 +197,9 @@ class Custom
             $viewLog->setContentUnit($contentUnit);
             $viewLog->setUserIdentifier($userIdentifier);
             $viewLog->setDatetime($date->getTimestamp());
-
-            $addView = true;
         } else {
             if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
                 $viewLog->setDatetime($date->getTimestamp());
-
-                $addView = true;
-            } else {
-                $addView = false;
             }
         }
 
@@ -330,7 +220,7 @@ class Custom
         $this->em->persist($viewLogHistory);
         $this->em->flush();
 
-        return $addView;
+        return $userIdentifier;
     }
 
     /**

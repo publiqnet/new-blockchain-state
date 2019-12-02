@@ -92,6 +92,11 @@ class FileDetailsCommand extends ContainerAwareCommand
                 }
 
                 /**
+                 * @var Account $channel
+                 */
+                $channel = $contentUnit->getChannel();
+
+                /**
                  * @var File[] $files
                  */
                 $files = $contentUnit->getFiles();
@@ -100,27 +105,17 @@ class FileDetailsCommand extends ContainerAwareCommand
                     foreach ($files as $file) {
                         //  get file details
                         if (!$file->getMimeType()) {
-                            /**
-                             * @var Account[] $fileStorages
-                             */
-                            $fileStorages = $this->customService->getFileStoragesWithPublicAccess($file);
-                            if (count($fileStorages)) {
-                                $randomStorage = rand(0, count($fileStorages) - 1);
-                                $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                                if ($storageUrl) {
-                                    $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $storageUrl);
-                                    if ($fileDetails instanceof StorageFileDetailsResponse) {
-                                        $file->setMimeType($fileDetails->getMimeType());
-                                        $file->setSize($fileDetails->getSize());
-                                        if ($file->getMimeType() == 'text/html') {
-                                            $fileText = file_get_contents($storageUrl . '/storage?file=' . $file->getUri());
-                                            $file->setContent($fileText);
-                                        }
-
-                                        $this->em->persist($file);
-                                        $this->em->flush();
-                                    }
+                            $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $channel->getUrl());
+                            if ($fileDetails instanceof StorageFileDetailsResponse) {
+                                $file->setMimeType($fileDetails->getMimeType());
+                                $file->setSize($fileDetails->getSize());
+                                if ($file->getMimeType() == 'text/html') {
+                                    $fileText = file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri());
+                                    $file->setContent($fileText);
                                 }
+
+                                $this->em->persist($file);
+                                $this->em->flush();
                             }
                         }
 
