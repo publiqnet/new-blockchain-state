@@ -557,7 +557,7 @@ class AccountApiController extends Controller
             return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
         }
 
-        $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account);
+        $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account, 4);
         //  prepare data to return
         if ($preferredAuthorsArticles) {
             try {
@@ -568,7 +568,7 @@ class AccountApiController extends Controller
         }
         $preferredAuthorsArticles = $this->get('serializer')->normalize($preferredAuthorsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
-        $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account);
+        $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account, 4);
         //  prepare data to return
         if ($preferredTagsArticles) {
             try {
