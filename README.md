@@ -33,12 +33,11 @@ https://www.digitalocean.com/community/tutorials/how-to-create-a-new-user-and-gr
 DATABASE_URL=mysql://user:password@127.0.0.1:3306/database-name
 CORS_ALLOW_ORIGIN=^https?://localhost(:[0-9]+)?$ (frontend URL or list of URLs)
 OAUTH_ENDPOINT=https://stage-mainnet-oauth.publiq.network (do not change if you gonna use PUBLIQ oAUTH)
-STATE_ENDPOINT=(State node endpoint)
-BROADCAST_ENDPOINT=(Broadcast node endpoint)
-CHANNEL_ENDPOINT=(Channel node endpoint)
-CHANNEL_STORAGE_ENDPOINT=(Storage endpoint)
-CHANNEL_STORAGE_ORDER_ENDPOINT=(Storage order generator endpoint)
-CHANNEL_STORAGE_ENDPOINT_POST=(RPC endpoint)
+STATE_ENDPOINT=(State node rpc endpoint)
+BROADCAST_ENDPOINT=(Broadcast node rpc endpoint)
+CHANNEL_ENDPOINT=(Channel node rpc endpoint)
+CHANNEL_STORAGE_ENDPOINT=(Channel node storage endpoint: HTTPS)
+CHANNEL_STORAGE_ORDER_ENDPOINT=(Storage Order Token Generator endpoint)
 DETECT_LANGUAGE_ENDPOINT=http://127.0.0.1:44121/5/.01
 CHANNEL_ADDRESS=PUBLIC-KEY
 CHANNEL_PRIVATE_KEY=PRIVATE-KEY
