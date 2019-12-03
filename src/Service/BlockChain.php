@@ -33,18 +33,16 @@ class BlockChain
     private $channelEndpoint;
     private $channelStorageEndpoint;
     private $detectLanguageEndpoint;
-    private $channelStorageEndpointPost;
     private $channelStorageOrderEndpoint;
     private $channelPrivateKey;
 
-    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $channelStorageEndpointPost, $channelStorageOrderEndpoint, $channelPrivateKey)
+    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $channelStorageOrderEndpoint, $channelPrivateKey)
     {
         $this->stateEndpoint = $stateEndpoint;
         $this->broadcastEndpoint = $broadcastEndpoint;
         $this->channelEndpoint = $channelEndpoint;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->detectLanguageEndpoint = $detectLanguageEndpoint;
-        $this->channelStorageEndpointPost = $channelStorageEndpointPost;
         $this->channelStorageOrderEndpoint = $channelStorageOrderEndpoint;
         $this->channelPrivateKey = $channelPrivateKey;
     }
@@ -168,7 +166,7 @@ class BlockChain
     {
         $header = ['Content-Type: ' . $fileMimeType, 'Content-Length: ' . strlen($fileData)];
 
-        $body = $this->callJsonRPC($this->channelStorageEndpointPost . '/storage', $header, $fileData);
+        $body = $this->callJsonRPC($this->channelEndpoint . '/storage', $header, $fileData);
 
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);
