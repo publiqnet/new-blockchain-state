@@ -57,7 +57,7 @@ services:
         arguments: ['@doctrine.orm.entity_manager', '%env(CHANNEL_ADDRESS)%']
 
     App\Service\Custom:
-        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%thumbnail_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%']
+        arguments: ['@doctrine.orm.entity_manager', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%thumbnail_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%', '%env(FB_CLIENT_ID)%', '%env(FB_CLIENT_SECRET)%']
 
     json:
         class: App\Service\Json

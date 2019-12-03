@@ -23,9 +23,6 @@ use Symfony\Component\HttpFoundation\Request;
 
 class Custom
 {
-    const FB_CLIENT_ID = '1949989915051606';
-    const FB_CLIENT_SECRET = 'e9ea0e9284f61ac66d538ae56bbebab3';
-
     /**
      * @var EntityManager
      */
@@ -37,8 +34,10 @@ class Custom
     private $thumbnailPath;
     private $channelStorageEndpoint;
     private $frontendEndpoint;
+    private $fbClientId;
+    private $fbClientSecret;
 
-    function __construct(EntityManagerInterface $em, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint)
+    function __construct(EntityManagerInterface $em, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint, $fbClientId, $fbClientSecret)
     {
         $this->em = $em;
         $this->oldBackendEndpoint = $oldBackendEndpoint;
@@ -47,6 +46,8 @@ class Custom
         $this->thumbnailPath = $thumbnailPath;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->frontendEndpoint = $frontendEndpoint;
+        $this->fbClientId = $fbClientId;
+        $this->fbClientSecret = $fbClientSecret;
     }
 
     /**
@@ -628,7 +629,7 @@ class Custom
      */
     public function scrapeUrl(String $link)
     {
-        $url = 'https://graph.facebook.com/oauth/access_token?client_id=' . self::FB_CLIENT_ID . '&client_secret=' . self::FB_CLIENT_SECRET . '&grant_type=client_credentials';
+        $url = 'https://graph.facebook.com/oauth/access_token?client_id=' . $this->fbClientId . '&client_secret=' . $this->fbClientSecret . '&grant_type=client_credentials';
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_RETURNTRANSFER => 1,
