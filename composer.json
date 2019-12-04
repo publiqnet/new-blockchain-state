@@ -3,7 +3,7 @@
     "license": "proprietary",
     "repositories": [
         {
-            "url": "git@github.com:publiqnet/publiq-api.git",
+            "url": "git@github.com:publiqnet/publiq-models-php.git",
             "type": "git"
         }
     ],
