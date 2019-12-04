@@ -140,8 +140,8 @@
     "psr/simple-cache": {
         "version": "1.0.1"
     },
-    "publiq/publiq-api": {
-        "version": "1.0.0"
+    "publiq/publiq-models-php": {
+        "version": "1.0.x-dev"
     },
     "sensio/framework-extra-bundle": {
         "version": "5.2",

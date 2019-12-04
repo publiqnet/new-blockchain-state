@@ -17,7 +17,7 @@
         "nelmio/api-doc-bundle": "^3.3",
         "nelmio/cors-bundle": "^1.5",
         "presta/sitemap-bundle": "^1.7",
-        "publiq/publiq-api": "1.0.x-dev",
+        "publiq/publiq-models-php": "1.0.x-dev",
         "sensio/framework-extra-bundle": "^5.2",
         "sonata-project/admin-bundle": "^3.53",
         "sonata-project/doctrine-orm-admin-bundle": "^3.10",

@@ -2217,11 +2217,11 @@
             "time": "2017-10-23T01:57:42+00:00"
         },
         {
-            "name": "publiq/publiq-api",
+            "name": "publiq/publiq-models-php",
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "git@github.com:publiqnet/publiq-api.git",
+                "url": "git@github.com:publiqnet/publiq-models-php.git",
                 "reference": "4e8bf2261309ce48c026226f5f6ffb145a940179"
             },
             "require": {
@@ -6729,7 +6729,7 @@
     "aliases": [],
     "minimum-stability": "stable",
     "stability-flags": {
-        "publiq/publiq-api": 20
+        "publiq/publiq-models-php": 20
     },
     "prefer-stable": false,
     "prefer-lowest": false,
