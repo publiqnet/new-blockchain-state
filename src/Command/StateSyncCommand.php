@@ -116,6 +116,18 @@ class StateSyncCommand extends ContainerAwareCommand
 
         $this->em->beginTransaction();
 
+        //  delete all temporary transactions
+        /**
+         * @var Transaction[] $transactions
+         */
+        $transactions = $this->em->getRepository(Transaction::class)->findBy(['transactionSize' => 0], ['timeSigned' => 'DESC', 'id' => 'DESC']);
+        if ($transactions) {
+            foreach ($transactions as $transaction) {
+                $this->em->remove($transaction);
+                $this->em->flush();
+            }
+        }
+
         $index = 0;
         /**
          * get the last index number - if not exist set default as 0
@@ -181,12 +193,6 @@ class StateSyncCommand extends ContainerAwareCommand
                         $timeSigned = $transaction->getTimeSigned();
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
-
-                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                        if ($transactionEntity) {
-                            $this->em->remove($transactionEntity);
-                            $this->em->flush();
-                        }
 
                         if ($transaction->getAction() instanceof File) {
                             /**
