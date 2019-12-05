@@ -57,7 +57,7 @@ bin/console d:s:u --force
 ```
 11. Create & setup virtual host to run application
 
-This is the **Backend** that will be referred from **Frontend** configuration
+This is the **Backend** that will be referenced from **Frontend** configuration
 ```
 https://tecadmin.net/setup-nginx-virtual-hosts-on-ubuntu/
 https://symfony.com/doc/4.3/setup/web_server_configuration.html#nginx
