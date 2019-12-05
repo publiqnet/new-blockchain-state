@@ -1,4 +1,5 @@
-# Step-by-step guide to deploy & run PUBLIQ Channel state
+# PUBLIQ Channel State DB and Backend
+# Step-by-step guide to deploy & run
 This manual assumes that you already have a server installed with NGINX, PHP-FPM(>7.1) and MySQL(>5.6).
 1. Install git
 ```
@@ -33,11 +34,11 @@ https://www.digitalocean.com/community/tutorials/how-to-create-a-new-user-and-gr
 DATABASE_URL=mysql://user:password@127.0.0.1:3306/database-name
 CORS_ALLOW_ORIGIN=^https?://localhost(:[0-9]+)?$ (frontend URL or list of URLs)
 OAUTH_ENDPOINT=https://stage-mainnet-oauth.publiq.network (do not change if you gonna use PUBLIQ oAUTH)
-STATE_ENDPOINT=(State node rpc endpoint)
-BROADCAST_ENDPOINT=(Broadcast node rpc endpoint)
-CHANNEL_ENDPOINT=(Channel node rpc endpoint)
-CHANNEL_STORAGE_ENDPOINT=(Channel node storage endpoint: HTTPS)
-CHANNEL_STORAGE_ORDER_ENDPOINT=(Storage Order Token Generator endpoint)
+STATE_ENDPOINT=http://127.0.0.1:14111/api (State node rpc endpoint)
+BROADCAST_ENDPOINT=http://127.0.0.1:14101/api (Broadcast node rpc endpoint)
+CHANNEL_ENDPOINT=http://127.0.0.1:14121 (Channel node rpc endpoint)
+CHANNEL_STORAGE_ENDPOINT=https://127.0.0.1:14123 (Channel node storage endpoint: HTTPS)
+CHANNEL_STORAGE_ORDER_ENDPOINT=http://127.0.0.1:14102/storage_order (Storage Order Token Generator endpoint)
 DETECT_LANGUAGE_ENDPOINT=http://127.0.0.1:44121/5/.01
 CHANNEL_ADDRESS=PUBLIC-KEY
 CHANNEL_PRIVATE_KEY=PRIVATE-KEY
@@ -55,6 +56,7 @@ bin/console d:d:c
 bin/console d:s:u --force
 ```
 11. Create & setup virtual host to run application
+This is the **Backend** that will be referred from **Frontend** configuration
 ```
 https://tecadmin.net/setup-nginx-virtual-hosts-on-ubuntu/
 https://symfony.com/doc/4.3/setup/web_server_configuration.html#nginx
