@@ -80,6 +80,51 @@ class FileDetailsCommand extends ContainerAwareCommand
             return 0;
         }
 
+        //  GET CONTENT UNITS WITHOUT DETAILS
+        /**
+         * @var ContentUnit[] $contentUnits
+         */
+        $contentUnits = $this->em->getRepository(ContentUnit::class)->findBy(['text' => null]);
+        if ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                /**
+                 * @var Account $channel
+                 */
+                $channel = $contentUnit->getChannel();
+                if ($channel->getUrl()) {
+                    $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
+                    if ($storageData) {
+                        $contentUnitTitle = 'Unknown';
+                        $coverUri = null;
+
+                        if (strpos($storageData, '</h1>')) {
+                            if (strpos($storageData, '<h1>') > 0) {
+                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+
+                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                            }
+                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                        } else {
+                            $contentUnitText = $storageData;
+                        }
+
+                        $contentUnit->setTitle($contentUnitTitle);
+                        $contentUnit->setText($contentUnitText);
+                        $contentUnit->setTextWithData($contentUnitText);
+                        if ($coverUri) {
+                            $coverFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                            $contentUnit->setCover($coverFileEntity);
+                        }
+
+                        $this->em->persist($contentUnit);
+                        $this->em->flush();
+                    }
+                }
+            }
+        }
+
         //  GET CONTENT UNITS WITHOUT DETAILED DATA
         /**
          * @var ContentUnit[] $contentUnits
