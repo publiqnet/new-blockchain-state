@@ -660,6 +660,7 @@ class ContentApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function contents(int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
@@ -742,6 +743,7 @@ class ContentApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function authorContents(string $publicKey, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
@@ -820,6 +822,7 @@ class ContentApiController extends Controller
      * @param CUService $contentUnitService
      * @return JsonResponse
      * @throws Exception
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
     {
@@ -1060,6 +1063,7 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param string $uri
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function contentSeo(string $uri)
     {
@@ -1346,6 +1350,7 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getBoosts(CUService $contentUnitService)
     {

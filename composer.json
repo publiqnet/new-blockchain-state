@@ -25,20 +25,21 @@
         "stof/doctrine-extensions-bundle": "^1.3",
         "sybio/image-workshop": "^2.1",
         "symfony/asset": "*",
+        "symfony/cache": "^4.2.12",
         "symfony/console": "*",
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "*",
         "symfony/lock": "*",
         "symfony/monolog-bundle": "^3.3",
         "symfony/property-access": "*",
-        "symfony/security-bundle": "4.1.*",
-        "symfony/security-core": "4.1.*",
-        "symfony/security-guard": "4.1.*",
+        "symfony/security-bundle": "4.2.*",
+        "symfony/security-core": "4.2.*",
+        "symfony/security-guard": "4.2.*",
         "symfony/serializer": "^4.0",
         "symfony/swiftmailer-bundle": "^3.2",
         "symfony/templating": "*",
         "symfony/twig-bundle": "*",
-        "symfony/validator": "4.1.*",
+        "symfony/validator": "4.2.*",
         "symfony/yaml": "*",
         "tooleks/php-avg-color-picker": "^1.1"
     },
@@ -90,7 +91,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": true,
-            "require": "4.1.*"
+            "require": "4.2.*"
         }
     }
 }

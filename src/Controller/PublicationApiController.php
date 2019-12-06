@@ -65,6 +65,7 @@ class PublicationApiController extends Controller
      * @param ValidatorInterface $validator
      * @param Custom $customService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function createPublication(Request $request, ValidatorInterface $validator, Custom $customService)
     {
@@ -203,6 +204,7 @@ class PublicationApiController extends Controller
      * @param Custom $customService
      * @param $slug
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function updatePublication(Request $request, ValidatorInterface $validator, Custom $customService, $slug)
     {
@@ -417,6 +419,7 @@ class PublicationApiController extends Controller
      * @param int $count
      * @param null $slug
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getPublications($count = 10, $slug = null)
     {
@@ -477,6 +480,7 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getRelatedPublications()
     {
@@ -551,6 +555,7 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $type
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getRelatedPublicationsByType(string $type)
     {
@@ -636,6 +641,7 @@ class PublicationApiController extends Controller
      * @return Response
      * @throws \Doctrine\ORM\NoResultException
      * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getPublication($slug)
     {
@@ -801,6 +807,7 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param $slug
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getPublicationSeo($slug)
     {
@@ -1663,6 +1670,7 @@ class PublicationApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function contents(string $slug, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {

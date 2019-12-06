@@ -59,6 +59,7 @@ class DraftApiController extends Controller
      * @SWG\Tag(name="Draft")
      * @param Request $request
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function createDraft(Request $request)
     {
@@ -200,6 +201,7 @@ class DraftApiController extends Controller
      * @param Request $request
      * @param $id
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function updateDraft(Request $request, $id)
     {
@@ -401,6 +403,7 @@ class DraftApiController extends Controller
      * @SWG\Tag(name="Draft")
      * @param $id
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getDraft($id)
     {
@@ -447,6 +450,7 @@ class DraftApiController extends Controller
      * @param int $count
      * @param $fromId
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getDrafts(int $count, $fromId)
     {

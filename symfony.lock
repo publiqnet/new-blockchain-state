@@ -116,6 +116,9 @@
             "ref": "1fee84e00c71edee81aa54b470260779a890c9c6"
         }
     },
+    "php": {
+        "version": "7.1"
+    },
     "phpdocumentor/reflection-common": {
         "version": "1.0.1"
     },
@@ -247,6 +250,9 @@
             "ref": "e3868d2f4a5104f19f844fe551099a00c6562527"
         }
     },
+    "symfony/contracts": {
+        "version": "v1.1.8"
+    },
     "symfony/debug": {
         "version": "v4.1.4"
     },
@@ -364,9 +370,6 @@
             "ref": "5f514d9d3b8a8aac3d62ae6a86b18b90ed0c7826"
         }
     },
-    "symfony/security": {
-        "version": "v4.3.1"
-    },
     "symfony/security-acl": {
         "version": "v3.0.2"
     },
@@ -385,8 +388,14 @@
     "symfony/security-core": {
         "version": "v4.1.11"
     },
+    "symfony/security-csrf": {
+        "version": "v4.2.12"
+    },
     "symfony/security-guard": {
         "version": "v4.1.12"
+    },
+    "symfony/security-http": {
+        "version": "v4.2.12"
     },
     "symfony/serializer": {
         "version": "v4.1.4"

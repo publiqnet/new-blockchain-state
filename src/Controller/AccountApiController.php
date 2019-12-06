@@ -48,6 +48,7 @@ class AccountApiController extends Controller
      * @param Oauth $oauth
      * @param Custom $customService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function authenticateUser(Request $request, Oauth $oauth, Custom $customService)
     {
@@ -133,6 +134,7 @@ class AccountApiController extends Controller
      * @SWG\Response(response=401, description="Unauthorized user")
      * @SWG\Tag(name="User")
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getUserData()
     {
@@ -202,6 +204,7 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param Request $request
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function updateAccount(Request $request)
     {
@@ -294,6 +297,7 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param string $language
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function updateLanguage(string $language)
     {
@@ -394,6 +398,7 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param $searchWord
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function searchUsers($searchWord)
     {
@@ -423,6 +428,7 @@ class AccountApiController extends Controller
      * @SWG\Response(response=404, description="Not found")
      * @SWG\Tag(name="User")
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getSubscriptions()
     {
@@ -544,6 +550,7 @@ class AccountApiController extends Controller
      * @param int $publicationsCount
      * @param string|null $fromPublicationSlug
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getRecommendations(CUService $contentUnitService, int $publicationsCount, string $fromPublicationSlug = null)
     {

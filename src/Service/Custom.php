@@ -219,9 +219,6 @@ class Custom
         $viewLogHistory->setDatetime($date->getTimestamp());
         if ($account) {
             $viewLogHistory->setUser($account);
-            if ($account->getId() == 13) {
-                file_put_contents('/var/www/stage-mainnet-state.publiq.network/identifier.txt', serialize($userInfo) . ' - ' . $userIdentifier . PHP_EOL, FILE_APPEND);
-            }
         }
         $this->em->persist($viewLogHistory);
         $this->em->flush();
