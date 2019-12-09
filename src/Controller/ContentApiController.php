@@ -10,7 +10,10 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\BoostedContentUnit;
+use App\Entity\BoostedContentUnitSpending;
+use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
+use App\Entity\ContentUnitViews;
 use App\Entity\File;
 use App\Entity\Publication;
 use App\Entity\PublicationArticle;
@@ -306,78 +309,80 @@ class ContentApiController extends Controller
             }
 
             //  add data
-            $channelPublicKey = $this->getParameter('channel_address');
-            $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
+            if ($currentTransactionHash) {
+                $channelPublicKey = $this->getParameter('channel_address');
+                $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
 
-            //  get content unit data from storage
-            $coverUri = null;
-            $storageData = $blockChain->getContentUnitData($uri);
-            if (strpos($storageData, '</h1>')) {
-                if (strpos($storageData, '<h1>') > 0) {
-                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                //  get content unit data from storage
+                $coverUri = null;
+                $storageData = $blockChain->getContentUnitData($uri);
+                if (strpos($storageData, '</h1>')) {
+                    if (strpos($storageData, '<h1>') > 0) {
+                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
 
-                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                }
-                $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
-                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-            } else {
-                $contentUnitTitle = 'Old content without title';
-                $contentUnitText = $storageData;
-            }
-
-            $contentUnitEntity = new \App\Entity\ContentUnit();
-            $contentUnitEntity->setUri($uri);
-            $contentUnitEntity->setContentId($contentId);
-            $contentUnitEntity->setAuthor($account);
-            $contentUnitEntity->setChannel($channelAccount);
-            $contentUnitEntity->setTitle($contentUnitTitle);
-            $contentUnitEntity->setText($contentUnitText);
-            $contentUnitEntity->setTextWithData($contentUnitText);
-            if ($coverUri) {
-                $coverFileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
-                if (!$coverFileEntity) {
-                    $coverFileEntity = new File();
-                    $coverFileEntity->setUri($coverUri);
-                    $em->persist($coverFileEntity);
-                }
-                $contentUnitEntity->setCover($coverFileEntity);
-            }
-
-            //  check for related Publication
-            $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
-            if ($publicationArticle) {
-                $contentUnitEntity->setPublication($publicationArticle->getPublication());
-            }
-
-            $em->persist($contentUnitEntity);
-            $em->flush();
-
-            //  check for related tags
-            $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-            if ($contentUnitTags) {
-                foreach ($contentUnitTags as $contentUnitTag) {
-                    $contentUnitTag->setContentUnit($contentUnitEntity);
-                    $em->persist($contentUnitTag);
+                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                    }
+                    $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
+                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                } else {
+                    $contentUnitTitle = 'Old content without title';
+                    $contentUnitText = $storageData;
                 }
 
+                $contentUnitEntity = new \App\Entity\ContentUnit();
+                $contentUnitEntity->setUri($uri);
+                $contentUnitEntity->setContentId($contentId);
+                $contentUnitEntity->setAuthor($account);
+                $contentUnitEntity->setChannel($channelAccount);
+                $contentUnitEntity->setTitle($contentUnitTitle);
+                $contentUnitEntity->setText($contentUnitText);
+                $contentUnitEntity->setTextWithData($contentUnitText);
+                if ($coverUri) {
+                    $coverFileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                    if (!$coverFileEntity) {
+                        $coverFileEntity = new File();
+                        $coverFileEntity->setUri($coverUri);
+                        $em->persist($coverFileEntity);
+                    }
+                    $contentUnitEntity->setCover($coverFileEntity);
+                }
+
+                //  check for related Publication
+                $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
+                if ($publicationArticle) {
+                    $contentUnitEntity->setPublication($publicationArticle->getPublication());
+                }
+
+                $em->persist($contentUnitEntity);
+                $em->flush();
+
+                //  check for related tags
+                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                if ($contentUnitTags) {
+                    foreach ($contentUnitTags as $contentUnitTag) {
+                        $contentUnitTag->setContentUnit($contentUnitEntity);
+                        $em->persist($contentUnitTag);
+                    }
+
+                    $em->flush();
+                }
+
+                //  add transaction
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $transactionEntity = new Transaction();
+                $transactionEntity->setTransactionHash($currentTransactionHash);
+                $transactionEntity->setContentUnit($contentUnitEntity);
+                $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $transactionEntity->setFeeWhole($feeWhole);
+                $transactionEntity->setFeeFraction($feeFraction);
+                $transactionEntity->setTransactionSize(0);
+                $em->persist($transactionEntity);
                 $em->flush();
             }
-
-            //  add transaction
-            $timezone = new \DateTimeZone('UTC');
-            $datetime = new \DateTime();
-            $datetime->setTimezone($timezone);
-
-            $transactionEntity = new Transaction();
-            $transactionEntity->setTransactionHash($currentTransactionHash);
-            $transactionEntity->setContentUnit($contentUnitEntity);
-            $transactionEntity->setTimeSigned($datetime->getTimestamp());
-            $transactionEntity->setFeeWhole($feeWhole);
-            $transactionEntity->setFeeFraction($feeFraction);
-            $transactionEntity->setTransactionSize(0);
-            $em->persist($transactionEntity);
-            $em->flush();
 
             return new JsonResponse('', Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
@@ -655,6 +660,7 @@ class ContentApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function contents(int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
@@ -737,6 +743,7 @@ class ContentApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function authorContents(string $publicKey, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
@@ -815,12 +822,11 @@ class ContentApiController extends Controller
      * @param CUService $contentUnitService
      * @return JsonResponse
      * @throws Exception
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
-        $channelAddress = $this->getParameter('channel_address');
-        $removeFilesFromResponse = true;
 
         /**
          * @var Account $account
@@ -832,8 +838,8 @@ class ContentApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
-        //  get user info & determine if view must be added
-        $addView = $customService->viewLog($request, $contentUnit, $account);
+        //  get user info
+        $userIdentifier = $customService->viewLog($request, $contentUnit, $account);
 
         // update user preference if viewer is not article author
         if ($account && $contentUnit->getAuthor() != $account) {
@@ -845,8 +851,6 @@ class ContentApiController extends Controller
 
         //  if viewer is article author return full data without adding view
         if ($account && $contentUnit->getAuthor() == $account) {
-            $removeFilesFromResponse = false;
-
             //  get files & find storage address
             $files = $contentUnit->getFiles();
             if ($files) {
@@ -857,34 +861,17 @@ class ContentApiController extends Controller
                  */
                 foreach ($files as $file) {
                     /**
-                     * @var Account[] $fileStorages
+                     * @var Account $channel
                      */
-                    $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                    if (count($fileStorages)) {
-                        $randomStorage = rand(0, count($fileStorages) - 1);
-                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                        $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+                    $channel = $contentUnit->getChannel();
 
-                        $file->setUrl($fileUrl);
+                    $storageUrl = $channel->getUrl();
+                    $storageAddress = $channel->getPublicKey();
+                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
-                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                    } elseif ($contentUnit->getContent()) {
-                        /**
-                         * @var Account $channel
-                         */
-                        $channel = $contentUnit->getChannel();
+                    $file->setUrl($fileUrl);
 
-                        $storageUrl = $channel->getUrl();
-                        $storageAddress = $channel->getPublicKey();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                        $file->setUrl($fileUrl);
-
-                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                    } else {
-                        $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
-                    }
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
                 }
 
                 //  replace file uri with url
@@ -899,93 +886,71 @@ class ContentApiController extends Controller
                 }
             }
         } else {
-            if ($addView) {
-                $removeFilesFromResponse = false;
+            //  get files & find storage address
+            $files = $contentUnit->getFiles();
+            $contentUnitUri = $contentUnit->getUri();
+            if ($files) {
+                $fileStorageUrls = [];
 
-                //  get files & find storage address
-                $files = $contentUnit->getFiles();
-                $contentUnitUri = $contentUnit->getUri();
-                if ($files) {
-                    $fileStorageUrls = [];
+                /**
+                 * @var File $file
+                 */
+                foreach ($files as $file) {
+                    $storageOrderToken = '';
 
                     /**
-                     * @var File $file
+                     * @var Account $fileStorage
                      */
-                    foreach ($files as $file) {
-                        /**
-                         * @var Account[] $fileStorages
-                         */
-                        $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                        if (count($fileStorages)) {
-                            $randomStorage = rand(0, count($fileStorages) - 1);
-                            $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                            $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                            $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
+                    $fileStorage = $customService->getRandomFileStorage($file);
+                    if ($fileStorage) {
+                        $storageUrl = $fileStorage->getUrl();
+                        $storageAddress = $fileStorage->getPublicKey();
 
+                        $storageOrder = $blockChain->getStorageOrder($storageAddress, $file->getUri(), $contentUnitUri, $userIdentifier);
+                        if ($storageOrder['code']) {
+                            $storageOrderToken = $storageOrder['storage_order'];
+                            $storageOrderAddress = $storageOrder['storage_address'];
+                            if ($storageOrderAddress != $storageAddress) {
+                                $storageOrderAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $storageOrderAddress]);
+                                $storageUrl = $storageOrderAccount->getUrl();
+                            }
+
+                            $fileUrl = $storageUrl . '/storage?storage_order_token=' . $storageOrderToken;
                             $file->setUrl($fileUrl);
 
-                            $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                        } elseif ($contentUnit->getContent()) {
-                            /**
-                             * @var Account $channel
-                             */
-                            $channel = $contentUnit->getChannel();
-
-                            $storageUrl = $channel->getUrl();
-                            $storageAddress = $channel->getPublicKey();
-                            $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                            $file->setUrl($fileUrl);
-
-                            $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                        } else {
-                            $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
+                            $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'storageOrderToken' => $storageOrderToken];
                         }
                     }
 
-                    //  replace file uri with url
-                    try {
-                        foreach ($fileStorageUrls as $uri => $fileStorageData) {
-                            $contentUnitText = $contentUnit->getText();
-                            $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
-                            $contentUnit->setText($contentUnitText);
-
-                            //  inform Blockchain about served files
-                            $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
-                        }
-                    } catch (Exception $e) {
-                        $logger->error($e->getMessage());
-                    }
-                }
-            } else {
-                $contentUnit->setText($contentUnit->getTextWithData());
-
-                if ($contentUnit->getCover()) {
-                    /**
-                     * @var File $file
-                     */
-                    $file = $contentUnit->getCover();
-
-                    /**
-                     * @var Account[] $fileStorages
-                     */
-                    $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                    if (count($fileStorages)) {
-                        $randomStorage = rand(0, count($fileStorages) - 1);
-                        $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
-
-                        $file->setUrl($fileUrl);
-                    } elseif ($contentUnit->getContent()) {
+                    if (!$storageOrderToken && $contentUnit->getContent()) {
                         /**
                          * @var Account $channel
                          */
                         $channel = $contentUnit->getChannel();
+
                         $storageUrl = $channel->getUrl();
                         $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
                         $file->setUrl($fileUrl);
+
+                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'storageOrderToken' => ''];
                     }
+                }
+
+                //  replace file uri with url
+                try {
+                    foreach ($fileStorageUrls as $uri => $fileStorageData) {
+                        $contentUnitText = $contentUnit->getText();
+                        $contentUnitText = str_replace('src="' . $uri . '"', 'src="' . $fileStorageData['url'] . '"', $contentUnitText);
+                        $contentUnit->setText($contentUnitText);
+
+                        //  inform Blockchain about served files
+                        if ($fileStorageData['storageOrderToken']) {
+                            $blockChain->servedFile($fileStorageData['storageOrderToken']);
+                        }
+                    }
+                } catch (Exception $e) {
+                    $logger->error($e->getMessage());
                 }
             }
         }
@@ -1082,11 +1047,6 @@ class ContentApiController extends Controller
         $contentUnit = $contentUnitService->prepareTags($contentUnit, false);
         $contentUnit['related'] = $relatedArticles;
 
-        //  remove files field if served from local
-        if ($removeFilesFromResponse) {
-            unset($contentUnit['files']);
-        }
-
         return new JsonResponse($contentUnit);
     }
 
@@ -1102,10 +1062,10 @@ class ContentApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Content")
      * @param string $uri
-     * @param Custom $customService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function contentSeo(string $uri, Custom $customService)
+    public function contentSeo(string $uri)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -1120,26 +1080,13 @@ class ContentApiController extends Controller
              */
             $file = $contentUnit->getCover();
 
-            if ($contentUnit->getContent()) {
-                /**
-                 * @var Account $channel
-                 */
-                $channel = $contentUnit->getChannel();
-                $storageUrl = $channel->getUrl();
+            /**
+             * @var Account $channel
+             */
+            $channel = $contentUnit->getChannel();
+            $storageUrl = $channel->getUrl();
 
-                $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
-            } else {
-                /**
-                 * @var Account[] $fileStorages
-                 */
-                $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                if (count($fileStorages)) {
-                    $randomStorage = rand(0, count($fileStorages) - 1);
-                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
-
-                    $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
-                }
-            }
+            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
         }
 
         //  generate short description
@@ -1191,6 +1138,8 @@ class ContentApiController extends Controller
      */
     public function boostContent(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -1214,6 +1163,7 @@ class ContentApiController extends Controller
             $expiryTime = $content['expiryTime'];
             $feeWhole = $content['feeWhole'];
             $feeFraction = $content['feeFraction'];
+            $currentTransactionHash = $content['currentTransactionHash'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
@@ -1224,11 +1174,43 @@ class ContentApiController extends Controller
             $expiryTime = $request->request->get('expiryTime');
             $feeWhole = $request->request->get('feeWhole');
             $feeFraction = $request->request->get('feeFraction');
+            $currentTransactionHash = $request->request->get('currentTransactionHash');
         }
 
         try {
             $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
+                if ($currentTransactionHash) {
+                    $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+
+                    //  add boosted content unit
+                    $boostedContentUnit = new BoostedContentUnit();
+                    $boostedContentUnit->setSponsor($account);
+                    $boostedContentUnit->setContentUnit($contentUnit);
+                    $boostedContentUnit->setStartTimePoint($startTimePoint);
+                    $boostedContentUnit->setHours($hours);
+                    $boostedContentUnit->setWhole($amount);
+                    $boostedContentUnit->setFraction(0);
+                    $boostedContentUnit->setEndTimePoint($startTimePoint + $hours * 3600);
+                    $em->persist($boostedContentUnit);
+                    $em->flush();
+
+                    //  add transaction
+                    $timezone = new \DateTimeZone('UTC');
+                    $datetime = new \DateTime();
+                    $datetime->setTimezone($timezone);
+
+                    $transaction = new Transaction();
+                    $transaction->setTransactionHash($currentTransactionHash);
+                    $transaction->setBoostedContentUnit($boostedContentUnit);
+                    $transaction->setTimeSigned($datetime->getTimestamp());
+                    $transaction->setFeeWhole($feeWhole);
+                    $transaction->setFeeFraction($feeFraction);
+                    $transaction->setTransactionSize(0);
+                    $em->persist($transaction);
+                    $em->flush();
+                }
+
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
                 return new JsonResponse(['type' => 'boost_not_enough_balance'], Response::HTTP_CONFLICT);
@@ -1274,6 +1256,8 @@ class ContentApiController extends Controller
      */
     public function cancelBoostContent(Request $request, BlockChain $blockChain)
     {
+        $em = $this->getDoctrine()->getManager();
+
         /**
          * @var Account $account
          */
@@ -1295,6 +1279,7 @@ class ContentApiController extends Controller
             $expiryTime = $content['expiryTime'];
             $feeWhole = $content['feeWhole'];
             $feeFraction = $content['feeFraction'];
+            $currentTransactionHash = $content['currentTransactionHash'];
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
@@ -1303,11 +1288,46 @@ class ContentApiController extends Controller
             $expiryTime = $request->request->get('expiryTime');
             $feeWhole = $request->request->get('feeWhole');
             $feeFraction = $request->request->get('feeFraction');
+            $currentTransactionHash = $request->request->get('currentTransactionHash');
         }
 
         try {
             $broadcastResult = $blockChain->cancelBoostContent($signature, $uri, $account->getPublicKey(), $transactionHash, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
+                $timezone = new \DateTimeZone('UTC');
+                $datetime = new \DateTime();
+                $datetime->setTimezone($timezone);
+
+                $boostTransaction = $em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+
+                /**
+                 * @var BoostedContentUnit $boostedContentUnit
+                 */
+                $boostedContentUnit = $boostTransaction->getBoostedContentUnit();
+
+
+                //  add cancelled boosted content unit
+                $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnit);
+                $em->persist($cancelBoostedContentUnitEntity);
+
+                $boostedContentUnit->setCancelled(true);
+                $boostedContentUnit->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                $boostedContentUnit->setEndTimePoint($datetime->getTimestamp());
+                $em->persist($boostedContentUnit);
+                $em->flush();
+
+                //  add transaction
+                $transaction = new Transaction();
+                $transaction->setTransactionHash($currentTransactionHash);
+                $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                $transaction->setTimeSigned($datetime->getTimestamp());
+                $transaction->setFeeWhole($feeWhole);
+                $transaction->setFeeFraction($feeFraction);
+                $transaction->setTransactionSize(0);
+                $em->persist($transaction);
+                $em->flush();
+
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
@@ -1330,6 +1350,7 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param CUService $contentUnitService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getBoosts(CUService $contentUnitService)
     {
@@ -1347,16 +1368,77 @@ class ContentApiController extends Controller
         $passive = [];
 
         /**
-         * @var \App\Entity\ContentUnit[] $boostedContentUnits
+         * @var \App\Entity\ContentUnit[] $contentUnits
          */
-        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
-        if ($boostedContentUnits) {
-            foreach ($boostedContentUnits as $boostedContentUnit) {
-                $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($boostedContentUnit);
-                if ($isBoostActive) {
-                    $active[] = $boostedContentUnit;
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
+        if ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                $views = 0;
+                $channels = 0;
+                $viewsSummary = $em->getRepository(ContentUnitViews::class)->getBoostedArticleSummary($contentUnit);
+                foreach ($viewsSummary as $viewsSummarySingle) {
+                    $views += $viewsSummarySingle['views'];
+                    $channels++;
+                }
+                $viewsSummary[0] = ['views' => $views, 'channels' => $channels];
+
+                $summary = $em->getRepository(BoostedContentUnit::class)->getBoostedArticleSummary($contentUnit);
+                if (!isset($summary[0])) {
+                    $summary[0] = [];
+                }
+
+                $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostedArticleSummary($contentUnit);
+                if (!isset($spendingSummary[0])) {
+                    $spendingSummary[0] = ['spentWhole' => 0, 'spentFraction' => 0];
                 } else {
-                    $passive[] = $boostedContentUnit;
+                    $spentWhole = intval($spendingSummary[0]['spentWhole']);
+                    $spentFraction = intval($spendingSummary[0]['spentFraction']);
+
+                    if ($spentFraction > 99999999) {
+                        while ($spentFraction > 99999999) {
+                            $spentWhole++;
+                            $spentFraction -= 100000000;
+                        }
+                    }
+
+                    $spendingSummary[0]['spentWhole'] = $spentWhole;
+                    $spendingSummary[0]['spentFraction'] = $spentFraction;
+                }
+
+                $summary = array_merge($summary[0], $viewsSummary[0], $spendingSummary[0]);
+                $contentUnit->setBoostSummary($summary);
+
+                /**
+                 * @var BoostedContentUnit[] $boosts
+                 */
+                $boosts = $contentUnit->getBoosts();
+                foreach ($boosts as $boost) {
+                    $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostSummary($boost);
+                    if (!isset($spendingSummary[0])) {
+                        $spendingSummary[0] = ['spentWhole' => 0, 'spentFraction' => 0];
+                    } else {
+                        $spentWhole = intval($spendingSummary[0]['spentWhole']);
+                        $spentFraction = intval($spendingSummary[0]['spentFraction']);
+
+                        if ($spentFraction > 99999999) {
+                            while ($spentFraction > 99999999) {
+                                $spentWhole++;
+                                $spentFraction -= 100000000;
+                            }
+                        }
+
+                        $spendingSummary[0]['spentWhole'] = $spentWhole;
+                        $spendingSummary[0]['spentFraction'] = $spentFraction;
+                    }
+
+                    $boost->setSummary($spendingSummary[0]);
+                }
+
+                $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
+                if ($isBoostActive) {
+                    $active[] = $contentUnit;
+                } else {
+                    $passive[] = $contentUnit;
                 }
             }
         }
@@ -1377,9 +1459,44 @@ class ContentApiController extends Controller
             }
         }
 
+        //  get boost summary
+        $views = 0;
+        $channels = 0;
+        $boostSummaryViews = $em->getRepository(ContentUnitViews::class)->getAuthorBoostedArticlesSummary($account);
+        foreach ($boostSummaryViews as $boostSummaryViewsSingle) {
+            $views += $boostSummaryViewsSingle['views'];
+            $channels++;
+        }
+        $boostSummaryViews[0] = ['views' => $views, 'channels' => $channels];
+
+        $boostSummary = $em->getRepository(BoostedContentUnit::class)->getAuthorBoostedArticlesSummary($account);
+        if (!isset($boostSummary[0])) {
+            $boostSummary[0] = [];
+        }
+
+        $boostSummarySpending = $em->getRepository(BoostedContentUnitSpending::class)->getAuthorBoostedArticlesSummary($account);
+        if (!isset($boostSummarySpending[0])) {
+            $boostSummarySpending[0] = ['spentWhole' => 0, 'spentFraction' => 0];
+        } else {
+            $spentWhole = intval($boostSummarySpending[0]['spentWhole']);
+            $spentFraction = intval($boostSummarySpending[0]['spentFraction']);
+
+            if ($spentFraction > 99999999) {
+                while ($spentFraction > 99999999) {
+                    $spentWhole++;
+                    $spentFraction -= 100000000;
+                }
+            }
+
+            $boostSummarySpending[0]['spentWhole'] = $spentWhole;
+            $boostSummarySpending[0]['spentFraction'] = $spentFraction;
+        }
+
         $active = $this->get('serializer')->normalize($active, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
         $passive = $this->get('serializer')->normalize($passive, null, ['groups' => ['boostedContentUnitMain', 'contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'transactionLight', 'boost']]);
 
-        return new JsonResponse(['active' => $active, 'passive' => $passive]);
+        $boostSummary = array_merge($boostSummary[0], $boostSummaryViews[0], $boostSummarySpending[0]);
+
+        return new JsonResponse(['active' => $active, 'passive' => $passive, 'summary' => $boostSummary]);
     }
 }

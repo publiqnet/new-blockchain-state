@@ -274,6 +274,7 @@ class NotificationApiController extends Controller
      * @param int $count
      * @param int $fromId
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getAll(int $count, int $fromId)
     {

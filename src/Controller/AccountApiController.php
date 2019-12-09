@@ -48,6 +48,7 @@ class AccountApiController extends Controller
      * @param Oauth $oauth
      * @param Custom $customService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function authenticateUser(Request $request, Oauth $oauth, Custom $customService)
     {
@@ -133,6 +134,7 @@ class AccountApiController extends Controller
      * @SWG\Response(response=401, description="Unauthorized user")
      * @SWG\Tag(name="User")
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getUserData()
     {
@@ -202,6 +204,7 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param Request $request
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function updateAccount(Request $request)
     {
@@ -265,6 +268,7 @@ class AccountApiController extends Controller
                 $em->getRepository(ContentUnit::class)->updateSocialImageStatus($account);
             } elseif ($deleteImage) {
                 $account->setImage(null);
+                $account->setThumbnail(null);
             }
 
             $em->persist($account);
@@ -293,6 +297,7 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param string $language
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function updateLanguage(string $language)
     {
@@ -393,6 +398,7 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param $searchWord
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function searchUsers($searchWord)
     {
@@ -422,6 +428,7 @@ class AccountApiController extends Controller
      * @SWG\Response(response=404, description="Not found")
      * @SWG\Tag(name="User")
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getSubscriptions()
     {
@@ -543,6 +550,7 @@ class AccountApiController extends Controller
      * @param int $publicationsCount
      * @param string|null $fromPublicationSlug
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getRecommendations(CUService $contentUnitService, int $publicationsCount, string $fromPublicationSlug = null)
     {
@@ -556,7 +564,7 @@ class AccountApiController extends Controller
             return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
         }
 
-        $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account);
+        $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account, 4);
         //  prepare data to return
         if ($preferredAuthorsArticles) {
             try {
@@ -567,7 +575,7 @@ class AccountApiController extends Controller
         }
         $preferredAuthorsArticles = $this->get('serializer')->normalize($preferredAuthorsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
-        $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account);
+        $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account, 4);
         //  prepare data to return
         if ($preferredTagsArticles) {
             try {

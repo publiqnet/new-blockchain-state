@@ -40,6 +40,7 @@ class SearchApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Search")
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function default()
     {
@@ -110,6 +111,7 @@ class SearchApiController extends Controller
      * @param string $word
      * @param CUService $contentUnitService
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function search(string $word, CUService $contentUnitService)
     {
@@ -215,6 +217,7 @@ class SearchApiController extends Controller
      * @param int $count
      * @param string $fromSlug
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function searchPublication(string $word, int $count, string $fromSlug)
     {
@@ -278,6 +281,7 @@ class SearchApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function searchArticle(string $word, int $count, string $fromUri, CUService $contentUnitService)
     {
@@ -322,6 +326,7 @@ class SearchApiController extends Controller
      * @param int $count
      * @param string $fromPublicKey
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function searchAuthors(string $word, int $count, string $fromPublicKey)
     {

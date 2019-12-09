@@ -33,16 +33,18 @@ class BlockChain
     private $channelEndpoint;
     private $channelStorageEndpoint;
     private $detectLanguageEndpoint;
-    private $channelStorageEndpointPost;
+    private $channelStorageOrderEndpoint;
+    private $channelPrivateKey;
 
-    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $channelStorageEndpointPost)
+    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $channelStorageOrderEndpoint, $channelPrivateKey)
     {
         $this->stateEndpoint = $stateEndpoint;
         $this->broadcastEndpoint = $broadcastEndpoint;
         $this->channelEndpoint = $channelEndpoint;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->detectLanguageEndpoint = $detectLanguageEndpoint;
-        $this->channelStorageEndpointPost = $channelStorageEndpointPost;
+        $this->channelStorageOrderEndpoint = $channelStorageOrderEndpoint;
+        $this->channelPrivateKey = $channelPrivateKey;
     }
 
     /**
@@ -164,7 +166,7 @@ class BlockChain
     {
         $header = ['Content-Type: ' . $fileMimeType, 'Content-Length: ' . strlen($fileData)];
 
-        $body = $this->callJsonRPC($this->channelStorageEndpointPost . '/storage', $header, $fileData);
+        $body = $this->callJsonRPC($this->channelEndpoint . '/storage', $header, $fileData);
 
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);
@@ -336,18 +338,43 @@ class BlockChain
     }
 
     /**
-     * @param String $fileUri
-     * @param $contentUnitUri
-     * @param $peerAddress
+     * @param string $storageAddress
+     * @param string $fileUri
+     * @param string $contentUnitUri
+     * @param string $sessionId
      * @return bool|string
      * @throws \Exception
      */
-    public function servedFile(string $fileUri, $contentUnitUri, $peerAddress)
+    public function getStorageOrder(string $storageAddress, string $fileUri, string $contentUnitUri, string $sessionId)
+    {
+        $header = ['Content-Type:application/json'];
+
+        $body = $this->callJsonRPC($this->channelStorageOrderEndpoint . '?private_key=' . $this->channelPrivateKey . '&storage_address=' . $storageAddress . '&file_uri=' . $fileUri . '&content_unit_uri=' . $contentUnitUri . '&session_id=' . $sessionId, $header, null, 'GET');
+
+        $headerStatusCode = $body['status_code'];
+
+        //  check data
+        if ($headerStatusCode == 200) {
+            return json_decode($body['data'], true);
+        }
+
+        if ($headerStatusCode == 404) {
+            return null;
+        }
+
+        throw new \Exception('Issue with getting content unit data');
+    }
+
+    /**
+     * @param string $storageOrderToken
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function servedFile(string $storageOrderToken)
     {
         $served = New Served();
-        $served->setContentUnitUri($contentUnitUri);
-        $served->setPeerAddress($peerAddress);
-        $served->setFileUri($fileUri);
+
+        $served->setStorageOrderToken($storageOrderToken);
 
         $data = $served->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
@@ -392,7 +419,7 @@ class BlockChain
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with getting file details: ' . ($storageUrl ? $storageUrl: $this->channelStorageEndpoint));
+            throw new \Exception('Issue with getting file details: ' . ($storageUrl ? $storageUrl : $this->channelStorageEndpoint));
         }
 
         $validateRes = Rtt::validate($body['data']);

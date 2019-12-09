@@ -8,6 +8,7 @@
 
 namespace App\Command;
 
+use App\Entity\Account;
 use App\Entity\File;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -77,6 +78,17 @@ class ThumbnailCommand extends ContainerAwareCommand
             foreach ($covers as $cover) {
                 $result = $this->customService->createThumbnail($cover, 'public/');
                 $this->io->writeln($cover->getUri() . ': ' . intval($result));
+            }
+        }
+
+        /**
+         * @var Account[] $authors
+         */
+        $authors = $this->em->getRepository(Account::class)->getAccountsWithoutThumbnails();
+        if ($authors) {
+            foreach ($authors as $author) {
+                $result = $this->customService->createThumbnailAuthor($author, 'public/');
+                $this->io->writeln($author->getPublicKey() . ': ' . intval($result));
             }
         }
 

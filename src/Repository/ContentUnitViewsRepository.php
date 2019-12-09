@@ -8,6 +8,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Account;
 use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
@@ -26,6 +27,46 @@ class ContentUnitViewsRepository extends EntityRepository
             ->join('cuv.channel', 'ch')
             ->where('cuv.contentUnit = :contentUnit')
             ->setParameters(['contentUnit' => $article])
+            ->groupBy('cuv.channel')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getAuthorBoostedArticlesSummary(Account $author)
+    {
+        $subQuery = $this->createQueryBuilder('cuv2');
+        $subQuery
+            ->select('cuv2.id')
+            ->join('cuv2.contentUnit', 'cu')
+            ->join('cu.boosts', 'bcu')
+            ->where('cu.author = :author')
+            ->andWhere('(cuv2.viewsTime >= bcu.startTimePoint and cuv2.viewsTime <= bcu.endTimePoint)')
+            ->setParameters(['author' => $author]);
+
+        $query = $this->createQueryBuilder('cuv');
+        return $query->select('SUM(cuv.viewsCount) as views')
+            ->where($query->expr()->in('cuv.id', $subQuery->getDQL()))
+            ->setParameters(['author' => $author])
+            ->groupBy('cuv.channel')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getBoostedArticleSummary(ContentUnit $article)
+    {
+        $subQuery = $this->createQueryBuilder('cuv2');
+        $subQuery
+            ->select('cuv2.id')
+            ->join('cuv2.contentUnit', 'cu')
+            ->join('cu.boosts', 'bcu')
+            ->where('cu = :article')
+            ->andWhere('(cuv2.viewsTime >= bcu.startTimePoint and cuv2.viewsTime <= bcu.endTimePoint)')
+            ->setParameters(['article' => $article]);
+
+        $query = $this->createQueryBuilder('cuv');
+        return $query->select('SUM(cuv.viewsCount) as views')
+            ->where($query->expr()->in('cuv.id', $subQuery->getDQL()))
+            ->setParameters(['article' => $article])
             ->groupBy('cuv.channel')
             ->getQuery()
             ->getResult();

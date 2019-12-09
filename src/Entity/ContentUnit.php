@@ -49,13 +49,13 @@ class ContentUnit
     private $title;
 
     /**
-     * @ORM\Column(name="text", type="text", nullable=false)
+     * @ORM\Column(name="text", type="text", nullable=true)
      * @Groups({"contentUnit", "contentUnitFull"})
      */
     private $text;
 
     /**
-     * @ORM\Column(name="text_with_data", type="text", nullable=false)
+     * @ORM\Column(name="text_with_data", type="text", nullable=true)
      */
     private $textWithData;
 
@@ -142,18 +142,18 @@ class ContentUnit
     private $publication;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit", fetch="EXTRA_LAZY")
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnit", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"boost"})
      */
     private $boosts;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitViews", mappedBy="contentUnit")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitViews", mappedBy="contentUnit", cascade={"remove"})
      */
     private $viewsPerChannel;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", fetch="EXTRA_LAZY")
+     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnitTag", mappedBy="contentUnit", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $tags;
@@ -185,6 +185,12 @@ class ContentUnit
      * @Groups({"contentUnitSeo"})
      */
     private $description;
+
+    /**
+     * @var mixed
+     * @Groups({"boost"})
+     */
+    private $boostSummary;
 
 
     public function __construct()
@@ -608,5 +614,21 @@ class ContentUnit
     public function setDescription(string $description)
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostSummary()
+    {
+        return $this->boostSummary;
+    }
+
+    /**
+     * @param mixed $boostSummary
+     */
+    public function setBoostSummary($boostSummary)
+    {
+        $this->boostSummary = $boostSummary;
     }
 }

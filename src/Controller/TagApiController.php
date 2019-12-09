@@ -36,6 +36,7 @@ class TagApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Tag")
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getTags()
     {
@@ -63,6 +64,7 @@ class TagApiController extends Controller
      * @param string $fromUri
      * @param CUService $contentUnitService
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getArticlesByTag(string $tag, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {

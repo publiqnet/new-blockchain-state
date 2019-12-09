@@ -66,35 +66,42 @@ class Transaction
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $file;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\ContentUnit", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\ContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $contentUnit;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\BoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $boostedContentUnit;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @Groups({"explorerTransaction"})
+     */
+    private $cancelBoostedContentUnit;
+
+    /**
+     * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
+     * @ORM\OneToOne(targetEntity="App\Entity\Content", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $content;
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\Transfer", inversedBy="transaction", cascade={"remove"})
+     * @ORM\OneToOne(targetEntity="App\Entity\Transfer", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $transfer;
@@ -282,5 +289,21 @@ class Transaction
     public function setBoostedContentUnit($boostedContentUnit)
     {
         $this->boostedContentUnit = $boostedContentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCancelBoostedContentUnit()
+    {
+        return $this->cancelBoostedContentUnit;
+    }
+
+    /**
+     * @param mixed $cancelBoostedContentUnit
+     */
+    public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
+    {
+        $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
     }
 }

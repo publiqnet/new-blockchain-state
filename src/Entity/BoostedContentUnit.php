@@ -8,6 +8,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -64,6 +65,12 @@ class BoostedContentUnit
 
     /**
      * @ORM\Column(type="integer", nullable=false)
+     * @Groups({"boostedContentUnit", "boostedContentUnitMain"})
+     */
+    private $endTimePoint;
+
+    /**
+     * @ORM\Column(type="integer", nullable=false)
      * @Groups({"boostedContentUnitMain"})
      */
     private $whole;
@@ -80,6 +87,28 @@ class BoostedContentUnit
      */
     private $status;
 
+    /**
+     * @ORM\JoinColumn(nullable=true, onDelete="SET NULL")
+     * @ORM\OneToOne(targetEntity="App\Entity\CancelBoostedContentUnit", mappedBy="boostedContentUnit", cascade={"remove"})
+     */
+    private $cancelBoostedContentUnit;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\BoostedContentUnitSpending", mappedBy="boostedContentUnit", cascade={"remove"})
+     */
+    private $boostedContentUnitSpendings;
+
+    /**
+     * @var mixed
+     * @Groups({"boost"})
+     */
+    private $summary;
+
+
+    public function __construct()
+    {
+        $this->boostedContentUnitSpendings = new ArrayCollection();
+    }
 
     /**
      * @return mixed
@@ -188,6 +217,22 @@ class BoostedContentUnit
     /**
      * @return mixed
      */
+    public function getEndTimePoint()
+    {
+        return $this->endTimePoint;
+    }
+
+    /**
+     * @param mixed $endTimePoint
+     */
+    public function setEndTimePoint($endTimePoint)
+    {
+        $this->endTimePoint = $endTimePoint;
+    }
+
+    /**
+     * @return mixed
+     */
     public function getWhole()
     {
         return $this->whole;
@@ -231,5 +276,45 @@ class BoostedContentUnit
     public function setStatus(string $status)
     {
         $this->status = $status;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCancelBoostedContentUnit()
+    {
+        return $this->cancelBoostedContentUnit;
+    }
+
+    /**
+     * @param mixed $cancelBoostedContentUnit
+     */
+    public function setCancelBoostedContentUnit($cancelBoostedContentUnit)
+    {
+        $this->cancelBoostedContentUnit = $cancelBoostedContentUnit;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getBoostedContentUnitSpendings()
+    {
+        return $this->boostedContentUnitSpendings;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSummary()
+    {
+        return $this->summary;
+    }
+
+    /**
+     * @param mixed $summary
+     */
+    public function setSummary($summary)
+    {
+        $this->summary = $summary;
     }
 }

@@ -236,4 +236,14 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
     }
+
+    public function getAccountsWithoutThumbnails()
+    {
+        return $this->createQueryBuilder('a')
+            ->select("a")
+            ->where('a.thumbnail is null')
+            ->andWhere('a.image is not null')
+            ->getQuery()
+            ->getResult();
+    }
 }

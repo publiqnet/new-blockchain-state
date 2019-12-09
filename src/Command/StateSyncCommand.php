@@ -11,6 +11,8 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
+use App\Entity\BoostedContentUnitSpending;
+use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
@@ -36,6 +38,7 @@ use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
 use PubliqAPI\Model\SponsorContentUnit;
+use PubliqAPI\Model\SponsorContentUnitApplied;
 use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
@@ -113,6 +116,18 @@ class StateSyncCommand extends ContainerAwareCommand
 
         $this->em->beginTransaction();
 
+        //  delete all temporary transactions
+        /**
+         * @var Transaction[] $transactions
+         */
+        $transactions = $this->em->getRepository(Transaction::class)->findBy(['transactionSize' => 0], ['timeSigned' => 'DESC', 'id' => 'DESC']);
+        if ($transactions) {
+            foreach ($transactions as $transaction) {
+                $this->em->remove($transaction);
+                $this->em->flush();
+            }
+        }
+
         $index = 0;
         /**
          * get the last index number - if not exist set default as 0
@@ -150,6 +165,7 @@ class StateSyncCommand extends ContainerAwareCommand
                 $transactions = $action->getTransactions();
                 $rewards = $action->getRewards();
                 $unitUriImpacts = $action->getUnitUriImpacts();
+                $appliedSponsorItems = $action->getAppliedSponsorItems();
 
                 //  get authority account
                 $authorityAccount = $this->checkAccount($authority);
@@ -228,30 +244,28 @@ class StateSyncCommand extends ContainerAwareCommand
                             $fileUris = $contentUnit->getFileUris();
                             $coverUri = null;
 
-                            //  get content unit data from storage
-                            $storageData = $this->blockChainService->getContentUnitData($uri);
-                            if ($storageData === null) {
-                                $contentUnitTitle = 'Mismatch content title';
-                                $contentUnitText = 'Mismatch content text';
-                            } else {
-                                if (strpos($storageData, '</h1>')) {
-                                    if (strpos($storageData, '<h1>') > 0) {
-                                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
-
-                                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                                    }
-                                    $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                                } else {
-                                    $contentUnitTitle = 'Old content without title';
-                                    $contentUnitText = $storageData;
-                                }
-                            }
-
-                            //  create objects
                             $authorAccount = $this->checkAccount($authorAddress);
                             $channelAccount = $this->checkAccount($channelAddress);
+
+                            //  get content unit data from storage
+                            $contentUnitTitle = 'Unknown';
+                            $contentUnitText = null;
+                            if ($channelAccount->getUrl()) {
+                                $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                                if ($storageData) {
+                                    if (strpos($storageData, '</h1>')) {
+                                        if (strpos($storageData, '<h1>') > 0) {
+                                            $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                                            $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                            $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                        }
+                                        $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                                    } else {
+                                        $contentUnitText = $storageData;
+                                    }
+                                }
+                            }
 
                             if ($appliedReverted) {
                                 //  add content unit record
@@ -303,6 +317,17 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                             } else {
+                                //  check for related tags
+                                $contentUnitTags = $this->em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
+                                if ($contentUnitTags) {
+                                    foreach ($contentUnitTags as $contentUnitTag) {
+                                        $contentUnitTag->setContentUnit(null);
+                                        $this->em->persist($contentUnitTag);
+                                    }
+
+                                    $this->em->flush();
+                                }
+
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
@@ -543,6 +568,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $boostedContentUnitEntity->setHours($hours);
                                 $boostedContentUnitEntity->setWhole($whole);
                                 $boostedContentUnitEntity->setFraction($fraction);
+                                $boostedContentUnitEntity->setEndTimePoint($startTimePoint + $hours * 3600);
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
@@ -569,32 +595,39 @@ class StateSyncCommand extends ContainerAwareCommand
                             $sponsorAddress = $cancelSponsorContentUnit->getSponsorAddress();
 
                             $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
+                            $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
 
                             if ($appliedReverted) {
-                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
-
                                 /**
                                  * @var BoostedContentUnit $boostedContentUnitEntity
                                  */
                                 $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+
+                                $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                                $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                                $this->em->persist($cancelBoostedContentUnitEntity);
+
                                 $boostedContentUnitEntity->setCancelled(true);
+                                $boostedContentUnitEntity->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                                $boostedContentUnitEntity->setEndTimePoint($timeSigned);
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
                                 //  add transaction record without relation
-                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
                             } else {
-                                $boostTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $boostTransactionHash]);
-
                                 /**
                                  * @var BoostedContentUnit $boostedContentUnitEntity
                                  */
                                 $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
                                 $boostedContentUnitEntity->setCancelled(false);
+
+                                $endTime = $boostedContentUnitEntity->getStartTimePoint() + $boostedContentUnitEntity->getHours() * 3600;
+                                $boostedContentUnitEntity->setEndTimePoint($endTime);
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
@@ -676,6 +709,31 @@ class StateSyncCommand extends ContainerAwareCommand
                     }
                 }
 
+                if (is_array($appliedSponsorItems)) {
+                    /**
+                     * @var SponsorContentUnitApplied $appliedSponsorItem
+                     */
+                    foreach ($appliedSponsorItems as $appliedSponsorItem) {
+                        $transactionHash = $appliedSponsorItem->getTransactionHash();
+                        $amount = $appliedSponsorItem->getAmount();
+                        $whole = $amount->getWhole();
+                        $fraction = $amount->getFraction();
+
+                        $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transactionEntity) {
+                            $boostedContentUnitEntity = $transactionEntity->getBoostedContentUnit();
+
+                            $boostedContentUnitSpending = new BoostedContentUnitSpending();
+                            $boostedContentUnitSpending->setBlock($block);
+                            $boostedContentUnitSpending->setBoostedContentUnit($boostedContentUnitEntity);
+                            $boostedContentUnitSpending->setWhole($whole);
+                            $boostedContentUnitSpending->setFraction($fraction);
+                            $this->em->persist($boostedContentUnitSpending);
+                            $this->em->flush();
+                        }
+                    }
+                }
+
                 //  delete block with all data
                 if (!$appliedReverted) {
                     $this->em->remove($block);
@@ -688,6 +746,12 @@ class StateSyncCommand extends ContainerAwareCommand
                 $timeSigned = $action->getTimeSigned();
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
+
+                $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                if ($transactionEntity) {
+                    $this->em->remove($transactionEntity);
+                    $this->em->flush();
+                }
 
                 if ($action->getAction() instanceof File) {
                     /**
@@ -736,25 +800,28 @@ class StateSyncCommand extends ContainerAwareCommand
                     $fileUris = $contentUnit->getFileUris();
                     $coverUri = null;
 
-                    //  get content unit data from storage
-                    $storageData = $this->blockChainService->getContentUnitData($uri);
-                    if (strpos($storageData, '</h1>')) {
-                        if (strpos($storageData, '<h1>') > 0) {
-                            $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
-
-                            $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                            $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                        }
-                        $contentUnitTitle = strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5));
-                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                    } else {
-                        $contentUnitTitle = 'Old content without title';
-                        $contentUnitText = $storageData;
-                    }
-
-                    //  create objects
                     $authorAccount = $this->checkAccount($authorAddress);
                     $channelAccount = $this->checkAccount($channelAddress);
+
+                    //  get content unit data from storage
+                    $contentUnitTitle = 'Unknown';
+                    $contentUnitText = null;
+                    if ($channelAccount->getUrl()) {
+                        $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                        if ($storageData) {
+                            if (strpos($storageData, '</h1>')) {
+                                if (strpos($storageData, '<h1>') > 0) {
+                                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                }
+                                $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                            } else {
+                                $contentUnitText = $storageData;
+                            }
+                        }
+                    }
 
                     if ($appliedReverted) {
                         //  add ContentUnit record
@@ -1045,6 +1112,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $boostedContentUnitEntity->setHours($hours);
                         $boostedContentUnitEntity->setWhole($whole);
                         $boostedContentUnitEntity->setFraction($fraction);
+                        $boostedContentUnitEntity->setEndTimePoint($startTimePoint + $hours * 3600);
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
@@ -1077,12 +1145,19 @@ class StateSyncCommand extends ContainerAwareCommand
                          * @var BoostedContentUnit $boostedContentUnitEntity
                          */
                         $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
+
+                        $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
+                        $cancelBoostedContentUnitEntity->setBoostedContentUnit($boostedContentUnitEntity);
+                        $this->em->persist($cancelBoostedContentUnitEntity);
+
                         $boostedContentUnitEntity->setCancelled(true);
+                        $boostedContentUnitEntity->setCancelBoostedContentUnit($cancelBoostedContentUnitEntity);
+                        $boostedContentUnitEntity->setEndTimePoint($timeSigned);
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
                         //  add transaction record without relation
-                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, false);
@@ -1094,6 +1169,9 @@ class StateSyncCommand extends ContainerAwareCommand
                          */
                         $boostedContentUnitEntity = $boostTransaction->getBoostedContentUnit();
                         $boostedContentUnitEntity->setCancelled(false);
+
+                        $endTime = $boostedContentUnitEntity->getStartTimePoint() + $boostedContentUnitEntity->getHours() * 3600;
+                        $boostedContentUnitEntity->setEndTimePoint($endTime);
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
 
@@ -1202,23 +1280,21 @@ class StateSyncCommand extends ContainerAwareCommand
      * @param null $content
      * @param null $transfer
      * @param null $boostedContentUnit
+     * @param null $cancelBoostedContentUnit
      * @return null
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null)
+    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
-        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-        if (!$transaction) {
-            $transaction = new Transaction();
-            $transaction->setTransactionHash($transactionHash);
-        }
-
+        $transaction = new Transaction();
+        $transaction->setTransactionHash($transactionHash);
         $transaction->setFile(null);
         $transaction->setContentUnit(null);
         $transaction->setContent(null);
         $transaction->setTransfer(null);
         $transaction->setBoostedContentUnit(null);
+        $transaction->setCancelBoostedContentUnit(null);
 
         if ($block) {
             $transaction->setBlock($block);
@@ -1241,6 +1317,9 @@ class StateSyncCommand extends ContainerAwareCommand
         }
         if ($boostedContentUnit) {
             $transaction->setBoostedContentUnit($boostedContentUnit);
+        }
+        if ($cancelBoostedContentUnit) {
+            $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnit);
         }
 
         $this->em->persist($transaction);

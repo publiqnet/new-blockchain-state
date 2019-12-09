@@ -33,7 +33,7 @@ class BoostedContentUnitRepository extends EntityRepository
         $result = $this->createQueryBuilder('bcu')
             ->select('bcu')
             ->where('bcu.startTimePoint <= :date')
-            ->andWhere('(bcu.startTimePoint + bcu.hours * 3600) >= :date')
+            ->andWhere('bcu.endTimePoint >= :date')
             ->andWhere('bcu.contentUnit = :contentUnit')
             ->andWhere('(bcu.cancelled = 0 or bcu.cancelled is null)')
             ->setParameters(['date' => $date->getTimestamp(), 'contentUnit' => $contentUnit])
@@ -57,6 +57,39 @@ class BoostedContentUnitRepository extends EntityRepository
             ->orWhere('cu.author = :author')
             ->andWhere('bcu.cancelled = 0')
             ->setParameters(['author' => $author])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param Account $author
+     * @return array
+     */
+    public function getAuthorBoostedArticlesSummary(Account $author)
+    {
+        return $this->createQueryBuilder('bcu')
+            ->select('SUM(bcu.whole) as whole, SUM(bcu.fraction) as fraction')
+            ->join('bcu.contentUnit', 'cu')
+            ->join('bcu.sponsor', 'a')
+            ->where('bcu.sponsor = :author')
+            ->orWhere('cu.author = :author')
+            ->setParameters(['author' => $author])
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param ContentUnit $article
+     * @return array
+     */
+    public function getBoostedArticleSummary(ContentUnit $article)
+    {
+        return $this->createQueryBuilder('bcu')
+            ->select('SUM(bcu.whole) as whole, SUM(bcu.fraction) as fraction')
+            ->join('bcu.contentUnit', 'cu')
+            ->join('bcu.sponsor', 'a')
+            ->where('cu = :article')
+            ->setParameters(['article' => $article])
             ->getQuery()
             ->getResult();
     }

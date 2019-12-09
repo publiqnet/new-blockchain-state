@@ -23,43 +23,40 @@ use Symfony\Component\HttpFoundation\Request;
 
 class Custom
 {
-    const FB_CLIENT_ID = '1949989915051606';
-    const FB_CLIENT_SECRET = 'e9ea0e9284f61ac66d538ae56bbebab3';
-
     /**
      * @var EntityManager
      */
     private $em;
 
-    private $endpoint;
-    private $dsEndpoint;
     private $oldBackendEndpoint;
     private $socialAssetsPath;
     private $socialImagePath;
     private $thumbnailPath;
     private $channelStorageEndpoint;
     private $frontendEndpoint;
+    private $fbClientId;
+    private $fbClientSecret;
 
-    function __construct(EntityManagerInterface $em, $endpoint, $dsEndpoint, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint)
+    function __construct(EntityManagerInterface $em, $oldBackendEndpoint, $socialAssetsPath, $socialImagePath, $thumbnailPath, $channelStorageEndpoint, $frontendEndpoint, $fbClientId, $fbClientSecret)
     {
         $this->em = $em;
-        $this->endpoint = $endpoint;
-        $this->dsEndpoint = $dsEndpoint;
         $this->oldBackendEndpoint = $oldBackendEndpoint;
         $this->socialAssetsPath = $socialAssetsPath;
         $this->socialImagePath = $socialImagePath;
         $this->thumbnailPath = $thumbnailPath;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->frontendEndpoint = $frontendEndpoint;
+        $this->fbClientId = $fbClientId;
+        $this->fbClientSecret = $fbClientSecret;
     }
 
     /**
      * @param File $file
      * @return array
      */
-    public function getFileStoragesWithPublicAccess(File $file)
+    public function getRandomFileStorage(File $file)
     {
-        $fileStoragesWithPublicAccess = [];
+        $randomStorage = null;
 
         /**
          * @var Account[] $fileStorages
@@ -67,14 +64,21 @@ class Custom
         $fileStorages = $file->getStorages();
 
         if (count($fileStorages)) {
+            $fileStoragesSelected = [];
+
             foreach ($fileStorages as $fileStorage) {
-                if ($fileStorage->getUrl()) {
-                    $fileStoragesWithPublicAccess[] = $fileStorage;
+                if ($fileStorage->getUrl() && $fileStorage->isStorage()) {
+                    $fileStoragesSelected[] = $fileStorage;
                 }
+            }
+
+            if (count($fileStoragesSelected) > 0) {
+                $randomStorageIndex = rand(0, count($fileStoragesSelected) - 1);
+                $randomStorage = $fileStoragesSelected[$randomStorageIndex];
             }
         }
 
-        return $fileStoragesWithPublicAccess;
+        return $randomStorage;
     }
 
     /**
@@ -108,112 +112,6 @@ class Custom
         }
 
         return false;
-    }
-
-    /**
-     * @param string $from
-     * @return bool|string
-     * @throws \Exception
-     */
-    public function searchAuthors($from = '0.0.0')
-    {
-        $dataString = sprintf('{"id":1, "method":"call", "params":[0, "search_accounts", ["PBQ","","%s",1000]]}', $from);
-
-        $ch = curl_init($this->endpoint);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER,
-            ['Content-Type:application/json', 'Content-Length: ' . strlen($dataString)]
-        );
-
-        $response = curl_exec($ch);
-
-        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $headerSize);
-
-        curl_close($ch);
-
-        $data = json_decode($body, true);
-
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Connection failed: searchAuthors');
-        }
-
-        return $data['result'];
-    }
-
-    /**
-     * @param $publicKey
-     * @return bool|string
-     * @throws \Exception
-     * @return array
-     */
-    public function getAuthorArticles($publicKey)
-    {
-        $dataString = sprintf('{"id":1, "method":"call", "params":[0, "search_content", ["","",[],"","%s","","","-1"]]}', $publicKey);
-
-        $ch = curl_init($this->endpoint);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER,
-            ['Content-Type:application/json', 'Content-Length: ' . strlen($dataString)]
-        );
-
-        $response = curl_exec($ch);
-
-        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $headerSize);
-
-        curl_close($ch);
-
-        $data = json_decode($body, true);
-
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Connection failed: getAuthorArticles');
-        }
-
-        return $data['result'];
-    }
-
-    /**
-     * @param $articleId
-     * @return array|string
-     * @throws \Exception
-     * @return array
-     */
-    public function getArticle($articleId)
-    {
-        $ch = curl_init($this->dsEndpoint . '/' . $articleId);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "GET");
-        curl_setopt($ch, CURLOPT_POSTFIELDS, false);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER,
-            ['Content-Type:application/json']
-        );
-
-        $response = curl_exec($ch);
-
-        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-        $body = substr($response, $headerSize);
-
-        curl_close($ch);
-
-        $data = json_decode($body, true);
-
-        //  check for errors
-        if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Connection failed: getArticle');
-        }
-
-        return $data['content']['data'];
     }
 
     /**
@@ -274,7 +172,7 @@ class Custom
      * @param Request $request
      * @param ContentUnit $contentUnit
      * @param $account
-     * @return bool
+     * @return string
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
@@ -289,6 +187,7 @@ class Custom
         $userInfo['charset'] = $request->getCharsets();
         $userInfo['encodings'] = $request->getEncodings();
         $userInfo['userInfo'] = $request->getUserInfo();
+        $userInfo['language'] = $request->getPreferredLanguage();
         $userIdentifier = md5(serialize($userInfo));
 
         $date = new \DateTime();
@@ -301,15 +200,9 @@ class Custom
             $viewLog->setContentUnit($contentUnit);
             $viewLog->setUserIdentifier($userIdentifier);
             $viewLog->setDatetime($date->getTimestamp());
-
-            $addView = true;
         } else {
             if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
                 $viewLog->setDatetime($date->getTimestamp());
-
-                $addView = true;
-            } else {
-                $addView = false;
             }
         }
 
@@ -330,7 +223,7 @@ class Custom
         $this->em->persist($viewLogHistory);
         $this->em->flush();
 
-        return $addView;
+        return $userIdentifier;
     }
 
     /**
@@ -608,7 +501,7 @@ class Custom
             //  create instance of ImageWorkshop from cover
             $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
             $coverWorkshop->resizeInPixel(300, null, true);
-            $coverWorkshop->save($imagePath, $imageName, false, null, 60);
+            $coverWorkshop->save($imagePath, $imageName, false, null, 80);
 
             if (isset($tempImage)) {
                 unlink($tempImage);
@@ -618,6 +511,43 @@ class Custom
             $cover->setThumbnailWidth($coverWorkshop->getWidth());
             $cover->setThumbnailHeight($coverWorkshop->getHeight());
             $this->em->persist($cover);
+            $this->em->flush();
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @param Account $author
+     * @param string $relativePath
+     * @return bool|string
+     */
+    function createThumbnailAuthor(Account $author, $relativePath = '')
+    {
+        $imagePath = $relativePath . $this->thumbnailPath;
+        $imageName = $author->getPublicKey() . '-thumbnail.jpg';
+
+        if (!$author->getImage()) {
+            return false;
+        }
+
+        try {
+            $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
+            copy($relativePath . $author->getImage(), $tempImage);
+
+            //  create instance of ImageWorkshop from cover
+            $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+            $coverWorkshop->resizeInPixel(80, null, true);
+            $coverWorkshop->save($imagePath, $imageName, false, null, 80);
+
+            if (isset($tempImage)) {
+                unlink($tempImage);
+            }
+
+            $author->setThumbnail($this->thumbnailPath . '/' . $imageName);
+            $this->em->persist($author);
             $this->em->flush();
         } catch (\Exception $e) {
             return false;
@@ -700,7 +630,7 @@ class Custom
      */
     public function scrapeUrl(String $link)
     {
-        $url = 'https://graph.facebook.com/oauth/access_token?client_id=' . self::FB_CLIENT_ID . '&client_secret=' . self::FB_CLIENT_SECRET . '&grant_type=client_credentials';
+        $url = 'https://graph.facebook.com/oauth/access_token?client_id=' . $this->fbClientId . '&client_secret=' . $this->fbClientSecret . '&grant_type=client_credentials';
         $curl = curl_init();
         curl_setopt_array($curl, array(
             CURLOPT_RETURNTRANSFER => 1,
