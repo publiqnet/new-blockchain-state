@@ -8,12 +8,10 @@
 
 namespace App\Command;
 
-use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
 use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
-use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -22,11 +20,8 @@ use Doctrine\ORM\EntityManager;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\CancelSponsorContentUnit;
-use PubliqAPI\Model\ContentUnitImpactLog;
-use PubliqAPI\Model\ContentUnitImpactPerChannel;
 use PubliqAPI\Model\LoggedTransaction;
 use PubliqAPI\Model\LoggedTransactions;
-use PubliqAPI\Model\SponsorContentUnit;
 use PubliqAPI\Model\SponsorContentUnitApplied;
 use PubliqAPI\Model\TransactionLog;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -133,7 +128,6 @@ class TempCommand extends ContainerAwareCommand
                 //  get block data
                 $blockHash = $action->getBlockHash();
                 $transactions = $action->getTransactions();
-                $unitUriImpacts = $action->getUnitUriImpacts();
                 $appliedSponsorItems = $action->getAppliedSponsorItems();
 
                 $block = $this->em->getRepository(Block::class)->findOneBy(['hash' => $blockHash]);
@@ -153,39 +147,7 @@ class TempCommand extends ContainerAwareCommand
                         $feeWhole = $transaction->getFee()->getWhole();
                         $feeFraction = $transaction->getFee()->getFraction();
 
-                        if ($transaction->getAction() instanceof SponsorContentUnit) {
-                            /**
-                             * @var SponsorContentUnit $sponsorContentUnit
-                             */
-                            $sponsorContentUnit = $transaction->getAction();
-
-                            $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
-                            $uri = $sponsorContentUnit->getUri();
-                            $startTimePoint = $sponsorContentUnit->getStartTimePoint();
-                            $hours = $sponsorContentUnit->getHours();
-                            $whole = $sponsorContentUnit->getAmount()->getWhole();
-                            $fraction = $sponsorContentUnit->getAmount()->getFraction();
-
-                            $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
-
-                            if ($appliedReverted) {
-                                $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
-
-                                $boostedContentUnitEntity = new BoostedContentUnit();
-                                $boostedContentUnitEntity->setSponsor($sponsorAddressAccount);
-                                $boostedContentUnitEntity->setContentUnit($contentUnitEntity);
-                                $boostedContentUnitEntity->setStartTimePoint($startTimePoint);
-                                $boostedContentUnitEntity->setHours($hours);
-                                $boostedContentUnitEntity->setWhole($whole);
-                                $boostedContentUnitEntity->setFraction($fraction);
-                                $boostedContentUnitEntity->setEndTimePoint($startTimePoint + $hours * 3600);
-                                $this->em->persist($boostedContentUnitEntity);
-                                $this->em->flush();
-
-                                //  add transaction record without relation
-                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, $boostedContentUnitEntity);
-                            }
-                        } elseif ($transaction->getAction() instanceof CancelSponsorContentUnit) {
+                        if ($transaction->getAction() instanceof CancelSponsorContentUnit) {
                             /**
                              * @var CancelSponsorContentUnit $cancelSponsorContentUnit
                              */
@@ -231,52 +193,6 @@ class TempCommand extends ContainerAwareCommand
                     }
                 }
 
-                if (is_array($unitUriImpacts)) {
-                    /**
-                     * @var ContentUnitImpactLog $unitUriImpact
-                     */
-                    foreach ($unitUriImpacts as $unitUriImpact) {
-                        $contentUnitUri = $unitUriImpact->getContentUnitUri();
-                        $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $contentUnitUri]);
-                        if ($contentUnitEntity) {
-                            $viewCount = 0;
-                            /**
-                             * @var ContentUnitImpactPerChannel[] $viewsPerChannels
-                             */
-                            $viewsPerChannels = $unitUriImpact->getViewsPerChannel();
-                            foreach ($viewsPerChannels as $viewsPerChannel) {
-                                $viewCount += $viewsPerChannel->getViewCount();
-
-                                $views = $viewsPerChannel->getViewCount();
-                                $channelAddress = $viewsPerChannel->getChannelAddress();
-
-                                //  create channel object
-                                $channelAccount = $this->checkAccount($channelAddress);
-
-                                if ($appliedReverted) {
-                                    $contentUnitViews = new ContentUnitViews();
-                                    $contentUnitViews->setChannel($channelAccount);
-                                    $contentUnitViews->setContentUnit($contentUnitEntity);
-                                    $contentUnitViews->setBlock($block);
-                                    $contentUnitViews->setViewsCount($views);
-                                    $contentUnitViews->setViewsTime($block->getSignTime());
-                                    $this->em->persist($contentUnitViews);
-                                    $this->em->flush();
-                                }
-                            }
-
-                            if ($appliedReverted) {
-                                $contentUnitEntity->plusViews($viewCount);
-                            } else {
-                                $contentUnitEntity->minusViews($viewCount);
-                            }
-
-                            $this->em->persist($contentUnitEntity);
-                            $this->em->flush();
-                        }
-                    }
-                }
-
                 if (is_array($appliedSponsorItems)) {
                     /**
                      * @var SponsorContentUnitApplied $appliedSponsorItem
@@ -315,39 +231,7 @@ class TempCommand extends ContainerAwareCommand
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
 
-                if ($action->getAction() instanceof SponsorContentUnit) {
-                    /**
-                     * @var SponsorContentUnit $sponsorContentUnit
-                     */
-                    $sponsorContentUnit = $action->getAction();
-
-                    $sponsorAddress = $sponsorContentUnit->getSponsorAddress();
-                    $uri = $sponsorContentUnit->getUri();
-                    $startTimePoint = $sponsorContentUnit->getStartTimePoint();
-                    $hours = $sponsorContentUnit->getHours();
-                    $whole = $sponsorContentUnit->getAmount()->getWhole();
-                    $fraction = $sponsorContentUnit->getAmount()->getFraction();
-
-                    $sponsorAddressAccount = $this->checkAccount($sponsorAddress);
-
-                    if ($appliedReverted) {
-                        $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
-
-                        $boostedContentUnitEntity = new BoostedContentUnit();
-                        $boostedContentUnitEntity->setSponsor($sponsorAddressAccount);
-                        $boostedContentUnitEntity->setContentUnit($contentUnitEntity);
-                        $boostedContentUnitEntity->setStartTimePoint($startTimePoint);
-                        $boostedContentUnitEntity->setHours($hours);
-                        $boostedContentUnitEntity->setWhole($whole);
-                        $boostedContentUnitEntity->setFraction($fraction);
-                        $boostedContentUnitEntity->setEndTimePoint($startTimePoint + $hours * 3600);
-                        $this->em->persist($boostedContentUnitEntity);
-                        $this->em->flush();
-
-                        //  add transaction record without relation
-                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, $boostedContentUnitEntity);
-                    }
-                } elseif ($action->getAction() instanceof CancelSponsorContentUnit) {
+                if ($action->getAction() instanceof CancelSponsorContentUnit) {
                     /**
                      * @var CancelSponsorContentUnit $cancelSponsorContentUnit
                      */
@@ -427,28 +311,6 @@ class TempCommand extends ContainerAwareCommand
         $this->release();
 
         return null;
-    }
-
-    /**
-     * @param string $address
-     * @return Account|null|object
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     */
-    private function checkAccount(string $address)
-    {
-        $account = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $address]);
-        if (!$account) {
-            $account = new Account();
-            $account->setPublicKey($address);
-            $account->setWhole(0);
-            $account->setFraction(0);
-
-            $this->em->persist($account);
-            $this->em->flush();
-        }
-
-        return $account;
     }
 
     /**
