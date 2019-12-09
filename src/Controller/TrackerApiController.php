@@ -50,6 +50,7 @@ class TrackerApiController extends Controller
      * @param $fromUri
      * @param Custom $customService
      * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function search(string $word, int $count, $fromUri, Custom $customService)
     {
@@ -213,6 +214,7 @@ class TrackerApiController extends Controller
      * @param string $fromUri
      * @param Custom $customService
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function contents(int $count, string $fromUri, Custom $customService)
     {
@@ -311,11 +313,11 @@ class TrackerApiController extends Controller
      * @param LoggerInterface $logger
      * @return JsonResponse
      * @throws Exception
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger)
     {
         $em = $this->getDoctrine()->getManager();
-        $channelAddress = $this->getParameter('channel_address');
 
         $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
@@ -323,7 +325,7 @@ class TrackerApiController extends Controller
         }
 
         //  get user info & determine if view must be added
-        $addView = $customService->viewLog($request, $contentUnit);
+        $userIdentifier = $customService->viewLog($request, $contentUnit);
 
         //  get files & find storage address
         $files = $contentUnit->getFiles();
@@ -335,38 +337,44 @@ class TrackerApiController extends Controller
              * @var File $file
              */
             foreach ($files as $file) {
+                $storageOrderToken = '';
+
                 /**
-                 * @var Account[] $fileStorages
+                 * @var Account $fileStorage
                  */
-                $fileStorages = $customService->getFileStoragesWithPublicAccess($file);
-                if (count($fileStorages)) {
-                    $randomStorage = rand(0, count($fileStorages) - 1);
-                    $storageUrl = $fileStorages[$randomStorage]->getUrl();
-                    $storageAddress = $fileStorages[$randomStorage]->getPublicKey();
-                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri() . '&channel_address=' . $channelAddress;
+                $fileStorage = $customService->getRandomFileStorage($file);
+                if ($fileStorage) {
+                    $storageUrl = $fileStorage->getUrl();
+                    $storageAddress = $fileStorage->getPublicKey();
 
-                    $file->setUrl($fileUrl);
+                    $storageOrder = $blockChain->getStorageOrder($storageAddress, $file->getUri(), $contentUnitUri, $userIdentifier);
+                    if ($storageOrder['code']) {
+                        $storageOrderToken = $storageOrder['storage_order'];
+                        $storageOrderAddress = $storageOrder['storage_address'];
+                        if ($storageOrderAddress != $storageAddress) {
+                            $storageOrderAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $storageOrderAddress]);
+                            $storageUrl = $storageOrderAccount->getUrl();
+                        }
 
-                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                } elseif ($contentUnit->getContent()) {
+                        $fileUrl = $storageUrl . '/storage?storage_order_token=' . $storageOrderToken;
+                        $file->setUrl($fileUrl);
+
+                        $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'storageOrderToken' => $storageOrderToken];
+                    }
+                }
+
+                if (!$storageOrderToken && $contentUnit->getContent()) {
                     /**
                      * @var Account $channel
                      */
                     $channel = $contentUnit->getChannel();
 
                     $storageUrl = $channel->getUrl();
-                    $storageAddress = $channel->getPublicKey();
                     $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
 
                     $file->setUrl($fileUrl);
 
-                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
-                } else {
-                    $fileStorageUrls[$file->getUri()] = ['url' => '', 'address' => ''];
-                }
-
-                if (!$addView && $file->getMimeType() == 'text/html') {
-                    $file->setUrl(null);
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'storageOrderToken' => ''];
                 }
             }
 
@@ -378,7 +386,9 @@ class TrackerApiController extends Controller
                     $contentUnit->setText($contentUnitText);
 
                     //  inform Blockchain about served files
-                  $blockChain->servedFile($uri, $contentUnitUri, $fileStorageData['address']);
+                    if ($fileStorageData['storageOrderToken']) {
+                        $blockChain->servedFile($fileStorageData['storageOrderToken']);
+                    }
                 }
             } catch (Exception $e) {
                 $logger->error($e->getMessage());

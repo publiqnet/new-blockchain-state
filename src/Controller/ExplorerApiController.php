@@ -457,6 +457,7 @@ class ExplorerApiController extends Controller
      * @param string $publicKey
      * @return JsonResponse
      * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getAccount(string $publicKey)
     {

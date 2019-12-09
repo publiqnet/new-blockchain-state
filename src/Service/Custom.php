@@ -54,9 +54,40 @@ class Custom
     }
 
     /**
+     * @param File $file
+     * @return array
+     */
+    public function getRandomFileStorage(File $file)
+    {
+        $randomStorage = null;
+
+        /**
+         * @var Account[] $fileStorages
+         */
+        $fileStorages = $file->getStorages();
+
+        if (count($fileStorages)) {
+            $fileStoragesSelected = [];
+
+            foreach ($fileStorages as $fileStorage) {
+                if ($fileStorage->getUrl() && $fileStorage->isStorage()) {
+                    $fileStoragesSelected[] = $fileStorage;
+                }
+            }
+
+            if (count($fileStoragesSelected) > 0) {
+                $randomStorageIndex = rand(0, count($fileStoragesSelected) - 1);
+                $randomStorage = $fileStoragesSelected[$randomStorageIndex];
+            }
+        }
+
+        return $randomStorage;
+    }
+
+    /**
      * @param Request $request
      * @param ContentUnit $contentUnit
-     * @return bool
+     * @return string
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
@@ -71,6 +102,7 @@ class Custom
         $userInfo['charset'] = $request->getCharsets();
         $userInfo['encodings'] = $request->getEncodings();
         $userInfo['userInfo'] = $request->getUserInfo();
+        $userInfo['language'] = $request->getPreferredLanguage();
         $userIdentifier = md5(serialize($userInfo));
 
         $date = new \DateTime();
@@ -83,15 +115,9 @@ class Custom
             $viewLog->setContentUnit($contentUnit);
             $viewLog->setUserIdentifier($userIdentifier);
             $viewLog->setDatetime($date->getTimestamp());
-
-            $addView = true;
         } else {
             if (($date->getTimestamp() - $viewLog->getDatetime()) > 3600) {
                 $viewLog->setDatetime($date->getTimestamp());
-
-                $addView = true;
-            } else {
-                $addView = false;
             }
         }
 
@@ -106,6 +132,6 @@ class Custom
         $this->em->persist($viewLogHistory);
         $this->em->flush();
 
-        return $addView;
+        return $userIdentifier;
     }
 }
