@@ -219,10 +219,10 @@ class TempCommand extends ContainerAwareCommand
                 }
 
                 //  delete block with all data
-                if (!$appliedReverted) {
-                    $this->em->remove($block);
-                    $this->em->flush();
-                }
+//                if (!$appliedReverted) {
+//                    $this->em->remove($block);
+//                    $this->em->flush();
+//                }
             } elseif ($action instanceof TransactionLog) {
                 //  get transaction data
                 $transactionHash = $action->getTransactionHash();
@@ -273,19 +273,16 @@ class TempCommand extends ContainerAwareCommand
                         $this->em->persist($boostedContentUnitEntity);
                         $this->em->flush();
                     }
-                }
 
-                //  delete transaction with all data
-                if (!$appliedReverted) {
-                    $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                    if ($transaction) {
-                        $this->em->remove($transaction);
-                        $this->em->flush();
+                    //  delete transaction with all data
+                    if (!$appliedReverted) {
+                        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+                        if ($transaction) {
+                            $this->em->remove($transaction);
+                            $this->em->flush();
+                        }
                     }
                 }
-            } else {
-                var_dump($action);
-                exit();
             }
         }
 
