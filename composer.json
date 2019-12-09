@@ -3,7 +3,7 @@
     "license": "proprietary",
     "repositories": [
         {
-            "url": "git@github.com:publiqnet/publiq-api.git",
+            "url": "https://github.com/publiqnet/publiq-models-php.git",
             "type": "git"
         }
     ],
@@ -16,28 +16,32 @@
         "doctrine/orm": "^2.6",
         "nelmio/api-doc-bundle": "^3.3",
         "nelmio/cors-bundle": "^1.5",
-        "publiq/publiq-api": "1.0.x-dev",
+        "presta/sitemap-bundle": "^1.7",
+        "publiq/publiq-models-php": "1.0.x-dev",
         "sensio/framework-extra-bundle": "^5.2",
         "sonata-project/admin-bundle": "^3.53",
         "sonata-project/doctrine-orm-admin-bundle": "^3.10",
         "sonata-project/translation-bundle": "^2.4",
         "stof/doctrine-extensions-bundle": "^1.3",
+        "sybio/image-workshop": "^2.1",
         "symfony/asset": "*",
+        "symfony/cache": "^4.2.12",
         "symfony/console": "*",
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "*",
         "symfony/lock": "*",
         "symfony/monolog-bundle": "^3.3",
         "symfony/property-access": "*",
-        "symfony/security-bundle": "4.1.*",
-        "symfony/security-core": "4.1.*",
-        "symfony/security-guard": "4.1.*",
+        "symfony/security-bundle": "4.2.*",
+        "symfony/security-core": "4.2.*",
+        "symfony/security-guard": "4.2.*",
         "symfony/serializer": "^4.0",
         "symfony/swiftmailer-bundle": "^3.2",
         "symfony/templating": "*",
         "symfony/twig-bundle": "*",
-        "symfony/validator": "4.1.*",
-        "symfony/yaml": "*"
+        "symfony/validator": "4.2.*",
+        "symfony/yaml": "*",
+        "tooleks/php-avg-color-picker": "^1.1"
     },
     "require-dev": {
         "doctrine/doctrine-fixtures-bundle": "^3.1",
@@ -87,7 +91,7 @@
     "extra": {
         "symfony": {
             "allow-contrib": true,
-            "require": "4.1.*"
+            "require": "4.2.*"
         }
     }
 }
