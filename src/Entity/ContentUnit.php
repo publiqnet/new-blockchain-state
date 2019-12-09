@@ -72,6 +72,7 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
+     * @ORM\JoinColumn(name="cover_id", referencedColumnName="id", onDelete="SET NULL")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
      */
     private $cover;
