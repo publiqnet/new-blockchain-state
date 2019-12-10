@@ -75,6 +75,10 @@ class FileApiController extends Controller
                 $channel = $contentUnits[0]->getChannel();
 
                 $image->setUrl($channel->getUrl() . '/storage?file=' . $image->getUri());
+
+                if (!$image->getThumbnail()) {
+                    $image->setThumbnail($image->getUrl());
+                }
             }
         }
         $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images']]);
