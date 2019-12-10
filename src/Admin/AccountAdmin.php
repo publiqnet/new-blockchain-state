@@ -27,15 +27,15 @@ class AccountAdmin extends AbstractAdmin
         $collection->remove('create');
     }
 
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-    {
-        $datagridMapper
-            ->add('publicKey')
-            ->add('email')
-            ->add('channel')
-            ->add('storage')
-        ;
-    }
+//    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+//    {
+//        $datagridMapper
+//            ->add('publicKey')
+//            ->add('email')
+//            ->add('channel')
+//            ->add('storage')
+//        ;
+//    }
 
     protected function configureListFields(ListMapper $listMapper)
     {
