@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\ContentUnit;
+use App\Entity\Tag;
 use App\Service\BlockChain;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
@@ -49,7 +50,7 @@ class FileApiController extends Controller
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function contents(int $count, string $fromUri)
+    public function images(int $count, string $fromUri)
     {
         $em = $this->getDoctrine()->getManager();
         $backendEndpoint = $this->getParameter('backend_endpoint');
@@ -84,7 +85,70 @@ class FileApiController extends Controller
                 }
             }
         }
-        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images']]);
+        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images', 'tag']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($images) > $count) {
+            unset($images[$count]);
+            $more = true;
+        }
+
+        return new JsonResponse(['data' => $images, 'more' => $more]);
+    }
+
+    /**
+     * @Route("s-by-tag/{tag}/{count}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get images by tag",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="File")
+     * @param string $tag
+     * @param int $count
+     * @param string $fromUri
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function imagesByTag(string $tag, int $count, string $fromUri)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $backendEndpoint = $this->getParameter('backend_endpoint');
+
+        $fromFile = null;
+        if ($fromUri) {
+            $fromFile = $em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fromUri]);
+        }
+
+        /**
+         * @var \App\Entity\File[] $images
+         */
+        $images = $em->getRepository(\App\Entity\File::class)->getImagesByTag($tag, $count + 1, $fromFile);
+        if ($images) {
+            foreach ($images as $image) {
+                /**
+                 * @var ContentUnit[] $contentUnits
+                 */
+                $contentUnits = $image->getContentUnits();
+
+                /**
+                 * @var Account $channel
+                 */
+                $channel = $contentUnits[0]->getChannel();
+
+                $image->setUrl($channel->getUrl() . '/storage?file=' . $image->getUri());
+
+                if (!$image->getThumbnail()) {
+                    $image->setThumbnail($image->getUrl());
+                } else {
+                    $image->setThumbnail($backendEndpoint . '/' . $image->getThumbnail());
+                }
+            }
+        }
+        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images', 'tag']]);
 
         //  check if more content exist
         $more = false;

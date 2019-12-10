@@ -64,4 +64,39 @@ class FileRepository extends EntityRepository
                 ->getResult();
         }
     }
+
+    /**
+     * @param string $tag
+     * @param int $count
+     * @param File|null $fromFile
+     * @return array|null
+     */
+    public function getImagesByTag(string $tag, int $count = 10, File $fromFile = null)
+    {
+        if ($fromFile) {
+            return $this->createQueryBuilder('f')
+                ->select('f')
+                ->join('f.contentUnits', 'cu')
+                ->where('f.mimeType != :mimeType')
+                ->andWhere('f.id < :fromId')
+                ->setParameters(['mimeType' => 'text/html', 'fromId' => $fromFile->getId()])
+                ->setMaxResults($count)
+                ->orderBy('f.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('f')
+                ->select('f')
+                ->join('f.contentUnits', 'cu')
+                ->join('cu.tags', 'cut')
+                ->join('cut.tag', 't')
+                ->where('f.mimeType != :mimeType')
+                ->andWhere('t.name = :tag')
+                ->setParameters(['mimeType' => 'text/html', 'tag' => $tag])
+                ->setMaxResults($count)
+                ->orderBy('f.id', 'desc')
+                ->getQuery()
+                ->getResult();
+        }
+    }
 }
