@@ -297,7 +297,7 @@ class BlockChain
         $data = $transactionBroadcastRequest->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
 
-        $body = $this->callJsonRPC($this->stateEndpoint, $header, $data);
+        $body = $this->callJsonRPC($this->broadcastEndpoint, $header, $data);
 
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);

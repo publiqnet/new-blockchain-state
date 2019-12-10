@@ -10,7 +10,6 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\ContentUnit;
-use App\Entity\Tag;
 use App\Service\BlockChain;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
