@@ -50,6 +50,7 @@ class FileRepository extends EntityRepository
                 ->setParameters(['mimeType' => 'text/html', 'fromId' => $fromFile->getId()])
                 ->setMaxResults($count)
                 ->orderBy('f.id', 'desc')
+                ->groupBy('f')
                 ->getQuery()
                 ->getResult();
         } else {
@@ -60,6 +61,7 @@ class FileRepository extends EntityRepository
                 ->setParameters(['mimeType' => 'text/html'])
                 ->setMaxResults($count)
                 ->orderBy('f.id', 'desc')
+                ->groupBy('f')
                 ->getQuery()
                 ->getResult();
         }
