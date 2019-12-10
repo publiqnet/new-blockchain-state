@@ -50,19 +50,24 @@ MAIN_DOMAIN_SCHEME=http(s)
 ```
 bin/console cache:clear --no-warmup --env=(prod|dev)
 ```
-10. Create MySQL database & schema
+10. Give write permission to 'uploads' folder under 'public' folder in project root directory
+11. Create MySQL database & schema
 ```
 bin/console d:d:c
 bin/console d:s:u --force
 ```
-11. Create & setup virtual host to run application
+12. Import data fixtures
+```
+bin/console d:f:l
+```
+13. Create & setup virtual host to run application
 
 This is the **Backend** that will be referenced from **Frontend** configuration
 ```
 https://tecadmin.net/setup-nginx-virtual-hosts-on-ubuntu/
 https://symfony.com/doc/4.3/setup/web_server_configuration.html#nginx
 ```
-12. Setup cronjobs
+14. Setup cronjobs
 ```
 * * * * * /path/to/application/projectName/bin/console state:sync-new-blockchain >> /path/to/application/projectName/var/log/cron_state.txt 2>&1
 */2 * * * * /path/to/application/projectName/bin/console state:file-details >> /path/to/application/projectName/var/log/cron_file.txt 2>&1
