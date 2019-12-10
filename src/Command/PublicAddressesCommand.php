@@ -83,33 +83,38 @@ class PublicAddressesCommand extends ContainerAwareCommand
              */
             foreach ($publicAddresses->getAddressesInfo() as $publicAddress) {
                 if ($publicAddress->getSecondsSinceChecked() > 3600) {
-                    break;
-                }
-
-                $nodeAddress = $publicAddress->getNodeAddress();
-
-                $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
-                if ($nodeEntity) {
-                    $sslIpAddress = $publicAddress->getSslIpAddress()->getLocal()->getAddress();
-                    $sslPort = $publicAddress->getSslIpAddress()->getLocal()->getPort();
-                    if ($sslIpAddress) {
-                        $url = 'https://' . $sslIpAddress;
-                        if ($sslPort) {
-                            $url .= ':' . $sslPort;
-                        }
-                    } else {
-                        $ipAddress = $publicAddress->getIpAddress()->getLocal()->getAddress();
-                        $port = $publicAddress->getIpAddress()->getLocal()->getPort();
-
-                        $url = 'http://' . $ipAddress;
-                        if ($port) {
-                            $url .= ':' . $port;
-                        }
+                    $nodeAddress = $publicAddress->getNodeAddress();
+                    $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
+                    if ($nodeEntity) {
+                        $nodeEntity->setUrl(null);
+                        $this->em->persist($nodeEntity);
+                        $this->em->flush();
                     }
+                } else {
+                    $nodeAddress = $publicAddress->getNodeAddress();
+                    $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
+                    if ($nodeEntity) {
+                        $sslIpAddress = $publicAddress->getSslIpAddress()->getLocal()->getAddress();
+                        $sslPort = $publicAddress->getSslIpAddress()->getLocal()->getPort();
+                        if ($sslIpAddress) {
+                            $url = 'https://' . $sslIpAddress;
+                            if ($sslPort) {
+                                $url .= ':' . $sslPort;
+                            }
+                        } else {
+                            $ipAddress = $publicAddress->getIpAddress()->getLocal()->getAddress();
+                            $port = $publicAddress->getIpAddress()->getLocal()->getPort();
 
-                    $nodeEntity->setUrl($url);
-                    $this->em->persist($nodeEntity);
-                    $this->em->flush();
+                            $url = 'http://' . $ipAddress;
+                            if ($port) {
+                                $url .= ':' . $port;
+                            }
+                        }
+
+                        $nodeEntity->setUrl($url);
+                        $this->em->persist($nodeEntity);
+                        $this->em->flush();
+                    }
                 }
             }
         }
