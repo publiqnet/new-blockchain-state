@@ -44,6 +44,7 @@ class FileRepository extends EntityRepository
         if ($fromFile) {
             return $this->createQueryBuilder('f')
                 ->select('f')
+                ->join('f.contentUnits', 'cu')
                 ->where('f.mimeType != :mimeType')
                 ->andWhere('f.id < :fromId')
                 ->setParameters(['mimeType' => 'text/html', 'fromId' => $fromFile->getId()])
@@ -54,6 +55,7 @@ class FileRepository extends EntityRepository
         } else {
             return $this->createQueryBuilder('f')
                 ->select('f')
+                ->join('f.contentUnits', 'cu')
                 ->where('f.mimeType != :mimeType')
                 ->setParameters(['mimeType' => 'text/html'])
                 ->setMaxResults($count)

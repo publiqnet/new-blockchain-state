@@ -52,6 +52,7 @@ class FileApiController extends Controller
     public function contents(int $count, string $fromUri)
     {
         $em = $this->getDoctrine()->getManager();
+        $backendEndpoint = $this->getParameter('backend_endpoint');
 
         $fromFile = null;
         if ($fromUri) {
@@ -78,6 +79,8 @@ class FileApiController extends Controller
 
                 if (!$image->getThumbnail()) {
                     $image->setThumbnail($image->getUrl());
+                } else {
+                    $image->setThumbnail($backendEndpoint . '/' . $image->getThumbnail());
                 }
             }
         }

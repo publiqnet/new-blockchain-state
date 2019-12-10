@@ -16,6 +16,7 @@ parameters:
     json_path: '../public/jsons/'
     router.request_context.host: '%env(MAIN_DOMAIN_HOST)%'
     router.request_context.scheme: '%env(MAIN_DOMAIN_SCHEME)%'
+    backend_endpoint: '%env(BACKEND_ENDPOINT)%'
 
 services:
     # default configuration for services in *this* file
