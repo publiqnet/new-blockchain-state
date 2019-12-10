@@ -77,11 +77,15 @@ class FileRepository extends EntityRepository
             return $this->createQueryBuilder('f')
                 ->select('f')
                 ->join('f.contentUnits', 'cu')
+                ->join('cu.tags', 'cut')
+                ->join('cut.tag', 't')
                 ->where('f.mimeType != :mimeType')
+                ->andWhere('t.name = :tag')
                 ->andWhere('f.id < :fromId')
-                ->setParameters(['mimeType' => 'text/html', 'fromId' => $fromFile->getId()])
+                ->setParameters(['mimeType' => 'text/html', 'fromId' => $fromFile->getId(), 'tag' => $tag])
                 ->setMaxResults($count)
                 ->orderBy('f.id', 'desc')
+                ->groupBy('f')
                 ->getQuery()
                 ->getResult();
         } else {
@@ -95,6 +99,7 @@ class FileRepository extends EntityRepository
                 ->setParameters(['mimeType' => 'text/html', 'tag' => $tag])
                 ->setMaxResults($count)
                 ->orderBy('f.id', 'desc')
+                ->groupBy('f')
                 ->getQuery()
                 ->getResult();
         }
