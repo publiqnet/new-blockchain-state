@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\ContentUnit;
 use App\Service\BlockChain;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
@@ -33,6 +34,61 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class FileApiController extends Controller
 {
+    /**
+     * @Route("s/{count}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get images",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="File")
+     * @param int $count
+     * @param string $fromUri
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function contents(int $count, string $fromUri)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $fromFile = null;
+        if ($fromUri) {
+            $fromFile = $em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fromUri]);
+        }
+
+        /**
+         * @var \App\Entity\File[] $images
+         */
+        $images = $em->getRepository(\App\Entity\File::class)->getImages($count + 1, $fromFile);
+        if ($images) {
+            foreach ($images as $image) {
+                /**
+                 * @var ContentUnit[] $contentUnits
+                 */
+                $contentUnits = $image->getContentUnits();
+
+                /**
+                 * @var Account $channel
+                 */
+                $channel = $contentUnits[0]->getChannel();
+
+                $image->setUrl($channel->getUrl() . '/storage?file=' . $image->getUri());
+            }
+        }
+        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($images) > $count) {
+            unset($images[$count]);
+            $more = true;
+        }
+
+        return new JsonResponse(['data' => $images, 'more' => $more]);
+    }
+
     /**
      * @Route("/upload", methods={"POST"})
      * @SWG\Post(
