@@ -221,7 +221,7 @@ class ContentApiController extends Controller
             //  Verify signature
             $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
-                throw new Exception('Invalid signature');
+                return new JsonResponse(['type' => 'story_invalid_signature'], Response::HTTP_CONFLICT);
             } elseif ($signatureResult['signatureResult'] instanceof UriError) {
                 /**
                  * @var UriError $uriError
@@ -1214,6 +1214,8 @@ class ContentApiController extends Controller
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
                 return new JsonResponse(['type' => 'boost_not_enough_balance'], Response::HTTP_CONFLICT);
+            } elseif ($broadcastResult instanceof InvalidSignature) {
+                return new JsonResponse(['type' => 'boost_invalid_signature'], Response::HTTP_CONFLICT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }

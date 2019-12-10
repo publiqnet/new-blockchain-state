@@ -14,6 +14,7 @@ use Exception;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Done;
 use PubliqAPI\Model\File;
+use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
 use PubliqAPI\Model\UriError;
@@ -174,6 +175,8 @@ class FileApiController extends Controller
                             }
                         } elseif ($broadcastResult instanceof NotEnoughBalance) {
                             return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
+                        } elseif ($broadcastResult instanceof InvalidSignature) {
+                            return new JsonResponse(['type' => 'story_invalid_signature'], Response::HTTP_CONFLICT);
                         } else {
                             return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $file['uri'] . '; Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
                         }
