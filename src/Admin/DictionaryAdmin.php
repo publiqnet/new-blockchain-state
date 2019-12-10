@@ -33,11 +33,11 @@ class DictionaryAdmin extends AbstractAdmin
             ->add('value');
     }
 
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-    {
-        $datagridMapper
-            ->add('wordKey');
-    }
+//    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+//    {
+//        $datagridMapper
+//            ->add('wordKey');
+//    }
 
     protected function configureListFields(ListMapper $listMapper)
     {

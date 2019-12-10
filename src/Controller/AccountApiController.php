@@ -625,7 +625,7 @@ class AccountApiController extends Controller
         }
 
         //  GET TRENDING PUBLICATIONS & AUTHORS
-        $trendingPublications = $em->getRepository(Publication::class)->getTrendingPublications();
+        $trendingPublications = $em->getRepository(Publication::class)->getTrendingPublications(16);
         if ($trendingPublications) {
             foreach ($trendingPublications as $publication) {
                 //  get subscribers
@@ -643,7 +643,7 @@ class AccountApiController extends Controller
         }
         $trendingPublications = $this->get('serializer')->normalize($trendingPublications, null, ['groups' => ['trending', 'publicationSubscribed']]);
 
-        $trendingAuthors = $em->getRepository(Account::class)->getTrendingAuthors();
+        $trendingAuthors = $em->getRepository(Account::class)->getTrendingAuthors(16);
         if ($trendingAuthors) {
             /**
              * @var Account $author

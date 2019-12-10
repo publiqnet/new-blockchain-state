@@ -27,12 +27,12 @@ class PublicationAdmin extends AbstractAdmin
         $collection->remove('create');
     }
 
-    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-    {
-        $datagridMapper
-            ->add('slug')
-        ;
-    }
+//    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+//    {
+//        $datagridMapper
+//            ->add('slug')
+//        ;
+//    }
 
     protected function configureListFields(ListMapper $listMapper)
     {
