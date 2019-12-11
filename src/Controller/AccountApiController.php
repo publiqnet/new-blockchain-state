@@ -535,7 +535,7 @@ class AccountApiController extends Controller
     }
 
     /**
-     * @Route("/homepage-data", methods={"GET"}, name="get_user_recommendations")
+     * @Route("/homepage-data", methods={"GET"}, name="get_homepage_data")
      * @SWG\Get(
      *     summary="Get user homepage data",
      *     consumes={"application/json"},
@@ -552,7 +552,7 @@ class AccountApiController extends Controller
      * @throws \Doctrine\ORM\NonUniqueResultException
      * @throws Exception
      */
-    public function getRecommendations(CUService $contentUnitService)
+    public function getHomepageData(CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
         $preferredAuthorsArticles = null;

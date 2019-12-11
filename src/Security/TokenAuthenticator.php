@@ -79,6 +79,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
         if (in_array($route, [
             'get_content_by_uri',
             'get_author_data',
+            'get_homepage_data',
         ])) {
             return null;
         }
