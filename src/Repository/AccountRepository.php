@@ -237,6 +237,46 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult('AGGREGATES_HYDRATOR');
     }
 
+    public function getUserRecommendedAuthors(Account $user, $count = 5)
+    {
+        $subscriptionQuery = $this->getEntityManager()
+            ->createQuery("
+                select a1
+                from App:Account a1 
+                join App:Subscription s with s.author = a1
+                where s.subscriber = :user
+            ");
+
+        $authorPreferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select a2 
+                from App:Account a2 
+                join App:UserPreference up with a2 = up.author
+                where up.account = :user and up.author is not null
+            ");
+
+        $tagPreferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select cu3
+                from App:ContentUnit cu3 
+                join App:ContentUnitTag cut with cut.contentUnit = cu3
+                where cut.tag in (select tg from App:Tag tg join App:UserPreference up1 with up1.tag = tg where up1.account = :user and up1.tag is not null) 
+                group by cu3.id
+            ");
+
+        $query = $this->createQueryBuilder('a');
+        return $query->select("a")
+            ->join('a.authorContentUnits', 'cu')
+            ->where($query->expr()->in('cu.author', $authorPreferenceQuery->getDQL()))
+            ->orWhere($query->expr()->in('cu', $tagPreferenceQuery->getDQL()))
+            ->andWhere($query->expr()->notIn('a', $subscriptionQuery->getDQL()))
+            ->setParameter('user', $user)
+            ->setMaxResults($count)
+            ->orderBy('a.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getAccountsWithoutThumbnails()
     {
         return $this->createQueryBuilder('a')
