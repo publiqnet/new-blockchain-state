@@ -608,8 +608,8 @@ class ContentUnitRepository extends EntityRepository
         $subQuery2
             ->select('cu3.id')
             ->join('cu3.boosts', 'cub')
-            ->where('cub.startTimePoint > :date')
-            ->andWhere('cub.endTimePoint < :date')
+            ->where('cub.startTimePoint < :date')
+            ->andWhere('cub.endTimePoint > :date')
             ->setParameters(['date' => $date->getTimestamp()])
             ->groupBy('cu3.id');
 
