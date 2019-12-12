@@ -609,7 +609,7 @@ class ContentUnitRepository extends EntityRepository
             ->select('cu3.id')
             ->join('cu3.boosts', 'cub')
             ->where('cub.startTimePoint > :date')
-            ->orWhere('cub.endTimePoint < :date')
+            ->andWhere('cub.endTimePoint < :date')
             ->setParameters(['date' => $date->getTimestamp()])
             ->groupBy('cu3.id');
 
