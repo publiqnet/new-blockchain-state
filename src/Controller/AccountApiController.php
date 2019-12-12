@@ -613,6 +613,8 @@ class AccountApiController extends Controller
                     $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
                     $publication->setSubscribersCount(count($subscribers));
 
+                    $publication->setMembersCount(count($publication->getMembers()));
+
                     //  check if user subscribed to Publication
                     $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
                     if ($subscription) {
@@ -676,6 +678,8 @@ class AccountApiController extends Controller
                 //  get subscribers
                 $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
                 $publication->setSubscribersCount(count($subscribers));
+
+                $publication->setMembersCount(count($publication->getMembers()));
 
                 //  check if user subscribed to Publication
                 $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);

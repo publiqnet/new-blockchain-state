@@ -169,6 +169,12 @@ class Publication
     private $subscribersCount;
 
     /**
+     * @var int
+     * @Groups({"publication", "trending"})
+     */
+    private $membersCount;
+
+    /**
      * @ORM\Column(name="social_image", type="string", nullable=true)
      * @Assert\File()
      * @Groups({"publicationSeo"})
@@ -492,6 +498,22 @@ class Publication
     public function setSubscribersCount(int $subscribersCount)
     {
         $this->subscribersCount = $subscribersCount;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMembersCount()
+    {
+        return $this->membersCount;
+    }
+
+    /**
+     * @param int $membersCount
+     */
+    public function setMembersCount(int $membersCount)
+    {
+        $this->membersCount = $membersCount;
     }
 
     /**
