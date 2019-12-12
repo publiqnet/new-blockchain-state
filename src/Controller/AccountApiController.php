@@ -547,12 +547,14 @@ class AccountApiController extends Controller
      * @SWG\Response(response=404, description="Not found")
      * @SWG\Tag(name="User")
      * @param CUService $contentUnitService
+     * @param Custom $customService
      * @return JsonResponse
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      * @throws \Doctrine\ORM\NonUniqueResultException
-     * @throws Exception
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function getHomepageData(CUService $contentUnitService)
+    public function getHomepageData(CUService $contentUnitService, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
         $preferredAuthorsArticles = null;
@@ -561,6 +563,7 @@ class AccountApiController extends Controller
         $nonBoostedArticle = null;
         $recommendedPublications = null;
         $recommendedAuthors = null;
+        $fee = null;
 
         /**
          * @var Account $account
@@ -651,6 +654,15 @@ class AccountApiController extends Controller
                 $nonBoostedArticle = $contentUnitService->prepareTags($nonBoostedArticle);
                 $nonBoostedArticle = $nonBoostedArticle[0];
             }
+
+            //  GET FEE
+            list($feeWhole, $feeFraction) = $customService->getFee();
+
+            $date = new \DateTime();
+            $timezone = new \DateTimeZone('UTC');
+            $date->setTimezone($timezone);
+
+            $fee = ['whole' => $feeWhole, 'fraction' => $feeFraction, 'currentTime' => $date->getTimestamp()];
         }
 
 
@@ -698,6 +710,6 @@ class AccountApiController extends Controller
         }
         $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles], 'firstArticle' => $firstArticle, 'articleToBoost' => $nonBoostedArticle, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors], 'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors]]);
+        return new JsonResponse(['preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles], 'firstArticle' => $firstArticle, 'articleToBoost' => $nonBoostedArticle, 'currentBoostFee' => $fee, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors], 'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors]]);
     }
 }
