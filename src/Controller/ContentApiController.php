@@ -25,6 +25,7 @@ use App\Event\UserPreferenceEvent;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
 use App\Service\Custom;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Psr\Log\LoggerInterface;
 use PubliqAPI\Base\UriProblemType;
@@ -1138,6 +1139,9 @@ class ContentApiController extends Controller
      */
     public function boostContent(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1183,6 +1187,8 @@ class ContentApiController extends Controller
                 if ($currentTransactionHash) {
                     $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
 
+                    $em->beginTransaction();
+
                     //  add boosted content unit
                     $boostedContentUnit = new BoostedContentUnit();
                     $boostedContentUnit->setSponsor($account);
@@ -1209,6 +1215,8 @@ class ContentApiController extends Controller
                     $transaction->setTransactionSize(0);
                     $em->persist($transaction);
                     $em->flush();
+
+                    $em->commit();
                 }
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
@@ -1258,6 +1266,9 @@ class ContentApiController extends Controller
      */
     public function cancelBoostContent(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1307,6 +1318,7 @@ class ContentApiController extends Controller
                  */
                 $boostedContentUnit = $boostTransaction->getBoostedContentUnit();
 
+                $em->beginTransaction();
 
                 //  add cancelled boosted content unit
                 $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
@@ -1329,6 +1341,8 @@ class ContentApiController extends Controller
                 $transaction->setTransactionSize(0);
                 $em->persist($transaction);
                 $em->flush();
+
+                $em->commit();
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {
