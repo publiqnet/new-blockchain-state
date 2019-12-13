@@ -535,102 +535,151 @@ class AccountApiController extends Controller
     }
 
     /**
-     * @Route("/recommendations/{publicationsCount}/{fromPublicationSlug}", methods={"GET"}, name="get_user_recommendations")
+     * @Route("/homepage-data", methods={"GET"}, name="get_homepage_data")
      * @SWG\Get(
-     *     summary="Get user recommendations",
+     *     summary="Get user homepage data",
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
-     * @SWG\Parameter(name="X-API-TOKEN", in="header", type="string")
+     * @SWG\Parameter(name="X-API-TOKEN", in="header", type="string", required=false)
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=401, description="Unauthorized user")
      * @SWG\Response(response=404, description="Not found")
      * @SWG\Tag(name="User")
      * @param CUService $contentUnitService
-     * @param int $publicationsCount
-     * @param string|null $fromPublicationSlug
+     * @param Custom $customService
      * @return JsonResponse
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function getRecommendations(CUService $contentUnitService, int $publicationsCount, string $fromPublicationSlug = null)
+    public function getHomepageData(CUService $contentUnitService, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
+        $preferredAuthorsArticles = null;
+        $preferredTagsArticles = null;
+        $firstArticle = null;
+        $nonBoostedArticle = null;
+        $recommendedPublications = null;
+        $recommendedAuthors = null;
+        $fee = null;
 
         /**
          * @var Account $account
          */
         $account = $this->getUser();
-        if (!$account) {
-            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
-        }
 
-        $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account, 4);
-        //  prepare data to return
-        if ($preferredAuthorsArticles) {
-            try {
-                $preferredAuthorsArticles = $contentUnitService->prepare($preferredAuthorsArticles);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+        if ($account) {
+            //  IF USER HAS ARTICLE
+            $firstArticle = false;
+            $contentUnits = $account->getAuthorContentUnits();
+            if (count($contentUnits) == 0) {
+                $firstArticle = true;
             }
-        }
-        $preferredAuthorsArticles = $this->get('serializer')->normalize($preferredAuthorsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
-        $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account, 4);
-        //  prepare data to return
-        if ($preferredTagsArticles) {
-            try {
-                $preferredTagsArticles = $contentUnitService->prepare($preferredTagsArticles);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            //  PREFERENCES - articles by author
+            $preferredAuthorsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredAuthorsArticles($account, 4);
+            if ($preferredAuthorsArticles) {
+                try {
+                    $preferredAuthorsArticles = $contentUnitService->prepare($preferredAuthorsArticles);
+                } catch (Exception $e) {
+                    return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+                }
             }
+            $preferredAuthorsArticles = $this->get('serializer')->normalize($preferredAuthorsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+            $preferredAuthorsArticles = $contentUnitService->prepareTags($preferredAuthorsArticles);
+
+            //  PREFERENCES - articles by tags
+            $preferredTagsArticles = $em->getRepository(ContentUnit::class)->getUserPreferredTagsArticles($account, 4);
+            if ($preferredTagsArticles) {
+                try {
+                    $preferredTagsArticles = $contentUnitService->prepare($preferredTagsArticles);
+                } catch (Exception $e) {
+                    return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+                }
+            }
+            $preferredTagsArticles = $this->get('serializer')->normalize($preferredTagsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+            $preferredTagsArticles = $contentUnitService->prepareTags($preferredTagsArticles);
+
+            //  RECOMMENDATIONS - publications
+            /**
+             * @var Publication[] $recommendedPublications
+             */
+            $recommendedPublications = $em->getRepository(Publication::class)->getUserRecommendedPublications($account,16);
+            if ($recommendedPublications) {
+                foreach ($recommendedPublications as $publication) {
+                    //  get subscribers
+                    $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
+                    $publication->setSubscribersCount(count($subscribers));
+
+                    $publication->setMembersCount(count($publication->getMembers()));
+
+                    //  check if user subscribed to Publication
+                    $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
+                    if ($subscription) {
+                        $publication->setSubscribed(true);
+                    } else {
+                        $publication->setSubscribed(false);
+                    }
+                }
+            }
+            $recommendedPublications = $this->get('serializer')->normalize($recommendedPublications, null, ['groups' => ['trending', 'publicationSubscribed']]);
+
+            //  RECOMMENDATIONS - authors
+            /**
+             * @var Account[] $recommendedAuthors
+             */
+            $recommendedAuthors = $em->getRepository(Account::class)->getUserRecommendedAuthors($account,16);
+            if ($recommendedAuthors) {
+                foreach ($recommendedAuthors as $author) {
+                    //  get subscribers
+                    $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author);
+                    $author->setSubscribersCount(count($subscribers));
+
+                    //  check if user subscribed to author
+                    $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+                    if ($subscribed) {
+                        $author->setSubscribed(true);
+                    } else {
+                        $author->setSubscribed(false);
+                    }
+                }
+            }
+            $recommendedAuthors = $this->get('serializer')->normalize($recommendedAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+            //  GET AUTHOR NOT ACTIVE BOOSTED ARTICLE
+            $nonBoostedArticle = $em->getRepository(ContentUnit::class)->getAuthorNonBoostedRandomArticle($account);
+            if ($nonBoostedArticle) {
+                $nonBoostedArticle = $contentUnitService->prepare([$nonBoostedArticle]);
+                $nonBoostedArticle = $this->get('serializer')->normalize($nonBoostedArticle, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+                $nonBoostedArticle = $contentUnitService->prepareTags($nonBoostedArticle);
+                $nonBoostedArticle = $nonBoostedArticle[0];
+            }
+
+            //  GET FEE
+            list($feeWhole, $feeFraction) = $customService->getFee();
+
+            $date = new \DateTime();
+            $timezone = new \DateTimeZone('UTC');
+            $date->setTimezone($timezone);
+
+            $fee = ['whole' => $feeWhole, 'fraction' => $feeFraction, 'currentTime' => $date->getTimestamp()];
         }
-        $preferredTagsArticles = $this->get('serializer')->normalize($preferredTagsArticles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
-
-        $preferredAuthorsArticles = $contentUnitService->prepareTags($preferredAuthorsArticles);
-        $preferredTagsArticles = $contentUnitService->prepareTags($preferredTagsArticles);
 
 
+        //  TRENDING  - publications
         /**
-         * @var Publication $publication
+         * @var Publication[] $trendingPublications
          */
-        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $fromPublicationSlug]);
-
-        $publications = $em->getRepository(Publication::class)->getUserRecommendedPublications($account,$publicationsCount + 1, $publication);
-        if ($publications) {
-            foreach ($publications as $publication) {
-                $publication->setMemberStatus(0);
-                $publication->setSubscribed(false);
-
-                //  get subscribers
-                $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
-                $publication->setSubscribersCount(count($subscribers));
-
-                //  get articles count
-                $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
-                $publication->setStoriesCount(intval($storiesCount[0][1]));
-            }
-        }
-        $publications = $this->get('serializer')->normalize($publications, null, ['groups' => ['publication', 'publicationMemberStatus', 'publicationSubscribed', 'tag']]);
-
-        $more = false;
-        if (count($publications) > $publicationsCount) {
-            $more = true;
-            unset($publications[$publicationsCount]);
-        }
-
-        $firstArticle = false;
-        $contentUnits = $account->getAuthorContentUnits();
-        if (count($contentUnits) == 0) {
-            $firstArticle = true;
-        }
-
-        //  GET TRENDING PUBLICATIONS & AUTHORS
         $trendingPublications = $em->getRepository(Publication::class)->getTrendingPublications(16);
         if ($trendingPublications) {
             foreach ($trendingPublications as $publication) {
                 //  get subscribers
                 $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
                 $publication->setSubscribersCount(count($subscribers));
+
+                $publication->setMembersCount(count($publication->getMembers()));
 
                 //  check if user subscribed to Publication
                 $subscription = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'publication' => $publication]);
@@ -643,11 +692,12 @@ class AccountApiController extends Controller
         }
         $trendingPublications = $this->get('serializer')->normalize($trendingPublications, null, ['groups' => ['trending', 'publicationSubscribed']]);
 
+        //  TRENDING  - authors
+        /**
+         * @var Account[] $trendingAuthors
+         */
         $trendingAuthors = $em->getRepository(Account::class)->getTrendingAuthors(16);
         if ($trendingAuthors) {
-            /**
-             * @var Account $author
-             */
             foreach ($trendingAuthors as $author) {
                 //  get subscribers
                 $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author);
@@ -664,6 +714,6 @@ class AccountApiController extends Controller
         }
         $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles, 'publications' => $publications, 'more' => $more, 'firstArticle' => $firstArticle, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors]]);
+        return new JsonResponse(['preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles], 'firstArticle' => $firstArticle, 'articleToBoost' => $nonBoostedArticle, 'currentBoostFee' => $fee, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors], 'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors]]);
     }
 }

@@ -81,29 +81,24 @@ class ContentUnitRepository extends EntityRepository
                 ->groupBy('cu2.contentId');
         }
 
+        $query = $this->createQueryBuilder('cu');
         if ($fromContentUnit) {
-            $query = $this->createQueryBuilder('cu');
-
-            $query->select('cu, a, t')
+            return $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
                 ->where('cu.id < :fromId')
-                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()));
-
-            return $query->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()
                 ->getResult();
         } else {
-            $query = $this->createQueryBuilder('cu');
-
-            $query->select('cu, a, t')
+            return $query->select('cu, a, t')
                 ->join('cu.transaction', 't')
                 ->join('cu.author', 'a')
-                ->where($query->expr()->in('cu.id', $subQuery->getDQL()));
-
-            return $query->setParameters(['author' => $account])
+                ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['author' => $account])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()
@@ -440,7 +435,6 @@ class ContentUnitRepository extends EntityRepository
             ");
 
         $query = $this->createQueryBuilder('cu');
-
         return $query->select('cu, a, t')
             ->join('cu.author', 'a')
             ->join('cu.transaction', 't')
@@ -480,7 +474,6 @@ class ContentUnitRepository extends EntityRepository
             ");
 
         $query = $this->createQueryBuilder('cu');
-
         return $query->select('cu, a, t')
             ->join('cu.author', 'a')
             ->join('cu.transaction', 't')
@@ -571,10 +564,6 @@ class ContentUnitRepository extends EntityRepository
      */
     public function getAuthorBoostedArticles(Account $account)
     {
-        $timezone = new \DateTimeZone('UTC');
-        $date = new \DateTime();
-        $date->setTimezone($timezone);
-
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
@@ -588,10 +577,52 @@ class ContentUnitRepository extends EntityRepository
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.sponsor = :sponsor')
-//            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameters(['sponsor' => $account])
             ->groupBy('cu')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @param Account $account
+     * @return array|null
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function getAuthorNonBoostedRandomArticle(Account $account)
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('cu2.author = :author')
+            ->andWhere('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->setParameter('author', $account)
+            ->groupBy('cu2.contentId');
+
+        $subQuery2 = $this->createQueryBuilder('cu3');
+        $subQuery2
+            ->select('cu3.id')
+            ->join('cu3.boosts', 'cub')
+            ->where('cub.startTimePoint < :date')
+            ->andWhere('cub.endTimePoint > :date')
+            ->setParameters(['date' => $date->getTimestamp()])
+            ->groupBy('cu3.id');
+
+        $query = $this->createQueryBuilder('cu');
+        return $query->select('cu, a, t')
+            ->join('cu.transaction', 't')
+            ->join('cu.author', 'a')
+            ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->andWhere($query->expr()->notIn('cu.id', $subQuery2->getDQL()))
+            ->setParameters(['author' => $account, 'date' => $date->getTimestamp()])
+            ->setMaxResults(1)
+            ->orderBy('RAND()')
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

@@ -161,7 +161,7 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getResult('AGGREGATES_HYDRATOR');
     }
 
-    public function getUserRecommendedPublications(Account $user, $count = 5, Publication $publication = null)
+    public function getUserRecommendedPublications(Account $user, $count = 5)
     {
         $subscriptionQuery = $this->getEntityManager()
             ->createQuery("
@@ -179,27 +179,34 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
                 where m.member = :user
             ");
 
-        if ($publication) {
-            $query = $this->createQueryBuilder('p');
-            return $query->select("p")
-                ->where($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
-                ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
-                ->andWhere('p.id < :id')
-                ->setParameters(['id' => $publication->getId(), 'user' => $user])
-                ->setMaxResults($count)
-                ->orderBy('p.id', 'DESC')
-                ->getQuery()
-                ->getResult();
-        } else {
-            $query = $this->createQueryBuilder('p');
-            return $query->select("p")
-                ->where($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
-                ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
-                ->setParameter('user', $user)
-                ->setMaxResults($count)
-                ->orderBy('p.id', 'DESC')
-                ->getQuery()
-                ->getResult();
-        }
+        $authorPreferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select a2 
+                from App:Account a2 
+                join App:UserPreference up with a2 = up.author
+                where up.account = :user and up.author is not null
+            ");
+
+        $tagPreferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select cu3
+                from App:ContentUnit cu3 
+                join App:ContentUnitTag cut with cut.contentUnit = cu3
+                where cut.tag in (select tg from App:Tag tg join App:UserPreference up1 with up1.tag = tg where up1.account = :user and up1.tag is not null) 
+                group by cu3.id
+            ");
+
+        $query = $this->createQueryBuilder('p');
+        return $query->select("p")
+            ->join('p.contentUnits', 'cu')
+            ->where($query->expr()->in('cu.author', $authorPreferenceQuery->getDQL()))
+            ->orWhere($query->expr()->in('cu', $tagPreferenceQuery->getDQL()))
+            ->andWhere($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
+            ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
+            ->setParameter('user', $user)
+            ->setMaxResults($count)
+            ->orderBy('p.id', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

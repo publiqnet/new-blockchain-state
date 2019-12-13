@@ -25,6 +25,7 @@ use App\Event\UserPreferenceEvent;
 use App\Service\BlockChain;
 use App\Service\ContentUnit as CUService;
 use App\Service\Custom;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Psr\Log\LoggerInterface;
 use PubliqAPI\Base\UriProblemType;
@@ -221,7 +222,7 @@ class ContentApiController extends Controller
             //  Verify signature
             $signatureResult = $blockChain->verifySignature($publicKey, $signedContentUnit, $action, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
-                throw new Exception('Invalid signature');
+                return new JsonResponse(['type' => 'story_invalid_signature'], Response::HTTP_CONFLICT);
             } elseif ($signatureResult['signatureResult'] instanceof UriError) {
                 /**
                  * @var UriError $uriError
@@ -1138,6 +1139,9 @@ class ContentApiController extends Controller
      */
     public function boostContent(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1183,6 +1187,8 @@ class ContentApiController extends Controller
                 if ($currentTransactionHash) {
                     $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
 
+                    $em->beginTransaction();
+
                     //  add boosted content unit
                     $boostedContentUnit = new BoostedContentUnit();
                     $boostedContentUnit->setSponsor($account);
@@ -1209,11 +1215,15 @@ class ContentApiController extends Controller
                     $transaction->setTransactionSize(0);
                     $em->persist($transaction);
                     $em->flush();
+
+                    $em->commit();
                 }
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } elseif ($broadcastResult instanceof NotEnoughBalance) {
                 return new JsonResponse(['type' => 'boost_not_enough_balance'], Response::HTTP_CONFLICT);
+            } elseif ($broadcastResult instanceof InvalidSignature) {
+                return new JsonResponse(['type' => 'boost_invalid_signature'], Response::HTTP_CONFLICT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
@@ -1256,6 +1266,9 @@ class ContentApiController extends Controller
      */
     public function cancelBoostContent(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1305,6 +1318,7 @@ class ContentApiController extends Controller
                  */
                 $boostedContentUnit = $boostTransaction->getBoostedContentUnit();
 
+                $em->beginTransaction();
 
                 //  add cancelled boosted content unit
                 $cancelBoostedContentUnitEntity = new CancelBoostedContentUnit();
@@ -1327,6 +1341,8 @@ class ContentApiController extends Controller
                 $transaction->setTransactionSize(0);
                 $em->persist($transaction);
                 $em->flush();
+
+                $em->commit();
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {

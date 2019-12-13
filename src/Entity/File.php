@@ -31,7 +31,7 @@ class File
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"file"})
+     * @Groups({"file", "images"})
      */
     private $uri;
 
@@ -54,7 +54,7 @@ class File
     private $content;
 
     /**
-     * @Groups({"file"})
+     * @Groups({"file", "images"})
      */
     private $url;
 
@@ -86,7 +86,7 @@ class File
     /**
      * @ORM\Column(name="thumbnail", type="string", nullable=true)
      * @Assert\File()
-     * @Groups({"file"})
+     * @Groups({"file", "images"})
      */
     private $thumbnail;
 
