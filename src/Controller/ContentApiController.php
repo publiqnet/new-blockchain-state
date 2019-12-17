@@ -1345,6 +1345,8 @@ class ContentApiController extends Controller
                 $em->commit();
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
+            } elseif ($broadcastResult instanceof InvalidSignature) {
+                return new JsonResponse(['type' => 'boost_invalid_signature'], Response::HTTP_CONFLICT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
