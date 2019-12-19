@@ -33,16 +33,18 @@ class BlockChain
     private $channelEndpoint;
     private $channelStorageEndpoint;
     private $detectLanguageEndpoint;
+    private $detectKeywordsEndpoint;
     private $channelStorageOrderEndpoint;
     private $channelPrivateKey;
 
-    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $channelStorageOrderEndpoint, $channelPrivateKey)
+    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $detectKeywordsEndpoint, $channelStorageOrderEndpoint, $channelPrivateKey)
     {
         $this->stateEndpoint = $stateEndpoint;
         $this->broadcastEndpoint = $broadcastEndpoint;
         $this->channelEndpoint = $channelEndpoint;
         $this->channelStorageEndpoint = $channelStorageEndpoint;
         $this->detectLanguageEndpoint = $detectLanguageEndpoint;
+        $this->detectKeywordsEndpoint = $detectKeywordsEndpoint;
         $this->channelStorageOrderEndpoint = $channelStorageOrderEndpoint;
         $this->channelPrivateKey = $channelPrivateKey;
     }
@@ -83,18 +85,22 @@ class BlockChain
      * @return int
      * @throws \Exception
      */
-    public function detectContentLanguage($text)
+    public function detectContentLanguageKeywords($text)
     {
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($text)];
 
         $body = $this->callJsonRPC($this->detectLanguageEndpoint, $header, $text);
-
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);
-
-        //  check for errors
         if ($headerStatusCode != 200) {
             throw new \Exception('Issue with detecting content language');
+        }
+
+        $body = $this->callJsonRPC($this->detectKeywordsEndpoint, $header, $text);
+        $headerStatusCode = $body['status_code'];
+        $data['keywords'] = json_decode($body['data'], true);
+        if ($headerStatusCode != 200) {
+            throw new \Exception('Issue with detecting content keywords');
         }
 
         return $data;
