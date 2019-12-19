@@ -82,7 +82,7 @@ class BlockChain
 
     /**
      * @param $text
-     * @return int
+     * @return array
      * @throws \Exception
      */
     public function detectContentLanguageKeywords($text)
@@ -93,17 +93,24 @@ class BlockChain
         $headerStatusCode = $body['status_code'];
         $data = json_decode($body['data'], true);
         if ($headerStatusCode != 200) {
-            throw new \Exception('Issue with detecting content language');
+            throw new \Exception('Issue with detecting language');
         }
 
         $body = $this->callJsonRPC($this->detectKeywordsEndpoint, $header, $text);
         $headerStatusCode = $body['status_code'];
-        $data['keywords'] = json_decode($body['data'], true);
+        $keywords = json_decode($body['data'], true);
         if ($headerStatusCode != 200) {
-            throw new \Exception('Issue with detecting content keywords');
+            throw new \Exception('Issue with detecting keywords');
         }
 
-        return $data;
+        $keywordsArr = [];
+        if ($keywords) {
+            for ($i=0; $i<count($keywords) && $i<3; $i++) {
+                $keywordsArr[] = $keywords[$i][0];
+            }
+        }
+
+        return [$data, $keywordsArr];
     }
 
     /**
