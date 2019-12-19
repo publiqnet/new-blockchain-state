@@ -634,7 +634,7 @@ class ContentApiController extends Controller
             $text = $request->request->get('text');
         }
 
-        $detectResult = $blockChainService->detectContentLanguage($text);
+        $detectResult = $blockChainService->detectContentLanguageKeywords($text);
         if (is_array($detectResult) && count($detectResult)) {
             foreach ($detectResult as $language => $possibility) {
                 return new JsonResponse(['code' => $language, 'internationalName' => $possibility[1], 'nativeName' => $possibility[2]]);
