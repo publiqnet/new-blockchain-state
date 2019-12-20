@@ -69,11 +69,15 @@ class FileApiController extends Controller
                  * @var ContentUnit[] $contentUnits
                  */
                 $contentUnits = $image->getContentUnits();
-
-                /**
-                 * @var Account $channel
-                 */
-                $channel = $contentUnits[0]->getChannel();
+                foreach ($contentUnits as $contentUnit) {
+                    /**
+                     * @var Account $channel
+                     */
+                    $channel = $contentUnit->getChannel();
+                    if ($channel->getUrl()) {
+                        break;
+                    }
+                }
 
                 $image->setUrl($channel->getUrl() . '/storage?file=' . $image->getUri());
 
@@ -132,11 +136,15 @@ class FileApiController extends Controller
                  * @var ContentUnit[] $contentUnits
                  */
                 $contentUnits = $image->getContentUnits();
-
-                /**
-                 * @var Account $channel
-                 */
-                $channel = $contentUnits[0]->getChannel();
+                foreach ($contentUnits as $contentUnit) {
+                    /**
+                     * @var Account $channel
+                     */
+                    $channel = $contentUnit->getChannel();
+                    if ($channel->getUrl()) {
+                        break;
+                    }
+                }
 
                 $image->setUrl($channel->getUrl() . '/storage?file=' . $image->getUri());
 

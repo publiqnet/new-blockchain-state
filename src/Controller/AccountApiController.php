@@ -553,6 +553,7 @@ class AccountApiController extends Controller
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws Exception
      */
     public function getHomepageData(CUService $contentUnitService, Custom $customService)
     {

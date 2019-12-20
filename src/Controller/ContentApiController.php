@@ -634,10 +634,10 @@ class ContentApiController extends Controller
             $text = $request->request->get('text');
         }
 
-        $detectResult = $blockChainService->detectContentLanguage($text);
+        list($detectResult, $keywords) = $blockChainService->detectContentLanguageKeywords($text);
         if (is_array($detectResult) && count($detectResult)) {
             foreach ($detectResult as $language => $possibility) {
-                return new JsonResponse(['code' => $language, 'internationalName' => $possibility[1], 'nativeName' => $possibility[2]]);
+                return new JsonResponse(['code' => $language, 'internationalName' => $possibility[1], 'nativeName' => $possibility[2], 'keywords' => $keywords]);
             }
         }
 
@@ -961,6 +961,11 @@ class ContentApiController extends Controller
          */
         $transaction = $contentUnit->getTransaction();
         $contentUnit->setPublished($transaction->getTimeSigned());
+        if ($transaction->getBlock()) {
+            $contentUnit->setStatus('confirmed');
+        } else {
+            $contentUnit->setStatus('pending');
+        }
 
         //  get article next & previous versions
         $previousVersions = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
@@ -1345,6 +1350,8 @@ class ContentApiController extends Controller
                 $em->commit();
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
+            } elseif ($broadcastResult instanceof InvalidSignature) {
+                return new JsonResponse(['type' => 'boost_invalid_signature'], Response::HTTP_CONFLICT);
             } else {
                 return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
             }
