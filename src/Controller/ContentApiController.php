@@ -961,6 +961,11 @@ class ContentApiController extends Controller
          */
         $transaction = $contentUnit->getTransaction();
         $contentUnit->setPublished($transaction->getTimeSigned());
+        if ($transaction->getBlock()) {
+            $contentUnit->setStatus('confirmed');
+        } else {
+            $contentUnit->setStatus('pending');
+        }
 
         //  get article next & previous versions
         $previousVersions = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
