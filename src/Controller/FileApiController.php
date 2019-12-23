@@ -302,21 +302,23 @@ class FileApiController extends Controller
 
                     //  get file local path
                     $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $file['uri']]);
-                    $fileObj = new \Symfony\Component\HttpFoundation\File\File($draftFile->getPath());
-                    $fileData = file_get_contents($fileObj->getRealPath());
+                    if ($draftFile) {
+                        $fileObj = new \Symfony\Component\HttpFoundation\File\File($draftFile->getPath());
+                        $fileData = file_get_contents($fileObj->getRealPath());
 
-                    //  upload file into channel storage
-                    $uploadResult = $blockChain->uploadFile($fileData, $fileObj->getMimeType());
-                    if ($uploadResult instanceof StorageFileAddress) {
+                        //  upload file into channel storage
+                        $uploadResult = $blockChain->uploadFile($fileData, $fileObj->getMimeType());
+                        if ($uploadResult instanceof StorageFileAddress) {
 
-                    } elseif ($uploadResult instanceof UriError) {
-                        if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
+                        } elseif ($uploadResult instanceof UriError) {
+                            if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
 
+                            } else {
+                                throw new Exception('File upload error: ' . $uploadResult->getUriProblemType());
+                            }
                         } else {
-                            throw new Exception('File upload error: ' . $uploadResult->getUriProblemType());
+                            throw new Exception('Error type: ' . get_class($uploadResult));
                         }
-                    } else {
-                        throw new Exception('Error type: ' . get_class($uploadResult));
                     }
 
                     //  Verify signature
