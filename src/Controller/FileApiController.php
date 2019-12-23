@@ -183,17 +183,16 @@ class FileApiController extends Controller
      * @SWG\Response(response=409, description="something went wrong")
      * @SWG\Tag(name="File")
      * @param Request $request
-     * @param BlockChain $blockChain
      * @return JsonResponse
      * @throws Exception
      */
-    public function uploadFile(Request $request, BlockChain $blockChain)
+    public function uploadFile(Request $request)
     {
         /**
          * @var UploadedFile $file
          */
         $file = $request->files->get('file');
-        $channelStorageEndpoint = $this->getParameter('channel_storage_endpoint');
+
         $backendEndpoint = $this->getParameter('backend_endpoint');
         $draftPath = $this->getParameter('draft_path');
 
@@ -207,19 +206,6 @@ class FileApiController extends Controller
             $file->move($draftPath, $fileName);
 
             return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
-
-            /*$uploadResult = $blockChain->uploadFile($fileData, $file->getMimeType());
-            if ($uploadResult instanceof StorageFileAddress) {
-                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
-            } elseif ($uploadResult instanceof UriError) {
-                if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                    return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
-                } else {
-                    return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
-                }
-            } else {
-                return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
-            }*/
         }
 
         return new JsonResponse('', Response::HTTP_CONFLICT);
