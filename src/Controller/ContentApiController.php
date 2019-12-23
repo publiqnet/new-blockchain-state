@@ -1137,7 +1137,8 @@ class ContentApiController extends Controller
      *             type="object",
      *             @SWG\Property(property="signature", type="string"),
      *             @SWG\Property(property="uri", type="string"),
-     *             @SWG\Property(property="amount", type="string"),
+     *             @SWG\Property(property="whole", type="string"),
+     *             @SWG\Property(property="fraction", type="string"),
      *             @SWG\Property(property="hours", type="integer"),
      *             @SWG\Property(property="startTimePoint", type="integer"),
      *             @SWG\Property(property="creationTime", type="integer"),
@@ -1179,7 +1180,8 @@ class ContentApiController extends Controller
 
             $signature = $content['signature'];
             $uri = $content['uri'];
-            $amount = $content['amount'];
+            $whole = $content['whole'];
+            $fraction = $content['fraction'];
             $hours = $content['hours'];
             $startTimePoint = $content['startTimePoint'];
             $creationTime = $content['creationTime'];
@@ -1190,7 +1192,8 @@ class ContentApiController extends Controller
         } else {
             $signature = $request->request->get('signature');
             $uri = $request->request->get('uri');
-            $amount = $request->request->get('amount');
+            $whole = $request->request->get('whole');
+            $fraction = $request->request->get('fraction');
             $hours = $request->request->get('hours');
             $startTimePoint = $request->request->get('startTimePoint');
             $creationTime = $request->request->get('creationTime');
@@ -1201,7 +1204,7 @@ class ContentApiController extends Controller
         }
 
         try {
-            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
+            $broadcastResult = $blockChain->boostContent($signature, $uri, $account->getPublicKey(), $whole, $fraction, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole, $feeFraction);
             if ($broadcastResult instanceof Done) {
                 if ($currentTransactionHash) {
                     $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
@@ -1214,7 +1217,8 @@ class ContentApiController extends Controller
                     $boostedContentUnit->setContentUnit($contentUnit);
                     $boostedContentUnit->setStartTimePoint($startTimePoint);
                     $boostedContentUnit->setHours($hours);
-                    $boostedContentUnit->setWhole($amount);
+                    $boostedContentUnit->setWhole($whole);
+                    $boostedContentUnit->setFraction($fraction);
                     $boostedContentUnit->setFraction(0);
                     $boostedContentUnit->setEndTimePoint($startTimePoint + $hours * 3600);
                     $em->persist($boostedContentUnit);
