@@ -38,8 +38,27 @@ class NetworkApiController extends Controller
     {
         $em = $this->getDoctrine()->getManager();
 
-        $rewardSummary = $em->getRepository(Reward::class)->getTopRewardsByType($type);
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
 
-        return new JsonResponse($rewardSummary);
+        //  lifetime
+        $rewardSummaryLifetime = $em->getRepository(Reward::class)->getTopRewardsByType($type);
+
+        //  last month
+        $date->modify('-1 month');
+        $rewardSummaryMonth = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
+
+        //  last week
+        $date->modify('+1 month');
+        $date->modify('-1 week');
+        $rewardSummaryWeek = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
+
+        //  last day
+        $date->modify('+1 week');
+        $date->modify('-1 day');
+        $rewardSummaryDay = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
+
+        return new JsonResponse(['lifetime' => $rewardSummaryLifetime, 'month' => $rewardSummaryMonth, 'week' => $rewardSummaryWeek, 'day' => $rewardSummaryDay]);
     }
 }
