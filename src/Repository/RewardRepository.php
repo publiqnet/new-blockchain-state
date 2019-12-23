@@ -42,4 +42,22 @@ class RewardRepository extends EntityRepository
                 ->getOneOrNullResult();
         }
     }
+
+    /**
+     * @param string $rewardType
+     * @return array|null
+     */
+    public function getTopRewardsByType(string $rewardType)
+    {
+        return $this->createQueryBuilder('r')
+            ->select('a.publicKey, SUM(r.whole) as totalWhole, SUM(r.fraction) as totalFraction')
+            ->join('r.to', 'a')
+            ->where('r.rewardType = :rewardType')
+            ->setParameters(['rewardType' => $rewardType])
+            ->groupBy('r.to')
+            ->addOrderBy('totalWhole', 'desc')
+            ->addOrderBy('totalFraction', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
 }
