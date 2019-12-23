@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Draft;
+use App\Entity\DraftFile;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -155,6 +156,21 @@ class DraftApiController extends Controller
 
             $em->persist($draft);
             $em->flush();
+
+            //  set draft files
+            if (isset($contentUris) && count($contentUris) > 0) {
+                foreach ($contentUris as $uri => $url) {
+                    $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
+                    if (!$draftFile) {
+                        $draftFile = new DraftFile();
+                        $draftFile->setDraft($draft);
+                        $draftFile->setUri($uri);
+                        $draftFile->setPath($url);
+                        $em->persist($draftFile);
+                        $em->flush();
+                    }
+                }
+            }
 
             $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
@@ -305,6 +321,21 @@ class DraftApiController extends Controller
             $em->persist($draft);
             $em->flush();
 
+            //  set draft files
+            if (isset($contentUris) && count($contentUris) > 0) {
+                foreach ($contentUris as $uri => $url) {
+                    $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
+                    if (!$draftFile) {
+                        $draftFile = new DraftFile();
+                        $draftFile->setDraft($draft);
+                        $draftFile->setUri($uri);
+                        $draftFile->setPath($url);
+                        $em->persist($draftFile);
+                        $em->flush();
+                    }
+                }
+            }
+
             $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
             return new JsonResponse($draft);
@@ -373,7 +404,7 @@ class DraftApiController extends Controller
          */
         $account = $this->getUser();
 
-        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account]);
+        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account, 'published' => false]);
         if ($drafts) {
             try {
                 foreach ($drafts as $draft) {

@@ -8,8 +8,11 @@
 
 namespace App\Controller;
 
+use App\Custom\base58;
 use App\Entity\Account;
 use App\Entity\ContentUnit;
+use App\Entity\Draft;
+use App\Entity\DraftFile;
 use App\Service\BlockChain;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
@@ -182,7 +185,7 @@ class FileApiController extends Controller
      * @param Request $request
      * @param BlockChain $blockChain
      * @return JsonResponse
-     * @throws \Exception
+     * @throws Exception
      */
     public function uploadFile(Request $request, BlockChain $blockChain)
     {
@@ -191,11 +194,21 @@ class FileApiController extends Controller
          */
         $file = $request->files->get('file');
         $channelStorageEndpoint = $this->getParameter('channel_storage_endpoint');
+        $backendEndpoint = $this->getParameter('backend_endpoint');
+        $draftPath = $this->getParameter('draft_path');
 
         if ($file && $file->getClientMimeType()) {
             $fileData = file_get_contents($file->getRealPath());
+            $fileDataHash = hash('sha256', $fileData);
+            $fileUri = $fileUri = base58::Encode($fileDataHash);
 
-            $uploadResult = $blockChain->uploadFile($fileData, $file->getMimeType());
+            //  move file to draft files directory
+            $fileName = $fileUri . '.' . $file->guessExtension();
+            $file->move($draftPath, $fileName);
+
+            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
+
+            /*$uploadResult = $blockChain->uploadFile($fileData, $file->getMimeType());
             if ($uploadResult instanceof StorageFileAddress) {
                 return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
             } elseif ($uploadResult instanceof UriError) {
@@ -206,7 +219,7 @@ class FileApiController extends Controller
                 }
             } else {
                 return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
-            }
+            }*/
         }
 
         return new JsonResponse('', Response::HTTP_CONFLICT);
@@ -227,7 +240,8 @@ class FileApiController extends Controller
      *             type="object",
      *             @SWG\Property(property="files", type="array", items={"type": "object", "properties": {"uri": {"type": "string"}, "signedFile": {"type": "string"}, "creationTime": {"type": "integer"}, "expiryTime": {"type": "integer"}}}),
      *             @SWG\Property(property="feeWhole", type="integer"),
-     *             @SWG\Property(property="feeFraction", type="integer")
+     *             @SWG\Property(property="feeFraction", type="integer"),
+     *             @SWG\Property(property="draftId", type="integer")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -259,14 +273,17 @@ class FileApiController extends Controller
             $files = $content['files'];
             $feeWhole = intval($content['feeWhole']);
             $feeFraction = intval($content['feeFraction']);
+            $draftId = $content['draftId'];
         } else {
             $files = $request->request->get('files');
             $feeWhole = intval($request->request->get('feeWhole'));
             $feeFraction = intval($request->request->get('feeFraction'));
+            $draftId = intval($request->request->get('draftId'));
         }
 
         //  get public key
         $publicKey = $account->getPublicKey();
+        $draft = $em->getRepository(Draft::class)->find($draftId);
 
         try {
             if (is_array($files)) {
@@ -283,11 +300,30 @@ class FileApiController extends Controller
                         continue;
                     }
 
+                    //  get file local path
+                    $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $file['uri']]);
+                    $fileObj = new \Symfony\Component\HttpFoundation\File\File($draftFile->getPath());
+                    $fileData = file_get_contents($fileObj->getRealPath());
+
+                    //  upload file into channel storage
+                    $uploadResult = $blockChain->uploadFile($fileData, $fileObj->getMimeType());
+                    if ($uploadResult instanceof StorageFileAddress) {
+
+                    } elseif ($uploadResult instanceof UriError) {
+                        if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
+
+                        } else {
+                            throw new Exception('File upload error: ' . $uploadResult->getUriProblemType());
+                        }
+                    } else {
+                        throw new Exception('Error type: ' . get_class($uploadResult));
+                    }
+
+                    //  Verify signature
                     $action = new File();
                     $action->setUri($file['uri']);
                     $action->addAuthorAddresses($publicKey);
 
-                    //  Verify signature
                     $signatureResult = $blockChain->verifySignature($publicKey, $file['signedFile'], $action, $file['creationTime'], $file['expiryTime'], $feeWhole, $feeFraction);
                     if (!($signatureResult['signatureResult'] instanceof Done)) {
                         throw new Exception('Invalid signature for file: ' . $file['uri'] . '; Error type: ' . get_class($signatureResult['signatureResult']));

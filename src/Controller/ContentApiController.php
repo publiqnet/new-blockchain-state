@@ -14,6 +14,7 @@ use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
+use App\Entity\Draft;
 use App\Entity\File;
 use App\Entity\Publication;
 use App\Entity\PublicationArticle;
@@ -404,6 +405,7 @@ class ContentApiController extends Controller
      *         format="application/json",
      *         @SWG\Schema(
      *             type="object",
+     *             @SWG\Property(property="draftId", type="integer"),
      *             @SWG\Property(property="uri", type="string"),
      *             @SWG\Property(property="contentId", type="string")
      *         )
@@ -441,9 +443,11 @@ class ContentApiController extends Controller
 
             $uri = $content['uri'];
             $contentId = $content['contentId'];
+            $draftId = $content['draftId'];
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
+            $draftId = $request->request->get('draftId');
         }
 
         list($feeWhole, $feeFraction) = $customService->getFee();
@@ -498,6 +502,16 @@ class ContentApiController extends Controller
                 $transactionEntity->setTransactionSize(0);
                 $em->persist($transactionEntity);
                 $em->flush();
+
+                //  set draft as published
+                $draft = $em->getRepository(Draft::class)->find($draftId);
+                if ($draft) {
+                    $draft->setPublished(true);
+                    $draft->setPublishDate($datetime->getTimestamp());
+                    $draft->setUri($uri);
+                    $em->persist($draft);
+                    $em->flush();
+                }
 
                 return new JsonResponse('', Response::HTTP_NO_CONTENT);
             } else {

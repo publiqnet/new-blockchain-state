@@ -8,6 +8,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 use Gedmo\Mapping\Annotation as Gedmo;
@@ -123,12 +124,6 @@ class Draft
 
     /**
      * @var string
-     * @ORM\Column(name="ds_id", type="string", length=64, nullable=true)
-     */
-    private $dsId;
-
-    /**
-     * @var string
      * @ORM\Column(name="public_key", type="string", length=64, nullable=true)
      */
     private $publicKey;
@@ -139,6 +134,34 @@ class Draft
      * @Groups({"draft", "draftList"})
      */
     private $hideCover = 0;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\DraftFile", mappedBy="draft", cascade={"remove"})
+     */
+    private $files;
+
+    /**
+     * @var boolean
+     * @ORM\Column(name="published", type="boolean", options={"default":0})
+     */
+    private $published = 0;
+
+    /**
+     * @var integer
+     * @ORM\Column(name="publish_date", type="integer", nullable=true)
+     */
+    private $publishDate = 0;
+
+    /**
+     * @var string
+     * @ORM\Column(name="uri", type="string", length=64, nullable=true)
+     */
+    private $uri;
+
+    public function __construct()
+    {
+        $this->files = new ArrayCollection();
+    }
 
     /**
      * @return int
@@ -359,24 +382,6 @@ class Draft
     }
 
     /**
-     * Get dsId
-     *
-     * @return string
-     */
-    public function getDsId()
-    {
-        return $this->dsId;
-    }
-
-    /**
-     * @param string $dsId
-     */
-    public function setDsId($dsId)
-    {
-        $this->dsId = $dsId;
-    }
-
-    /**
      * Get publicKey
      *
      * @return string
@@ -408,5 +413,61 @@ class Draft
     public function setHideCover($hideCover)
     {
         $this->hideCover = $hideCover;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getFiles()
+    {
+        return $this->files;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isPublished()
+    {
+        return $this->published;
+    }
+
+    /**
+     * @param bool $published
+     */
+    public function setPublished(bool $published)
+    {
+        $this->published = $published;
+    }
+
+    /**
+     * @return string
+     */
+    public function getUri()
+    {
+        return $this->uri;
+    }
+
+    /**
+     * @param string $uri
+     */
+    public function setUri(string $uri)
+    {
+        $this->uri = $uri;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPublishDate()
+    {
+        return $this->publishDate;
+    }
+
+    /**
+     * @param int $publishDate
+     */
+    public function setPublishDate(int $publishDate)
+    {
+        $this->publishDate = $publishDate;
     }
 }

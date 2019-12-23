@@ -12,6 +12,7 @@ parameters:
     publications_path: 'uploads/publications'
     accounts_path: 'uploads/accounts'
     social_path: 'uploads/social'
+    draft_path: 'uploads/draft'
     socialAssetsPath: 'socialAssets'
     json_path: '../public/jsons/'
     router.request_context.host: '%env(MAIN_DOMAIN_HOST)%'
