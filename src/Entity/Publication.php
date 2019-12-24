@@ -175,6 +175,20 @@ class Publication
     private $membersCount;
 
     /**
+     * @var int
+     * @ORM\Column(name="cover_position_x", type="integer", options={"default": 0})
+     * @Groups({"publication"})
+     */
+    private $coverPositionX = 0;
+
+    /**
+     * @var int
+     * @ORM\Column(name="cover_position_y", type="integer", options={"default": 0})
+     * @Groups({"publication"})
+     */
+    private $coverPositionY = 0;
+
+    /**
      * @ORM\Column(name="social_image", type="string", nullable=true)
      * @Assert\File()
      * @Groups({"publicationSeo"})
@@ -530,5 +544,37 @@ class Publication
     public function setSocialImage($socialImage)
     {
         $this->socialImage = $socialImage;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCoverPositionX()
+    {
+        return $this->coverPositionX;
+    }
+
+    /**
+     * @param int $coverPositionX
+     */
+    public function setCoverPositionX(int $coverPositionX)
+    {
+        $this->coverPositionX = $coverPositionX;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCoverPositionY()
+    {
+        return $this->coverPositionY;
+    }
+
+    /**
+     * @param int $coverPositionY
+     */
+    public function setCoverPositionY(int $coverPositionY)
+    {
+        $this->coverPositionY = $coverPositionY;
     }
 }

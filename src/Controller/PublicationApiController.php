@@ -53,6 +53,8 @@ class PublicationApiController extends Controller
      *     @SWG\Parameter(name="listView", in="formData", type="boolean", description="List view"),
      *     @SWG\Parameter(name="hideCover", in="formData", type="boolean", description="Hide cover"),
      *     @SWG\Parameter(name="tags", in="formData", type="array", items={"type": "string"}, description="Tags"),
+     *     @SWG\Parameter(name="coverPositionX", in="formData", type="integer", description="Cover position X"),
+     *     @SWG\Parameter(name="coverPositionY", in="formData", type="integer", description="Cover position Y"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
      *     @SWG\Parameter(name="cover", in="formData", type="file", description="Cover"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -87,12 +89,16 @@ class PublicationApiController extends Controller
             $listView = $content['listView'];
             $hideCover = $content['hideCover'];
             $tags = $content['tags'];
+            $coverPositionX = $content['coverPositionX'];
+            $coverPositionY = $content['coverPositionY'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
             $listView = $request->request->get('listView');
             $hideCover = $request->request->get('hideCover');
             $tags = $request->request->get('tags');
+            $coverPositionX = $request->request->get('coverPositionX');
+            $coverPositionY = $request->request->get('coverPositionY');
         }
 
         try {
@@ -101,6 +107,8 @@ class PublicationApiController extends Controller
             $publication->setDescription($description);
             $publication->setListView($listView);
             $publication->setHideCover($hideCover);
+            $publication->setCoverPositionX($coverPositionX);
+            $publication->setCoverPositionY($coverPositionY);
 
             //  relate with Tags
             if ($tags) {
@@ -189,6 +197,8 @@ class PublicationApiController extends Controller
      *     @SWG\Parameter(name="tags", in="formData", type="array", items={"type": "string"}, description="Tags"),
      *     @SWG\Parameter(name="deleteLogo", in="formData", type="boolean", description="Delete logo"),
      *     @SWG\Parameter(name="deleteCover", in="formData", type="boolean", description="Delete cover"),
+     *     @SWG\Parameter(name="coverPositionX", in="formData", type="integer", description="Cover position X"),
+     *     @SWG\Parameter(name="coverPositionY", in="formData", type="integer", description="Cover position Y"),
      *     @SWG\Parameter(name="logo", in="formData", type="file", description="Logo"),
      *     @SWG\Parameter(name="cover", in="formData", type="file", description="Cover"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -242,6 +252,8 @@ class PublicationApiController extends Controller
             $tags = $content['tags'];
             $deleteLogo = $content['deleteLogo'];
             $deleteCover = $content['deleteCover'];
+            $coverPositionX = $content['coverPositionX'];
+            $coverPositionY = $content['coverPositionY'];
         } else {
             $title = $request->request->get('title');
             $description = $request->request->get('description');
@@ -250,6 +262,8 @@ class PublicationApiController extends Controller
             $tags = $request->request->get('tags');
             $deleteLogo = $request->request->get('deleteLogo');
             $deleteCover = $request->request->get('deleteCover');
+            $coverPositionX = $request->request->get('coverPositionX');
+            $coverPositionY = $request->request->get('coverPositionY');
         }
 
         try {
@@ -257,6 +271,8 @@ class PublicationApiController extends Controller
             $publication->setDescription($description);
             $publication->setListView($listView);
             $publication->setHideCover($hideCover);
+            $publication->setCoverPositionX($coverPositionX);
+            $publication->setCoverPositionY($coverPositionY);
 
             //  delete tag relation
             $publication->removeAllTags();
