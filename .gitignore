@@ -27,3 +27,6 @@
 
 /public/uploads/thumbnails/*
 !/public/uploads/thumbnails/.gitkeep
+
+/public/uploads/draft/*
+!/public/uploads/draft/.gitkeep

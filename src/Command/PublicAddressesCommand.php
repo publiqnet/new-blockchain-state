@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
+use PubliqAPI\Base\PublicAddressType;
 use PubliqAPI\Model\PublicAddressesInfo;
 use PubliqAPI\Model\PublicAddressInfo;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -83,11 +84,52 @@ class PublicAddressesCommand extends ContainerAwareCommand
              */
             foreach ($publicAddresses->getAddressesInfo() as $publicAddress) {
                 if ($publicAddress->getSecondsSinceChecked() > 3600) {
-                    break;
+                    $nodeAddress = $publicAddress->getNodeAddress();
+                    $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
+                    if ($nodeEntity) {
+                        $nodeEntity->setUrl(null);
+                        $this->em->persist($nodeEntity);
+                        $this->em->flush();
+                    }
+                } else {
+                    $nodeAddress = $publicAddress->getNodeAddress();
+                    $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
+                    if ($nodeEntity) {
+                        $sslIpAddress = $publicAddress->getSslIpAddress()->getLocal()->getAddress();
+                        $sslPort = $publicAddress->getSslIpAddress()->getLocal()->getPort();
+                        if ($sslIpAddress) {
+                            $url = 'https://' . $sslIpAddress;
+                            if ($sslPort) {
+                                $url .= ':' . $sslPort;
+                            }
+                        } else {
+                            $ipAddress = $publicAddress->getIpAddress()->getLocal()->getAddress();
+                            $port = $publicAddress->getIpAddress()->getLocal()->getPort();
+
+                            $url = 'http://' . $ipAddress;
+                            if ($port) {
+                                $url .= ':' . $port;
+                            }
+                        }
+
+                        $nodeEntity->setUrl($url);
+                        $this->em->persist($nodeEntity);
+                        $this->em->flush();
+                    }
                 }
+            }
+        }
 
+        /**
+         * @var PublicAddressesInfo $publicAddresses
+         */
+        $publicAddresses = $this->blockChainService->getPublicAddresses(PublicAddressType::p2p);
+        if ($publicAddresses->getAddressesInfo()) {
+            /**
+             * @var PublicAddressInfo $publicAddress
+             */
+            foreach ($publicAddresses->getAddressesInfo() as $publicAddress) {
                 $nodeAddress = $publicAddress->getNodeAddress();
-
                 $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
                 if ($nodeEntity) {
                     $sslIpAddress = $publicAddress->getSslIpAddress()->getLocal()->getAddress();
@@ -107,6 +149,7 @@ class PublicAddressesCommand extends ContainerAwareCommand
                         }
                     }
 
+                    $nodeEntity->setMiner(true);
                     $nodeEntity->setUrl($url);
                     $this->em->persist($nodeEntity);
                     $this->em->flush();
@@ -115,7 +158,6 @@ class PublicAddressesCommand extends ContainerAwareCommand
         }
 
         $this->io->success('Public addresses is synced now!');
-
         $this->release();
 
         return null;

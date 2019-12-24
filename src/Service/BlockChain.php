@@ -92,13 +92,14 @@ class BlockChain
     }
 
     /**
+     * @param string $addressType
      * @return int
      * @throws \Exception
      */
-    public function getPublicAddresses()
+    public function getPublicAddresses($addressType = PublicAddressType::rpc)
     {
         $request = new PublicAddressesRequest();
-        $request->setAddressType(PublicAddressType::rpc);
+        $request->setAddressType($addressType);
 
         $data = $request->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];

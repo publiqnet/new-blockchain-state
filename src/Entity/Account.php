@@ -69,6 +69,11 @@ class Account
     private $blockchain = 0;
 
     /**
+     * @ORM\Column(name="miner", type="boolean", options={"default": 0})
+     */
+    private $miner = 0;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\Block", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $signedBlocks;
@@ -375,6 +380,22 @@ class Account
     public function setBlockchain($blockchain)
     {
         $this->blockchain = $blockchain;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isMiner()
+    {
+        return $this->miner;
+    }
+
+    /**
+     * @param mixed $miner
+     */
+    public function setMiner($miner)
+    {
+        $this->miner = $miner;
     }
 
     /**
