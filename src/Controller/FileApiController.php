@@ -91,7 +91,7 @@ class FileApiController extends Controller
                 }
             }
         }
-        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images', 'tag']]);
+        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images', 'tag', 'accountBase']]);
 
         //  check if more content exist
         $more = false;
@@ -158,7 +158,7 @@ class FileApiController extends Controller
                 }
             }
         }
-        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images', 'tag']]);
+        $images = $this->get('serializer')->normalize($images, null, ['groups' => ['images', 'tag', 'accountBase']]);
 
         //  check if more content exist
         $more = false;
