@@ -13,7 +13,7 @@ use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 
 /**
  * @ORM\Table(name="draft_file")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\DraftFileRepository")
  * @HasLifecycleCallbacks
  */
 class DraftFile

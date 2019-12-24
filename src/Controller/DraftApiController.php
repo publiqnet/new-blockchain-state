@@ -159,9 +159,11 @@ class DraftApiController extends Controller
 
             //  set draft files
             if (isset($contentUris) && count($contentUris) > 0) {
+                $backendEndpoint = $this->getParameter('backend_endpoint');
                 foreach ($contentUris as $uri => $url) {
-                    $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
-                    if (!$draftFile) {
+                    if (strpos($url, $url) !== false) {
+                        $url = substr($url, strlen($backendEndpoint) + 1);
+
                         $draftFile = new DraftFile();
                         $draftFile->setDraft($draft);
                         $draftFile->setUri($uri);
@@ -323,15 +325,20 @@ class DraftApiController extends Controller
 
             //  set draft files
             if (isset($contentUris) && count($contentUris) > 0) {
+                $backendEndpoint = $this->getParameter('backend_endpoint');
                 foreach ($contentUris as $uri => $url) {
-                    $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
-                    if (!$draftFile) {
-                        $draftFile = new DraftFile();
-                        $draftFile->setDraft($draft);
-                        $draftFile->setUri($uri);
-                        $draftFile->setPath($url);
-                        $em->persist($draftFile);
-                        $em->flush();
+                    if (strpos($url, $url) !== false) {
+                        $url = substr($url, strlen($backendEndpoint) + 1);
+
+                        $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
+                        if (!$draftFile) {
+                            $draftFile = new DraftFile();
+                            $draftFile->setDraft($draft);
+                            $draftFile->setUri($uri);
+                            $draftFile->setPath($url);
+                            $em->persist($draftFile);
+                            $em->flush();
+                        }
                     }
                 }
             }
@@ -373,6 +380,21 @@ class DraftApiController extends Controller
         }
 
         try {
+            //  get local files & delete
+            /**
+             * @var DraftFile[] $draftFiles
+             */
+            $draftFiles = $em->getRepository(DraftFile::class)->findBy(['draft' => $draft]);
+            if ($draftFiles) {
+                foreach ($draftFiles as $draftFile) {
+                    $uri = $draftFile->getUri();
+                    $fileUsages = $em->getRepository(DraftFile::class)->getFileUsagesWithException($uri, $draft);
+                    if (!$fileUsages && file_exists($draftFile->getPath())) {
+                        unlink($draftFile->getPath());
+                    }
+                }
+            }
+
             $em->remove($draft);
             $em->flush();
 
@@ -408,6 +430,21 @@ class DraftApiController extends Controller
         if ($drafts) {
             try {
                 foreach ($drafts as $draft) {
+                    //  get local files & delete
+                    /**
+                     * @var DraftFile[] $draftFiles
+                     */
+                    $draftFiles = $em->getRepository(DraftFile::class)->findBy(['draft' => $draft]);
+                    if ($draftFiles) {
+                        foreach ($draftFiles as $draftFile) {
+                            $uri = $draftFile->getUri();
+                            $fileUsages = $em->getRepository(DraftFile::class)->getFileUsagesWithException($uri, $draft);
+                            if (!$fileUsages && file_exists($draftFile->getPath())) {
+                                unlink($draftFile->getPath());
+                            }
+                        }
+                    }
+                    
                     $em->remove($draft);
                     $em->flush();
                 }
