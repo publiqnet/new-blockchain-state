@@ -50,4 +50,23 @@ class DraftRepository extends EntityRepository
                 ->getResult();
         }
     }
+
+    /**
+     * @return array|null
+     */
+    public function getPublishedDrafts()
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $datetime = new \DateTime();
+        $datetime->setTimezone($timezone);
+        $datetime->modify('-1 day');
+
+        return $this->createQueryBuilder('d')
+            ->select('d')
+            ->where('d.published = 1')
+            ->andWhere('d.publishDate < :timestamp')
+            ->setParameters(['timestamp' => $datetime->getTimestamp()])
+            ->getQuery()
+            ->getResult();
+    }
 }
