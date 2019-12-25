@@ -161,7 +161,7 @@ class DraftApiController extends Controller
             if (isset($contentUris) && count($contentUris) > 0) {
                 $backendEndpoint = $this->getParameter('backend_endpoint');
                 foreach ($contentUris as $uri => $url) {
-                    if (strpos($url, $url) !== false) {
+                    if (strpos($url, $backendEndpoint) !== false) {
                         $url = substr($url, strlen($backendEndpoint) + 1);
 
                         $draftFile = new DraftFile();
@@ -327,7 +327,7 @@ class DraftApiController extends Controller
             if (isset($contentUris) && count($contentUris) > 0) {
                 $backendEndpoint = $this->getParameter('backend_endpoint');
                 foreach ($contentUris as $uri => $url) {
-                    if (strpos($url, $url) !== false) {
+                    if (strpos($url, $backendEndpoint) !== false) {
                         $url = substr($url, strlen($backendEndpoint) + 1);
 
                         $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
