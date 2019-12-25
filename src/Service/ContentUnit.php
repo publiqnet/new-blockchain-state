@@ -89,11 +89,6 @@ class ContentUnit
                 $storageUrl = $channel->getUrl();
 
                 $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
-                if (!$coverFile->getThumbnail()) {
-                    $coverFile->setThumbnail($coverFile->getUrl());
-                } else {
-                    $coverFile->setThumbnail($this->backendEndpoint . '/' . $coverFile->getThumbnail());
-                }
             }
 
             if ($boosted === null) {
