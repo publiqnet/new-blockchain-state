@@ -716,14 +716,15 @@ class AccountApiController extends Controller
         $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
         //  HIGHLIGHTS
-        $boostedArticles = $em->getRepository(ContentUnit::class)->getBoostedArticles(20);
-        if ($boostedArticles) {
+        $highlights = $em->getRepository(ContentUnit::class)->getBoostedArticles(20);
+        if ($highlights) {
             try {
-                $boostedArticles = $contentUnitService->prepare($boostedArticles, true);
+                $highlights = $contentUnitService->prepare($highlights, true);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
+        $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         return new JsonResponse([
             'preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles],
@@ -732,7 +733,7 @@ class AccountApiController extends Controller
             'currentBoostFee' => $fee,
             'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors],
             'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors],
-            'highlights' => $boostedArticles
+            'highlights' => $highlights
         ]);
     }
 }
