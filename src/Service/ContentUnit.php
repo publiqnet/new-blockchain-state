@@ -29,6 +29,11 @@ class ContentUnit
     private $channelAddress;
 
     /**
+     * @var string
+     */
+    private $backendEndpoint;
+
+    /**
      * @var BlockChain
      */
     private $blockChain;
@@ -43,10 +48,11 @@ class ContentUnit
      */
     private $serializer;
 
-    public function __construct(EntityManagerInterface $em, string $channelAddress, BlockChain $blockChain, Custom $custom, SerializerInterface $serializer)
+    public function __construct(EntityManagerInterface $em, string $channelAddress, string $backendEndpoint, BlockChain $blockChain, Custom $custom, SerializerInterface $serializer)
     {
         $this->em = $em;
         $this->channelAddress = $channelAddress;
+        $this->backendEndpoint = $backendEndpoint;
         $this->blockChain = $blockChain;
         $this->custom = $custom;
         $this->serializer = $serializer;
@@ -83,6 +89,11 @@ class ContentUnit
                 $storageUrl = $channel->getUrl();
 
                 $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
+                if (!$coverFile->getThumbnail()) {
+                    $coverFile->setThumbnail($coverFile->getUrl());
+                } else {
+                    $coverFile->setThumbnail($this->backendEndpoint . '/' . $coverFile->getThumbnail());
+                }
             }
 
             if ($boosted === null) {
