@@ -175,6 +175,7 @@ class FileApiController extends Controller
      * @SWG\Post(
      *     summary="Upload file",
      *     consumes={"multipart/form-data"},
+     *     @SWG\Parameter(name="replacementUri", in="formData", type="string", description="Replacement URI"),
      *     @SWG\Parameter(name="file", in="formData", type="file", description="File"),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string"),
      * )
@@ -188,6 +189,16 @@ class FileApiController extends Controller
      */
     public function uploadFile(Request $request)
     {
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $replacementUri = $content['replacementUri'];
+        } else {
+            $replacementUri = $request->request->get('replacementUri');
+        }
+
         /**
          * @var UploadedFile $file
          */
