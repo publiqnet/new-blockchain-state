@@ -8,6 +8,8 @@
 
 namespace App\Controller;
 
+use App\Entity\NetworkHomeContent;
+use App\Entity\NetworkHomeSlider;
 use App\Entity\Reward;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -60,5 +62,30 @@ class NetworkApiController extends Controller
         $rewardSummaryDay = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
 
         return new JsonResponse(['lifetime' => $rewardSummaryLifetime, 'month' => $rewardSummaryMonth, 'week' => $rewardSummaryWeek, 'day' => $rewardSummaryDay]);
+    }
+
+    /**
+     * @Route("/homepage", methods={"GET"}, name="network_homepage")
+     * @SWG\Get(
+     *     summary="Get Homepage data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network / Home")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getHomeContent()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $homeContent = $em->getRepository(NetworkHomeContent::class)->findAll();
+        $homeContent = $this->get('serializer')->normalize($homeContent, null, ['groups' => ['networkHomeContent']]);
+
+        $homeSlider = $em->getRepository(NetworkHomeSlider::class)->findAll();
+        $homeSlider = $this->get('serializer')->normalize($homeSlider, null, ['groups' => ['networkHomeSlider']]);
+
+        return new JsonResponse(['content' => $homeContent, 'slider' => $homeSlider]);
     }
 }

@@ -14,6 +14,7 @@
         "beberlei/doctrineextensions": "^1.2",
         "doctrine/doctrine-bundle": "^1.9",
         "doctrine/orm": "^2.6",
+        "friendsofsymfony/ckeditor-bundle": "^2.1",
         "nelmio/api-doc-bundle": "^3.3",
         "nelmio/cors-bundle": "^1.5",
         "presta/sitemap-bundle": "^1.7",
