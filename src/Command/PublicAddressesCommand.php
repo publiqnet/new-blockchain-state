@@ -77,6 +77,43 @@ class PublicAddressesCommand extends ContainerAwareCommand
         /**
          * @var PublicAddressesInfo $publicAddresses
          */
+        $publicAddresses = $this->blockChainService->getPublicAddresses(PublicAddressType::p2p);
+        if ($publicAddresses->getAddressesInfo()) {
+            /**
+             * @var PublicAddressInfo $publicAddress
+             */
+            foreach ($publicAddresses->getAddressesInfo() as $publicAddress) {
+                $nodeAddress = $publicAddress->getNodeAddress();
+                $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
+                if ($nodeEntity) {
+                    $sslIpAddress = $publicAddress->getSslIpAddress()->getRemote()->getAddress();
+                    $sslPort = $publicAddress->getSslIpAddress()->getRemote()->getPort();
+                    if ($sslIpAddress) {
+                        $url = 'https://' . $sslIpAddress;
+                        if ($sslPort) {
+                            $url .= ':' . $sslPort;
+                        }
+                    } else {
+                        $ipAddress = $publicAddress->getIpAddress()->getRemote()->getAddress();
+                        $port = $publicAddress->getIpAddress()->getRemote()->getPort();
+
+                        $url = 'http://' . $ipAddress;
+                        if ($port) {
+                            $url .= ':' . $port;
+                        }
+                    }
+
+                    $nodeEntity->setMiner(true);
+                    $nodeEntity->setUrl($url);
+                    $this->em->persist($nodeEntity);
+                    $this->em->flush();
+                }
+            }
+        }
+
+        /**
+         * @var PublicAddressesInfo $publicAddresses
+         */
         $publicAddresses = $this->blockChainService->getPublicAddresses();
         if ($publicAddresses->getAddressesInfo()) {
             /**
@@ -116,43 +153,6 @@ class PublicAddressesCommand extends ContainerAwareCommand
                         $this->em->persist($nodeEntity);
                         $this->em->flush();
                     }
-                }
-            }
-        }
-
-        /**
-         * @var PublicAddressesInfo $publicAddresses
-         */
-        $publicAddresses = $this->blockChainService->getPublicAddresses(PublicAddressType::p2p);
-        if ($publicAddresses->getAddressesInfo()) {
-            /**
-             * @var PublicAddressInfo $publicAddress
-             */
-            foreach ($publicAddresses->getAddressesInfo() as $publicAddress) {
-                $nodeAddress = $publicAddress->getNodeAddress();
-                $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
-                if ($nodeEntity) {
-                    $sslIpAddress = $publicAddress->getSslIpAddress()->getRemote()->getAddress();
-                    $sslPort = $publicAddress->getSslIpAddress()->getRemote()->getPort();
-                    if ($sslIpAddress) {
-                        $url = 'https://' . $sslIpAddress;
-                        if ($sslPort) {
-                            $url .= ':' . $sslPort;
-                        }
-                    } else {
-                        $ipAddress = $publicAddress->getIpAddress()->getRemote()->getAddress();
-                        $port = $publicAddress->getIpAddress()->getRemote()->getPort();
-
-                        $url = 'http://' . $ipAddress;
-                        if ($port) {
-                            $url .= ':' . $port;
-                        }
-                    }
-
-                    $nodeEntity->setMiner(true);
-                    $nodeEntity->setUrl($url);
-                    $this->em->persist($nodeEntity);
-                    $this->em->flush();
                 }
             }
         }
