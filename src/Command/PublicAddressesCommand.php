@@ -132,16 +132,16 @@ class PublicAddressesCommand extends ContainerAwareCommand
                 $nodeAddress = $publicAddress->getNodeAddress();
                 $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
                 if ($nodeEntity) {
-                    $sslIpAddress = $publicAddress->getSslIpAddress()->getLocal()->getAddress();
-                    $sslPort = $publicAddress->getSslIpAddress()->getLocal()->getPort();
+                    $sslIpAddress = $publicAddress->getSslIpAddress()->getRemote()->getAddress();
+                    $sslPort = $publicAddress->getSslIpAddress()->getRemote()->getPort();
                     if ($sslIpAddress) {
                         $url = 'https://' . $sslIpAddress;
                         if ($sslPort) {
                             $url .= ':' . $sslPort;
                         }
                     } else {
-                        $ipAddress = $publicAddress->getIpAddress()->getLocal()->getAddress();
-                        $port = $publicAddress->getIpAddress()->getLocal()->getPort();
+                        $ipAddress = $publicAddress->getIpAddress()->getRemote()->getAddress();
+                        $port = $publicAddress->getIpAddress()->getRemote()->getPort();
 
                         $url = 'http://' . $ipAddress;
                         if ($port) {
