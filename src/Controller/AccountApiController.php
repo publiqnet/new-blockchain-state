@@ -677,8 +677,8 @@ class AccountApiController extends Controller
         if ($trendingPublications) {
             foreach ($trendingPublications as $publication) {
                 //  get subscribers
-                $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
-                $publication->setSubscribersCount(count($subscribers));
+                $subscribersCount = $em->getRepository(Account::class)->getPublicationSubscribersCount($publication);
+                $publication->setSubscribersCount($subscribersCount[0]['totalCount']);
 
                 $publication->setMembersCount(count($publication->getMembers()));
 
@@ -701,8 +701,8 @@ class AccountApiController extends Controller
         if ($trendingAuthors) {
             foreach ($trendingAuthors as $author) {
                 //  get subscribers
-                $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author);
-                $author->setSubscribersCount(count($subscribers));
+                $subscribersCount = $em->getRepository(Account::class)->getAuthorSubscribersCount($author);
+                $author->setSubscribersCount($subscribersCount[0]['totalCount']);
 
                 //  check if user subscribed to author
                 $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);

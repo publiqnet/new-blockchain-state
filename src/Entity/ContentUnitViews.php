@@ -9,13 +9,14 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\ORM\Mapping\Index;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * Class ContentUnitViews
  * @package App\Entity
  *
- * @ORM\Table(name="content_unit_views")
+ * @ORM\Table(name="content_unit_views", indexes={@Index(columns={"views_time"})})
  * @ORM\Entity(repositoryClass="App\Repository\ContentUnitViewsRepository")
  */
 class ContentUnitViews

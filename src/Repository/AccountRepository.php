@@ -155,11 +155,31 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+    public function getPublicationSubscribersCount(Publication $publication)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('count(a) as totalCount')
+            ->join('a.subscriptions', 's')
+            ->where('s.publication = :publication')
+            ->setParameters(['publication' => $publication])
+            ->getQuery()
+            ->getResult();
+    }
 
     public function getAuthorSubscribers(Account $author)
     {
         return $this->createQueryBuilder('a')
             ->select('a')
+            ->join('a.subscriptions', 's')
+            ->where('s.author = :author')
+            ->setParameters(['author' => $author])
+            ->getQuery()
+            ->getResult();
+    }
+    public function getAuthorSubscribersCount(Account $author)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('count(a) as totalCount')
             ->join('a.subscriptions', 's')
             ->where('s.author = :author')
             ->setParameters(['author' => $author])
@@ -201,7 +221,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->having('totalArticles > 0')
                 ->setParameter('exception', $exception)
                 ->setMaxResults($count)
-                ->groupBy('a')
+                ->groupBy('a.id')
                 ->orderBy('totalViews', 'DESC')
                 ->getQuery()
                 ->getResult('AGGREGATES_HYDRATOR');
@@ -211,7 +231,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->leftJoin('a.authorContentUnits', 'cu')
                 ->having('totalArticles > 0')
                 ->setMaxResults($count)
-                ->groupBy('a')
+                ->groupBy('a.id')
                 ->orderBy('totalViews', 'DESC')
                 ->getQuery()
                 ->getResult('AGGREGATES_HYDRATOR');
@@ -231,7 +251,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->where('vpc.viewsTime > :currentTimestamp')
             ->setParameters(['currentTimestamp' => $date->getTimestamp() - 7 * 86400])
             ->setMaxResults($count)
-            ->groupBy('a')
+            ->groupBy('a.id')
             ->orderBy('totalViews', 'DESC')
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
