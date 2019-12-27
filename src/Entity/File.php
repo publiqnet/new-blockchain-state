@@ -60,6 +60,7 @@ class File
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="files")
+     * @Groups({"images"})
      */
     private $author;
 

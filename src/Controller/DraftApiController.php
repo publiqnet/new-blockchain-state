@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Draft;
+use App\Entity\DraftFile;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -155,6 +156,23 @@ class DraftApiController extends Controller
 
             $em->persist($draft);
             $em->flush();
+
+            //  set draft files
+            if (isset($contentUris) && count($contentUris) > 0) {
+                $backendEndpoint = $this->getParameter('backend_endpoint');
+                foreach ($contentUris as $uri => $url) {
+                    if (strpos($url, $backendEndpoint) !== false) {
+                        $url = substr($url, strlen($backendEndpoint) + 1);
+
+                        $draftFile = new DraftFile();
+                        $draftFile->setDraft($draft);
+                        $draftFile->setUri($uri);
+                        $draftFile->setPath($url);
+                        $em->persist($draftFile);
+                        $em->flush();
+                    }
+                }
+            }
 
             $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
@@ -305,6 +323,26 @@ class DraftApiController extends Controller
             $em->persist($draft);
             $em->flush();
 
+            //  set draft files
+            if (isset($contentUris) && count($contentUris) > 0) {
+                $backendEndpoint = $this->getParameter('backend_endpoint');
+                foreach ($contentUris as $uri => $url) {
+                    if (strpos($url, $backendEndpoint) !== false) {
+                        $url = substr($url, strlen($backendEndpoint) + 1);
+
+                        $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $uri]);
+                        if (!$draftFile) {
+                            $draftFile = new DraftFile();
+                            $draftFile->setDraft($draft);
+                            $draftFile->setUri($uri);
+                            $draftFile->setPath($url);
+                            $em->persist($draftFile);
+                            $em->flush();
+                        }
+                    }
+                }
+            }
+
             $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
             return new JsonResponse($draft);
@@ -342,6 +380,21 @@ class DraftApiController extends Controller
         }
 
         try {
+            //  get local files & delete
+            /**
+             * @var DraftFile[] $draftFiles
+             */
+            $draftFiles = $em->getRepository(DraftFile::class)->findBy(['draft' => $draft]);
+            if ($draftFiles) {
+                foreach ($draftFiles as $draftFile) {
+                    $uri = $draftFile->getUri();
+                    $fileUsages = $em->getRepository(DraftFile::class)->getFileUsagesWithException($uri, $draft);
+                    if (!$fileUsages && file_exists($draftFile->getPath())) {
+                        unlink($draftFile->getPath());
+                    }
+                }
+            }
+
             $em->remove($draft);
             $em->flush();
 
@@ -373,10 +426,25 @@ class DraftApiController extends Controller
          */
         $account = $this->getUser();
 
-        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account]);
+        $drafts = $em->getRepository(Draft::class)->findBy(["account" => $account, 'published' => false]);
         if ($drafts) {
             try {
                 foreach ($drafts as $draft) {
+                    //  get local files & delete
+                    /**
+                     * @var DraftFile[] $draftFiles
+                     */
+                    $draftFiles = $em->getRepository(DraftFile::class)->findBy(['draft' => $draft]);
+                    if ($draftFiles) {
+                        foreach ($draftFiles as $draftFile) {
+                            $uri = $draftFile->getUri();
+                            $fileUsages = $em->getRepository(DraftFile::class)->getFileUsagesWithException($uri, $draft);
+                            if (!$fileUsages && file_exists($draftFile->getPath())) {
+                                unlink($draftFile->getPath());
+                            }
+                        }
+                    }
+                    
                     $em->remove($draft);
                     $em->flush();
                 }

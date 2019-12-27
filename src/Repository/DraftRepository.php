@@ -26,28 +26,47 @@ class DraftRepository extends EntityRepository
     public function getAuthorDrafts(Account $account, int $count = 10, Draft $fromDraft = null)
     {
         if ($fromDraft) {
-            $query = $this->createQueryBuilder('d');
-
-            return $query->select('d')
+            return $this->createQueryBuilder('d')
+                ->select('d')
                 ->join('d.account', 'a')
                 ->where('a = :author')
                 ->andWhere('d.id < :fromId')
+                ->andWhere('d.published = 0')
                 ->setParameters(['author' => $account, 'fromId' => $fromDraft->getId()])
                 ->setMaxResults($count)
                 ->orderBy('d.id', 'desc')
                 ->getQuery()
                 ->getResult();
         } else {
-            $query = $this->createQueryBuilder('d');
-
-            return $query->select('d')
+            return $this->createQueryBuilder('d')
+                ->select('d')
                 ->join('d.account', 'a')
                 ->where('a = :author')
+                ->andWhere('d.published = 0')
                 ->setParameters(['author' => $account])
                 ->setMaxResults($count)
                 ->orderBy('d.id', 'desc')
                 ->getQuery()
                 ->getResult();
         }
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getPublishedDrafts()
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $datetime = new \DateTime();
+        $datetime->setTimezone($timezone);
+        $datetime->modify('-1 day');
+
+        return $this->createQueryBuilder('d')
+            ->select('d')
+            ->where('d.published = 1')
+            ->andWhere('d.publishDate < :timestamp')
+            ->setParameters(['timestamp' => $datetime->getTimestamp()])
+            ->getQuery()
+            ->getResult();
     }
 }

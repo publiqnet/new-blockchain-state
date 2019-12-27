@@ -57,6 +57,13 @@ class UserNotification
     private $isSeen = false;
 
     /**
+     * @var bool
+     * @ORM\Column(name="is_special", type="boolean", options={"default": 0})
+     * @Groups({"userNotification"})
+     */
+    private $isSpecial = false;
+
+    /**
      * @return int
      */
     public function getId(): int
@@ -126,5 +133,21 @@ class UserNotification
     public function setIsSeen(bool $isSeen)
     {
         $this->isSeen = $isSeen;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSpecial(): bool
+    {
+        return $this->isSpecial;
+    }
+
+    /**
+     * @param bool $isSpecial
+     */
+    public function setIsSpecial(bool $isSpecial)
+    {
+        $this->isSpecial = $isSpecial;
     }
 }

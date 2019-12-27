@@ -61,7 +61,7 @@ class BoostedContentUnit
     /**
      * @ORM\Column(type="boolean", nullable=true)
      */
-    private $cancelled;
+    private $cancelled = 0;
 
     /**
      * @ORM\Column(type="integer", nullable=false)

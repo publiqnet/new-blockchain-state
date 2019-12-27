@@ -20,7 +20,7 @@ class NotificationRepository extends EntityRepository
     public function getUserNotifications(Account $account, int $count = 0, int $fromId = 0)
     {
         $query = $this->createQueryBuilder('n')
-            ->select('n, un.isRead, un.id')
+            ->select('n, un.isRead, un.isSpecial, un.id')
             ->join('n.userNotifications', 'un')
             ->where('un.account = :account')
             ->setParameter('account', $account);

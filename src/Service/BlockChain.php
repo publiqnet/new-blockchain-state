@@ -444,7 +444,8 @@ class BlockChain
      * @param string $signature
      * @param string $uri
      * @param string $sponsorAddress
-     * @param $amount
+     * @param $whole
+     * @param $fraction
      * @param int $hours
      * @param int $startTimePoint
      * @param $creationTime
@@ -454,11 +455,11 @@ class BlockChain
      * @return bool|string
      * @throws \Exception
      */
-    public function boostContent($signature, $uri, $sponsorAddress, $amount, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole = 0, $feeFraction = 0)
+    public function boostContent($signature, $uri, $sponsorAddress, $whole, $fraction, $hours, $startTimePoint, $creationTime, $expiryTime, $feeWhole = 0, $feeFraction = 0)
     {
         $coin = new Coin();
-        $coin->setFraction(0);
-        $coin->setWhole($amount);
+        $coin->setFraction($fraction);
+        $coin->setWhole($whole);
 
         $sponsorContentUnit = new SponsorContentUnit();
         $sponsorContentUnit->setUri($uri);

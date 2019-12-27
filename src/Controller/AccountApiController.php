@@ -715,6 +715,25 @@ class AccountApiController extends Controller
         }
         $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
-        return new JsonResponse(['preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles], 'firstArticle' => $firstArticle, 'articleToBoost' => $nonBoostedArticle, 'currentBoostFee' => $fee, 'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors], 'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors]]);
+        //  HIGHLIGHTS
+        $highlights = $em->getRepository(ContentUnit::class)->getBoostedArticlesWithCover(20);
+        if ($highlights) {
+            try {
+                $highlights = $contentUnitService->prepare($highlights, true);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+        $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+
+        return new JsonResponse([
+            'preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles],
+            'firstArticle' => $firstArticle,
+            'articleToBoost' => $nonBoostedArticle,
+            'currentBoostFee' => $fee,
+            'trending' => ['publications' => $trendingPublications, 'authors' => $trendingAuthors],
+            'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors],
+            'highlights' => $highlights
+        ]);
     }
 }
