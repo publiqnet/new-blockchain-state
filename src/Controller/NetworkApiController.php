@@ -10,10 +10,12 @@ namespace App\Controller;
 
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
+use App\Entity\NetworkSupportContent;
 use App\Entity\Reward;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
 /**
@@ -87,5 +89,32 @@ class NetworkApiController extends Controller
         $homeSlider = $this->get('serializer')->normalize($homeSlider, null, ['groups' => ['networkHomeSlider']]);
 
         return new JsonResponse(['content' => $homeContent, 'slider' => $homeSlider]);
+    }
+
+    /**
+     * @Route("/support/{slug}", methods={"GET"}, name="network_support")
+     * @SWG\Get(
+     *     summary="Get Support data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network / Support")
+     * @param $slug
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getSupportContent($slug)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $supportContent = $em->getRepository(NetworkSupportContent::class)->findOneBy(['slug' => $slug]);
+        if ($supportContent) {
+            $supportContent = $this->get('serializer')->normalize($supportContent, null, ['groups' => ['networkSupportContent']]);
+
+            return new JsonResponse($supportContent);
+        }
+
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 }

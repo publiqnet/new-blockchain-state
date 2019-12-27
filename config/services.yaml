@@ -68,3 +68,9 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, label: Contents, group: Home }
         public: true
+    admin.networksupportcontent:
+        class: App\Admin\NetworkSupportContentAdmin
+        arguments: [~, App\Entity\NetworkSupportContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Support, group: Static }
+        public: true
