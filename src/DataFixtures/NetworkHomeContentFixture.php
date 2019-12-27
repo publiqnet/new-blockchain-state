@@ -17,6 +17,7 @@ class NetworkHomeContentFixture extends Fixture implements FixtureGroupInterface
 {
     const items = [
         'users' => 'Users',
+        'creatives' => 'Creatives',
         'channel-nodes' => 'Channel Nodes',
         'blockchain-nodes' => 'Blockchain Nodes',
         'storage-nodes' => 'Storage Nodes',
