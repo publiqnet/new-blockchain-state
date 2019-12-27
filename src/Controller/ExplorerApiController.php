@@ -31,11 +31,13 @@ class ExplorerApiController extends Controller
 {
     /**
      * @Route("/search/{search}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Search for block/account/transaction",
+     * @SWG\Get(
+     *     summary="Search for block / account / transaction",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Search")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param $search
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
@@ -150,11 +152,13 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/blocks/{count}/{fromHash}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns blocks",
+     * @SWG\Get(
+     *     summary="Get blocks (with pagination)",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Block")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param int $count
      * @param string|null $fromHash
      * @return JsonResponse
@@ -207,11 +211,13 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/blocks/{year}/{month}/{day}/{count}/{fromHash}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns blocks for given date",
+     * @SWG\Get(
+     *     summary="Get blocks for given date (with pagination)",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Block")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param int $year
      * @param int $month
      * @param int $day
@@ -267,11 +273,13 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/block/{blockHash}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns given block",
+     * @SWG\Get(
+     *     summary="Get single block",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Block")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param string $blockHash
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
@@ -325,11 +333,13 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/block/{blockHash}/transactions/{from}/{count}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns given block transactions",
+     * @SWG\Get(
+     *     summary="Get given block transactions (with pagination)",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Block")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param string $blockHash
      * @param int $from
      * @param int $count
@@ -360,11 +370,13 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/transaction/{count}/{fromHash}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns transactions",
+     * @SWG\Get(
+     *     summary="Get transactions (with pagination)",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Transaction")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param int $count
      * @param string|null $fromHash
      * @return JsonResponse
@@ -415,11 +427,13 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/transaction/{transactionHash}", methods={"GET"})
-     * @SWG\Response(
-     *     response=200,
-     *     description="Returns transaction by hash",
+     * @SWG\Get(
+     *     summary="Get transaction",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
      * )
-     * @SWG\Tag(name="Explorer / Transaction")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Explorer")
      * @param Transaction $transaction
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
@@ -452,8 +466,8 @@ class ExplorerApiController extends Controller
      *     produces={"application/json"},
      * )
      * @SWG\Response(response=200, description="Success")
-     * @SWG\Response(response=401, description="Unauthorized user")
-     * @SWG\Tag(name="Explorer / Account")
+     * @SWG\Response(response=404, description="Account not found")
+     * @SWG\Tag(name="Explorer")
      * @param string $publicKey
      * @return JsonResponse
      * @throws \Doctrine\ORM\NonUniqueResultException
@@ -522,7 +536,7 @@ class ExplorerApiController extends Controller
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=401, description="Unauthorized user")
-     * @SWG\Tag(name="Explorer / Account")
+     * @SWG\Tag(name="Explorer")
      * @param string $publicKey
      * @param $rtt
      * @param int $count
@@ -574,7 +588,7 @@ class ExplorerApiController extends Controller
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=401, description="Unauthorized user")
-     * @SWG\Tag(name="Explorer / Account")
+     * @SWG\Tag(name="Explorer")
      * @param string $publicKey
      * @param int $count
      * @param int $from

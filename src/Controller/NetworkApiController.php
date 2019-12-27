@@ -8,6 +8,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Block;
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
 use App\Entity\NetworkSupportContent;
@@ -27,7 +28,7 @@ use Symfony\Component\Routing\Annotation\Route;
 class NetworkApiController extends Controller
 {
     /**
-     * @Route("/rewards/{type}", methods={"GET"}, name="network_top_rewards")
+     * @Route("/status", methods={"GET"}, name="network_status")
      * @SWG\Get(
      *     summary="Get rewards stats per day / week / month / lifetime for given type",
      *     consumes={"application/json"},
@@ -35,35 +36,74 @@ class NetworkApiController extends Controller
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Tag(name="Network")
-     * @param string $type
      * @return JsonResponse
      */
-    public function getTopRewards(string $type)
+    public function getTopRewards()
     {
         $em = $this->getDoctrine()->getManager();
 
+        $rewards = [];
+        $miners = [];
+
+        //  REWARDS
+        $rewardTypes = ['author', 'channel', 'miner', 'storage'];
+        foreach ($rewardTypes as $rewardType) {
+            $timezone = new \DateTimeZone('UTC');
+            $date = new \DateTime();
+            $date->setTimezone($timezone);
+
+            //  lifetime
+            $rewards[$rewardType]['lifetime'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType);
+
+            //  last month
+            $date->modify('-1 month');
+            $rewards[$rewardType]['lastMonth'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
+
+            //  last week
+            $date->modify('+1 month');
+            $date->modify('-1 week');
+            $rewards[$rewardType]['lastWeel'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
+
+            //  last day
+            $date->modify('+1 week');
+            $date->modify('-1 day');
+            $rewards[$rewardType]['lastDay'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
+        }
+
+        //  MINERS
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
         $date->setTimezone($timezone);
 
         //  lifetime
-        $rewardSummaryLifetime = $em->getRepository(Reward::class)->getTopRewardsByType($type);
+        $miners['lifetime'] = $em->getRepository(Block::class)->getMiners();
 
         //  last month
         $date->modify('-1 month');
-        $rewardSummaryMonth = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
+        $miners['lastMonth'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
 
         //  last week
         $date->modify('+1 month');
         $date->modify('-1 week');
-        $rewardSummaryWeek = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
+        $miners['lastWeek'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
 
         //  last day
         $date->modify('+1 week');
         $date->modify('-1 day');
-        $rewardSummaryDay = $em->getRepository(Reward::class)->getTopRewardsByType($type, $date->getTimestamp());
+        $miners['lastDay'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
 
-        return new JsonResponse(['lifetime' => $rewardSummaryLifetime, 'month' => $rewardSummaryMonth, 'week' => $rewardSummaryWeek, 'day' => $rewardSummaryDay]);
+        //  PBQ TOTAL SUPPLY
+        //  get last block
+        $lastBlock = $em->getRepository(Block::class)->findOneBy([], ['id' => 'DESC']);
+
+        return new JsonResponse([
+            'rewards' => $rewards,
+            'miners' => $miners,
+            'supply' => [
+                'issued' => ['whole' => 250000000 + $lastBlock->getNumber() * 1000, 'fraction' => 0],
+                'scheduled' => ['whole' => 500000000, 'fraction' => 0],
+            ]
+        ]);
     }
 
     /**

@@ -16,7 +16,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * Class Reward
  * @package App\Entity
  *
- * @ORM\Table(name="reward",indexes={@Index(columns={"block_id"})})
+ * @ORM\Table(name="reward", indexes={@Index(columns={"block_id"}), @Index(columns={"reward_type"})})
  * @ORM\Entity(repositoryClass="App\Repository\RewardRepository")
  */
 class Reward

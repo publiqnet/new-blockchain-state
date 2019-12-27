@@ -44,7 +44,7 @@ class TrackerApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="Not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Tracker / Search")
+     * @SWG\Tag(name="Tracker")
      * @param string $word
      * @param int $count
      * @param $fromUri
@@ -209,7 +209,7 @@ class TrackerApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Tracker / Content")
+     * @SWG\Tag(name="Tracker")
      * @param int $count
      * @param string $fromUri
      * @param Custom $customService
@@ -305,7 +305,7 @@ class TrackerApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Tracker / Content")
+     * @SWG\Tag(name="Tracker")
      * @param Request $request
      * @param string $uri
      * @param Blockchain $blockChain

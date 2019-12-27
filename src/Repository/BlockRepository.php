@@ -132,4 +132,21 @@ class BlockRepository extends EntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * @param int $timestamp
+     * @return mixed
+     */
+    public function getMiners(int $timestamp = 0)
+    {
+        return $this->createQueryBuilder('b')
+            ->select('a.publicKey, count(b) as totalBlocks')
+            ->join('b.account', 'a')
+            ->where('b.signTime > :timestamp')
+            ->setParameters(['timestamp' => $timestamp])
+            ->groupBy('a.publicKey')
+            ->orderBy('totalBlocks', 'desc')
+            ->getQuery()
+            ->getResult();
+    }
 }
