@@ -34,7 +34,7 @@ class NetworkApiController extends Controller
      *     produces={"application/json"},
      * )
      * @SWG\Response(response=200, description="Success")
-     * @SWG\Tag(name="Network / Rewards")
+     * @SWG\Tag(name="Network")
      * @param string $type
      * @return JsonResponse
      */
@@ -74,7 +74,7 @@ class NetworkApiController extends Controller
      *     produces={"application/json"},
      * )
      * @SWG\Response(response=200, description="Success")
-     * @SWG\Tag(name="Network / Home")
+     * @SWG\Tag(name="Network")
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
@@ -99,7 +99,7 @@ class NetworkApiController extends Controller
      *     produces={"application/json"},
      * )
      * @SWG\Response(response=200, description="Success")
-     * @SWG\Tag(name="Network / Support")
+     * @SWG\Tag(name="Network")
      * @param $slug
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
