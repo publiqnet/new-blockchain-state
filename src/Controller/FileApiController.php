@@ -424,4 +424,40 @@ class FileApiController extends Controller
             return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
         }
     }
+
+    /**
+     * @Route("/temp", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Temporary action",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="File")
+     * @param BlockChain $blockChain
+     * @return JsonResponse
+     * @throws Exception
+     */
+    public function tempAction(BlockChain $blockChain)
+    {
+        $fileObj = new \Symfony\Component\HttpFoundation\File\File('uploads/draft/BAkmjmVdJANqH7cGtfjeH5JoBhx1KSYdBXAr2REPiQDN.jpeg');
+        $fileData = file_get_contents($fileObj->getRealPath());
+
+        //  upload file into channel storage
+        $uploadResult = $blockChain->uploadFile($fileData, $fileObj->getMimeType());
+        if ($uploadResult instanceof StorageFileAddress) {
+
+        } elseif ($uploadResult instanceof UriError) {
+            if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
+
+            } else {
+                throw new Exception('File upload error: ' . $uploadResult->getUriProblemType());
+            }
+        } else {
+            throw new Exception('Error type: ' . get_class($uploadResult));
+        }
+
+        return new JsonResponse(null);
+    }
 }
