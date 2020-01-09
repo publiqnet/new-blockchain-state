@@ -516,7 +516,7 @@ class ContentUnitRepository extends EntityRepository
                 from App:ContentUnit cu3 
                 join App:ContentUnitTag cut with cut.contentUnit = cu3
                 where cut.tag in (select tg from App:Tag tg join App:UserPreference up with up.tag = tg where up.account = :user and up.tag is not null) 
-                group by cu3
+                group by cu3.id
             ");
 
         $query = $this->createQueryBuilder('cu');

@@ -195,6 +195,11 @@ class Publication
      */
     private $socialImage;
 
+    /**
+     * @ORM\Column(name="trending_position", type="integer", options={"default":0})
+     */
+    private $trendingPosition = 0;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
@@ -576,5 +581,21 @@ class Publication
     public function setCoverPositionY(int $coverPositionY)
     {
         $this->coverPositionY = $coverPositionY;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTrendingPosition()
+    {
+        return $this->trendingPosition;
+    }
+
+    /**
+     * @param mixed $trendingPosition
+     */
+    public function setTrendingPosition($trendingPosition)
+    {
+        $this->trendingPosition = $trendingPosition;
     }
 }
