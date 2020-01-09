@@ -365,10 +365,33 @@ class ContentUnitRepository extends EntityRepository
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.startTimePoint <= :date')
-            ->andWhere('bcu.cancelled = 0')
             ->andWhere('bcu.endTimePoint >= :date')
             ->andWhere('cu.cover is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameters(['date' => $date->getTimestamp()])
+            ->setMaxResults($count)
+            ->orderBy('RAND()')
+            ->groupBy('cu.id')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param int $count
+     * @return array|null
+     */
+    public function getHighlights(int $count)
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        $query = $this->createQueryBuilder('cu');
+        return $query->select('cu')
+            ->join('cu.boosts', 'bcu')
+            ->where('bcu.startTimePoint <= :date')
+            ->andWhere('bcu.endTimePoint >= :date')
+            ->andWhere('cu.highlight = 1')
             ->setParameters(['date' => $date->getTimestamp()])
             ->setMaxResults($count)
             ->orderBy('RAND()')

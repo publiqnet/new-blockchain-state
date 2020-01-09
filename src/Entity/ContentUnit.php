@@ -193,6 +193,23 @@ class ContentUnit
      */
     private $boostSummary;
 
+    /**
+     * @ORM\Column(name="highlight", type="boolean", options={"default":0})
+     */
+    private $highlight = 0;
+
+    /**
+     * @ORM\Column(name="highlight_background", type="string", nullable=true)
+     * @Groups({"highlight"})
+     */
+    private $highlightBackground;
+
+    /**
+     * @ORM\Column(name="highlight_font", type="string", nullable=true)
+     * @Groups({"highlight"})
+     */
+    private $highlightFont;
+
 
     public function __construct()
     {
@@ -631,5 +648,53 @@ class ContentUnit
     public function setBoostSummary($boostSummary)
     {
         $this->boostSummary = $boostSummary;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHighlightBackground()
+    {
+        return $this->highlightBackground;
+    }
+
+    /**
+     * @param mixed $highlightBackground
+     */
+    public function setHighlightBackground($highlightBackground)
+    {
+        $this->highlightBackground = $highlightBackground;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHighlightFont()
+    {
+        return $this->highlightFont;
+    }
+
+    /**
+     * @param mixed $highlightFont
+     */
+    public function setHighlightFont($highlightFont)
+    {
+        $this->highlightFont = $highlightFont;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isHighlight()
+    {
+        return $this->highlight;
+    }
+
+    /**
+     * @param mixed $highlight
+     */
+    public function setHighlight($highlight)
+    {
+        $this->highlight = $highlight;
     }
 }

@@ -716,7 +716,7 @@ class AccountApiController extends Controller
         $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
         //  HIGHLIGHTS
-        $highlights = $em->getRepository(ContentUnit::class)->getBoostedArticlesWithCover(20);
+        $highlights = $em->getRepository(ContentUnit::class)->getHighlights(20);
         if ($highlights) {
             try {
                 $highlights = $contentUnitService->prepare($highlights, true);
@@ -724,7 +724,7 @@ class AccountApiController extends Controller
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
-        $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'highlight', 'tag', 'file', 'accountBase', 'publication']]);
 
         return new JsonResponse([
             'preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles],
