@@ -11,6 +11,8 @@ namespace App\Controller;
 use App\Entity\Block;
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
+use App\Entity\NetworkPage;
+use App\Entity\NetworkPbqContent;
 use App\Entity\NetworkSupportContent;
 use App\Entity\Reward;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -153,6 +155,49 @@ class NetworkApiController extends Controller
             $supportContent = $this->get('serializer')->normalize($supportContent, null, ['groups' => ['networkSupportContent']]);
 
             return new JsonResponse($supportContent);
+        }
+
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+    }
+
+    /**
+     * @Route("/page/pbq", methods={"GET"}, name="network_page_pbq")
+     * @SWG\Get(
+     *     summary="Get PBQ page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPagePbq()
+    {
+        $em = $this->getDoctrine()->getManager();
+        $networkFilePath = $this->getParameter('network_file_path');
+
+        $pagePbq = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'pbq']);
+        if ($pagePbq) {
+            $pagePbq = $this->get('serializer')->normalize($pagePbq, null, ['groups' => ['networkPage']]);
+
+            /**
+             * @var NetworkPbqContent[] $pbqContents
+             */
+            $pbqContents = $em->getRepository(NetworkPbqContent::class)->findAll();
+            if ($pbqContents) {
+                foreach ($pbqContents as $pbqContent) {
+                    if ($pbqContent->getImage()) {
+                        $pbqContent->setImage($networkFilePath . '/' . $pbqContent->getImage());
+                    }
+                    if ($pbqContent->getImageHover()) {
+                        $pbqContent->setImageHover($networkFilePath . '/' . $pbqContent->getImageHover());
+                    }
+                }
+            }
+            $pbqContents = $this->get('serializer')->normalize($pbqContents, null, ['groups' => ['networkPbqContent']]);
+
+            return new JsonResponse(['main' => $pagePbq, 'contents' => $pbqContents]);
         }
 
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
