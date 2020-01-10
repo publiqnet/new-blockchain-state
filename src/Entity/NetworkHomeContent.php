@@ -68,6 +68,13 @@ class NetworkHomeContent
      */
     protected $slug;
 
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkHomeContent"})
+     */
+    private $route;
+
 
     public function __toString()
     {
@@ -167,5 +174,21 @@ class NetworkHomeContent
     public function setSlug(string $slug)
     {
         $this->slug = $slug;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRoute(): ?string
+    {
+        return $this->route;
+    }
+
+    /**
+     * @param string $route
+     */
+    public function setRoute(string $route)
+    {
+        $this->route = $route;
     }
 }

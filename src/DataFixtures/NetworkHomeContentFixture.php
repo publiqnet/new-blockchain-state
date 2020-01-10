@@ -16,12 +16,12 @@ use Doctrine\Common\Persistence\ObjectManager;
 class NetworkHomeContentFixture extends Fixture implements FixtureGroupInterface
 {
     const items = [
-        'users' => 'Users',
-        'creatives' => 'Creatives',
-        'channel-nodes' => 'Channel Nodes',
-        'blockchain-nodes' => 'Blockchain Nodes',
-        'storage-nodes' => 'Storage Nodes',
-        'advertisers' => 'Advertisers'
+        'users' => ['title' => 'Users', 'route' => 'showcase'],
+        'creatives' => ['title' => 'Creatives', 'route' => 'showcase'],
+        'channel-nodes' => ['title' => 'Channel Nodes', 'route' => 'docs'],
+        'blockchain-nodes' => ['title' => 'Blockchain Nodes', 'route' => 'docs'],
+        'storage-nodes' => ['title' => 'Storage Nodes', 'route' => 'docs'],
+        'advertisers' => ['title' => 'Advertisers', 'route' => 'showcase']
     ];
 
     public static function getGroups(): array
@@ -43,7 +43,8 @@ class NetworkHomeContentFixture extends Fixture implements FixtureGroupInterface
                 $networkHomeContentObj = new NetworkHomeContent();
 
                 $networkHomeContentObj->setSlug($key);
-                $networkHomeContentObj->setTitle($content);
+                $networkHomeContentObj->setTitle($content['title']);
+                $networkHomeContentObj->setRoute($content['route']);
 
                 $manager->persist($networkHomeContentObj);
             }
