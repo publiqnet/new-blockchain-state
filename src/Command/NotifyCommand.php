@@ -111,7 +111,6 @@ class NotifyCommand extends ContainerAwareCommand
         $articles = $this->em->getRepository(ContentUnit::class)->getArticleAfterDate($datetime);
         if ($articles) {
             foreach ($articles as $article) {
-                echo $article->getUri() . PHP_EOL;
                 // notify subscribed users
                 $this->getContainer()->get('event_dispatcher')->dispatch(
                     ArticleNewEvent::NAME,

@@ -13,6 +13,7 @@ use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\Publication;
 use App\Entity\Subscription;
+use App\Event\SubscribeUserEvent;
 use App\Service\Oauth;
 use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
@@ -488,6 +489,12 @@ class AccountApiController extends Controller
 
             $em->persist($subscription);
             $em->flush();
+
+            // notify author
+            $this->container->get('event_dispatcher')->dispatch(
+                SubscribeUserEvent::NAME,
+                new SubscribeUserEvent($account, $author)
+            );
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

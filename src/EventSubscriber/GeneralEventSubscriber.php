@@ -24,6 +24,7 @@ use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
+use App\Event\SubscribeUserEvent;
 use App\Event\UserPreferenceEvent;
 use App\Service\UserNotification;
 use Doctrine\ORM\EntityManager;
@@ -84,6 +85,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             PublicationMembershipLeaveEvent::NAME => 'onPublicationMembershipLeaveEvent',
             UserPreferenceEvent::NAME => 'onUserPreferenceEvent',
             ArticleNewEvent::NAME => 'onArticleNewEvent',
+            SubscribeUserEvent::NAME => 'onSubscribeUserEvent',
         ];
     }
 
@@ -312,7 +314,23 @@ class GeneralEventSubscriber implements EventSubscriberInterface
                 }
             }
         } catch (\Throwable $e) {
-            echo $e->getMessage();exit();
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param SubscribeUserEvent $event
+     */
+    public function onSubscribeUserEvent(SubscribeUserEvent $event)
+    {
+        try {
+            $performer = $event->getPerformer();
+            $author = $event->getAuthor();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['subscribe_user']['key'], $performer, "New subscription");
+            $this->userNotificationService->notify($author, $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
         }
     }
 
