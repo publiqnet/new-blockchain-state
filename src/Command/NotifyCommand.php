@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\ContentUnit;
 use App\Entity\IndexNumber;
 use App\Event\ArticleNewEvent;
+use App\Event\ArticleShareEvent;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -111,6 +112,12 @@ class NotifyCommand extends ContainerAwareCommand
         $articles = $this->em->getRepository(ContentUnit::class)->getArticleAfterDate($datetime);
         if ($articles) {
             foreach ($articles as $article) {
+                // notify author to share
+                $this->getContainer()->get('event_dispatcher')->dispatch(
+                    ArticleShareEvent::NAME,
+                    new ArticleShareEvent($article)
+                );
+
                 // notify subscribed users
                 $this->getContainer()->get('event_dispatcher')->dispatch(
                     ArticleNewEvent::NAME,

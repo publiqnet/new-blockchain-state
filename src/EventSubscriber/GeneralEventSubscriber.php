@@ -14,6 +14,7 @@ use App\Entity\NotificationType;
 use App\Entity\Subscription;
 use App\Entity\UserPreference;
 use App\Event\ArticleNewEvent;
+use App\Event\ArticleShareEvent;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
@@ -85,6 +86,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             PublicationMembershipLeaveEvent::NAME => 'onPublicationMembershipLeaveEvent',
             UserPreferenceEvent::NAME => 'onUserPreferenceEvent',
             ArticleNewEvent::NAME => 'onArticleNewEvent',
+            ArticleShareEvent::NAME => 'onArticleShareEvent',
             SubscribeUserEvent::NAME => 'onSubscribeUserEvent',
         ];
     }
@@ -313,6 +315,21 @@ class GeneralEventSubscriber implements EventSubscriberInterface
                     $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
                 }
             }
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param ArticleShareEvent $event
+     */
+    public function onArticleShareEvent(ArticleShareEvent $event)
+    {
+        try {
+            $article = $event->getArticle();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['share_article']['key'], null, $article->getUri());
+            $this->userNotificationService->notify($article->getAuthor(), $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }
