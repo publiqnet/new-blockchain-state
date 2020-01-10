@@ -75,6 +75,13 @@ class NetworkHomeContent
      */
     private $route;
 
+    /**
+     * @var string
+     * @ORM\Column(type="string")
+     * @Groups({"networkHomeContent"})
+     */
+    private $routeTitle;
+
 
     public function __toString()
     {
@@ -190,5 +197,21 @@ class NetworkHomeContent
     public function setRoute(string $route)
     {
         $this->route = $route;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRouteTitle(): ?string
+    {
+        return $this->routeTitle;
+    }
+
+    /**
+     * @param string $routeTitle
+     */
+    public function setRouteTitle(string $routeTitle)
+    {
+        $this->routeTitle = $routeTitle;
     }
 }

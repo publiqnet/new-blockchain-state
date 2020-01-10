@@ -30,7 +30,8 @@ class NetworkHomeContentAdmin extends AbstractAdmin
             ->add('title', TextType::class)
             ->add('content', CKEditorType::class, [
                 'config' => ['uiColor' => '#ffffff', 'toolbar' => [['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'Bold', 'Italic', 'Underline', '-', 'Undo', 'Redo', '-', 'Link', 'Unlink', '-', 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Format', 'Styles', 'Source', 'Maximize']]]
-            ]);
+            ])
+            ->add('routeTitle', TextType::class, ['label' => 'Link name']);
     }
 
     protected function configureDatagridFilters(DatagridMapper $datagridMapper)
