@@ -500,7 +500,7 @@ class Custom
 
             //  create instance of ImageWorkshop from cover
             $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
-            $coverWorkshop->resizeInPixel(300, null, true);
+            $coverWorkshop->resizeInPixel(600, null, true);
             $coverWorkshop->save($imagePath, $imageName, false, null, 80);
 
             if (isset($tempImage)) {

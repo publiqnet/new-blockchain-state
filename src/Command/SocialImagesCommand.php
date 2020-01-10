@@ -2,12 +2,13 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 10/11/19
- * Time: 11:40 AM
+ * Date: 1/8/20
+ * Time: 7:40 PM
  */
 
 namespace App\Command;
 
+use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -17,11 +18,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class PublicationSocialImageCommand extends ContainerAwareCommand
+class SocialImagesCommand extends ContainerAwareCommand
 {
     use LockableTrait;
 
-    protected static $defaultName = 'state:publication-social-images';
+    protected static $defaultName = 'state:social-images';
 
     /** @var \App\Service\Custom $customService */
     private $customService;
@@ -42,7 +43,7 @@ class PublicationSocialImageCommand extends ContainerAwareCommand
 
     protected function configure()
     {
-        $this->setDescription('Create social images for publications');
+        $this->setDescription('Create social images for articles & publications');
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
@@ -70,12 +71,26 @@ class PublicationSocialImageCommand extends ContainerAwareCommand
         }
 
         /**
+         * @var ContentUnit[] $contentUnits
+         */
+        $contentUnits = $this->em->getRepository(ContentUnit::class)->findBy(['updateSocialImage' => true]);
+        if ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                if (!$contentUnit->getContent() || !$contentUnit->getTransaction()->getBlock()) {
+                    continue;
+                }
+
+                $this->customService->createSocialImageOfArticle($contentUnit, getcwd() . '/public/');
+            }
+        }
+
+        /**
          * @var Publication $publications[]
          */
         $publications = $this->em->getRepository(Publication::class)->findBy(['socialImage' => null]);
         if ($publications) {
             foreach ($publications as $publication) {
-                $this->customService->createSocialImageOfPublication($publication, 'public/');
+                $this->customService->createSocialImageOfPublication($publication, getcwd() . '/public/');
             }
         }
 

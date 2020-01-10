@@ -266,6 +266,11 @@ class Account implements UserInterface
      */
     private $subscribersCount;
 
+    /**
+     * @ORM\Column(name="trending_position", type="integer", options={"default":0})
+     */
+    private $trendingPosition = 0;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -815,5 +820,21 @@ class Account implements UserInterface
     public function setSubscribersCount(int $subscribersCount)
     {
         $this->subscribersCount = $subscribersCount;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTrendingPosition()
+    {
+        return $this->trendingPosition;
+    }
+
+    /**
+     * @param mixed $trendingPosition
+     */
+    public function setTrendingPosition($trendingPosition)
+    {
+        $this->trendingPosition = $trendingPosition;
     }
 }

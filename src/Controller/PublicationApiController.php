@@ -107,8 +107,12 @@ class PublicationApiController extends Controller
             $publication->setDescription($description);
             $publication->setListView($listView);
             $publication->setHideCover($hideCover);
-            $publication->setCoverPositionX($coverPositionX);
-            $publication->setCoverPositionY($coverPositionY);
+            if ($coverPositionX) {
+                $publication->setCoverPositionX($coverPositionX);
+            }
+            if ($coverPositionY) {
+                $publication->setCoverPositionY($coverPositionY);
+            }
 
             //  relate with Tags
             if ($tags) {
@@ -271,8 +275,12 @@ class PublicationApiController extends Controller
             $publication->setDescription($description);
             $publication->setListView($listView);
             $publication->setHideCover($hideCover);
-            $publication->setCoverPositionX($coverPositionX);
-            $publication->setCoverPositionY($coverPositionY);
+            if ($coverPositionX) {
+                $publication->setCoverPositionX($coverPositionX);
+            }
+            if ($coverPositionY) {
+                $publication->setCoverPositionY($coverPositionY);
+            }
 
             //  delete tag relation
             $publication->removeAllTags();

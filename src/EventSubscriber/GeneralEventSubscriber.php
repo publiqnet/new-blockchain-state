@@ -11,7 +11,10 @@ namespace App\EventSubscriber;
 use App\Entity\Account;
 use App\Entity\ContentUnitTag;
 use App\Entity\NotificationType;
+use App\Entity\Subscription;
 use App\Entity\UserPreference;
+use App\Event\ArticleNewEvent;
+use App\Event\ArticleShareEvent;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
@@ -22,6 +25,7 @@ use App\Event\PublicationMembershipRequestAcceptEvent;
 use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
+use App\Event\SubscribeUserEvent;
 use App\Event\UserPreferenceEvent;
 use App\Service\UserNotification;
 use Doctrine\ORM\EntityManager;
@@ -81,6 +85,9 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             PublicationMembershipCancelEvent::NAME => 'onPublicationMembershipCancelEvent',
             PublicationMembershipLeaveEvent::NAME => 'onPublicationMembershipLeaveEvent',
             UserPreferenceEvent::NAME => 'onUserPreferenceEvent',
+            ArticleNewEvent::NAME => 'onArticleNewEvent',
+            ArticleShareEvent::NAME => 'onArticleShareEvent',
+            SubscribeUserEvent::NAME => 'onSubscribeUserEvent',
         ];
     }
 
@@ -282,6 +289,63 @@ class GeneralEventSubscriber implements EventSubscriberInterface
 
             $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['publication_membership_cancelled_by_user']['key'], $performer, 'Membership cancelled by User', $publication);
             $this->userNotificationService->notify($publicationOwner, $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param ArticleNewEvent $event
+     */
+    public function onArticleNewEvent(ArticleNewEvent $event)
+    {
+        try {
+            $publisher = $event->getPublisher();
+            $article = $event->getArticle();
+
+            //  get subscribers
+            /**
+             * @var Subscription[] $subscribers
+             */
+            $subscribers = $publisher->getSubscribers();
+            if (count($subscribers)) {
+                $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['new_article']['key'], $publisher, $article->getUri());
+
+                foreach ($subscribers as $subscriber) {
+                    $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param ArticleShareEvent $event
+     */
+    public function onArticleShareEvent(ArticleShareEvent $event)
+    {
+        try {
+            $article = $event->getArticle();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['share_article']['key'], null, $article->getUri());
+            $this->userNotificationService->notify($article->getAuthor(), $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param SubscribeUserEvent $event
+     */
+    public function onSubscribeUserEvent(SubscribeUserEvent $event)
+    {
+        try {
+            $performer = $event->getPerformer();
+            $author = $event->getAuthor();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['subscribe_user']['key'], $performer, "New subscription");
+            $this->userNotificationService->notify($author, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }

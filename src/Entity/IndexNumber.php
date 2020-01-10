@@ -25,6 +25,11 @@ class IndexNumber
     protected $id;
 
     /**
+     * @ORM\Column(name="last_notify_time", type="integer")
+     */
+    private $lastNotifyTime;
+
+    /**
      * @return mixed
      */
     public function getId()
@@ -38,5 +43,21 @@ class IndexNumber
     public function setId($id)
     {
         $this->id = $id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLastNotifyTime()
+    {
+        return $this->lastNotifyTime;
+    }
+
+    /**
+     * @param mixed $lastNotifyTime
+     */
+    public function setLastNotifyTime($lastNotifyTime)
+    {
+        $this->lastNotifyTime = $lastNotifyTime;
     }
 }

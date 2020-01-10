@@ -63,14 +63,17 @@ class UserNotification
     /**
      * @param Account $user
      * @param Notification $notification
+     * @param bool $special
      * @return \App\Entity\UserNotification
      * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function notify(Account $user, Notification $notification)
+    public function notify(Account $user, Notification $notification, bool $special = false)
     {
         $userNotification = new UN();
         $userNotification->setAccount($user);
         $userNotification->setNotification($notification);
+        $userNotification->setIsSpecial($special);
 
         $this->em->persist($userNotification);
         $this->em->flush();

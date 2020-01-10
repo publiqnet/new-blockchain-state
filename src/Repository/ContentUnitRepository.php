@@ -365,10 +365,33 @@ class ContentUnitRepository extends EntityRepository
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.startTimePoint <= :date')
-            ->andWhere('bcu.cancelled = 0')
             ->andWhere('bcu.endTimePoint >= :date')
             ->andWhere('cu.cover is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameters(['date' => $date->getTimestamp()])
+            ->setMaxResults($count)
+            ->orderBy('RAND()')
+            ->groupBy('cu.id')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @param int $count
+     * @return array|null
+     */
+    public function getHighlights(int $count)
+    {
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        $query = $this->createQueryBuilder('cu');
+        return $query->select('cu')
+            ->join('cu.boosts', 'bcu')
+            ->where('bcu.startTimePoint <= :date')
+            ->andWhere('bcu.endTimePoint >= :date')
+            ->andWhere('cu.highlight = 1')
             ->setParameters(['date' => $date->getTimestamp()])
             ->setMaxResults($count)
             ->orderBy('RAND()')
@@ -516,7 +539,7 @@ class ContentUnitRepository extends EntityRepository
                 from App:ContentUnit cu3 
                 join App:ContentUnitTag cut with cut.contentUnit = cu3
                 where cut.tag in (select tg from App:Tag tg join App:UserPreference up with up.tag = tg where up.account = :user and up.tag is not null) 
-                group by cu3
+                group by cu3.id
             ");
 
         $query = $this->createQueryBuilder('cu');
@@ -670,5 +693,29 @@ class ContentUnitRepository extends EntityRepository
             ->orderBy('RAND()')
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    /**
+     * @param int $datetime
+     * @return array|null
+     */
+    public function getArticleAfterDate(int $datetime)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->groupBy('cu2.contentId');
+
+        $query = $this->createQueryBuilder('cu');
+        return $query->select('cu, a')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('t.timeSigned > :datetime')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameters(['datetime' => $datetime])
+            ->getQuery()
+            ->getResult();
     }
 }

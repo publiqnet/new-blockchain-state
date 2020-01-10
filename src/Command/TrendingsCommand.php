@@ -2,13 +2,14 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 11/27/19
- * Time: 5:22 PM
+ * Date: 1/8/20
+ * Time: 7:54 PM
  */
 
 namespace App\Command;
 
-use App\Entity\ContentUnit;
+use App\Entity\Account;
+use App\Entity\Publication;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -18,13 +19,13 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class TempCommand extends ContainerAwareCommand
+class TrendingsCommand extends ContainerAwareCommand
 {
     const ACTION_COUNT = 5000;
 
     use LockableTrait;
 
-    protected static $defaultName = 'state:temp';
+    protected static $defaultName = 'state:update-trending';
 
     /** @var \App\Service\BlockChain $blockChainService */
     private $blockChainService;
@@ -52,7 +53,7 @@ class TempCommand extends ContainerAwareCommand
 
     protected function configure()
     {
-        $this->setDescription('Temporary command to set highlight articles');
+        $this->setDescription('Command to update trending status for authors & publications');
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
@@ -69,6 +70,8 @@ class TempCommand extends ContainerAwareCommand
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Exception
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -79,15 +82,41 @@ class TempCommand extends ContainerAwareCommand
             return 0;
         }
 
+        //  AUTHOR
+        $query = $this->em->getRepository(Account::class)->createQueryBuilder('a')->update()->set('a.trendingPosition', 0)->getQuery();
+        $query->execute();
+
         /**
-         * @var ContentUnit[] $articles
+         * @var Account[] $trendingAuthors
          */
-        $articles = $this->em->getRepository(ContentUnit::class)->getBoostedArticlesWithCover(9999);
-        if ($articles) {
-            foreach ($articles as $article) {
-                $article->setHighlight(true);
-                $article->setHighlightFont('Vollkorn');
-                $this->em->persist($article);
+        $trendingAuthors = $this->em->getRepository(Account::class)->getTrendingAuthors(32);
+        if ($trendingAuthors) {
+            $i = 32;
+            foreach ($trendingAuthors as $trendingAuthor) {
+                $trendingAuthor->setTrendingPosition($i);
+                $this->em->persist($trendingAuthor);
+
+                $i--;
+            }
+
+            $this->em->flush();
+        }
+
+        //  PUBLICATION
+        $query = $this->em->getRepository(Publication::class)->createQueryBuilder('p')->update()->set('p.trendingPosition', 0)->getQuery();
+        $query->execute();
+
+        /**
+         * @var Publication[] $trendingPublications
+         */
+        $trendingPublications = $this->em->getRepository(Publication::class)->getTrendingPublications(32);
+        if ($trendingPublications) {
+            $i = 32;
+            foreach ($trendingPublications as $trendingPublication) {
+                $trendingPublication->setTrendingPosition($i);
+                $this->em->persist($trendingPublication);
+
+                $i--;
             }
 
             $this->em->flush();

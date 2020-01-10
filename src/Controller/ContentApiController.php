@@ -1256,6 +1256,95 @@ class ContentApiController extends Controller
     }
 
     /**
+     * @Route("-highlight", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Highlight content",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="uri", type="string"),
+     *             @SWG\Property(property="background", type="string"),
+     *             @SWG\Property(property="font", type="string")
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function boostHighlight(Request $request)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
+        }
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $content = json_decode($content, true);
+
+            $uri = $content['uri'];
+            $background = $content['background'];
+            $font = $content['font'];
+        } else {
+            $uri = $request->request->get('uri');
+            $background = $request->request->get('background');
+            $font = $request->request->get('font');
+        }
+
+        try {
+            $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+            if (!$contentUnit) {
+                return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+            }
+
+            if ($contentUnit->getAuthor() != $account) {
+                return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+            }
+
+            //  font is required
+            if (!$font) {
+                return new JsonResponse(['type' => 'highlight_font_required'], Response::HTTP_CONFLICT);
+            }
+
+            //  background is required if article has no cover
+            if (!$background && !$contentUnit->getCover()) {
+                return new JsonResponse(['type' => 'highlight_background_required'], Response::HTTP_CONFLICT);
+            }
+
+            $contentUnit->setHighlight(true);
+            $contentUnit->setHighlightBackground($background);
+            $contentUnit->setHighlightFont($font);
+            $em->persist($contentUnit);
+            $em->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
      * @Route("-boost-cancel", methods={"POST"})
      * @SWG\Post(
      *     summary="Cancel boosted content",

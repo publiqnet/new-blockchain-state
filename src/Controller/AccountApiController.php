@@ -13,6 +13,7 @@ use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\Publication;
 use App\Entity\Subscription;
+use App\Event\SubscribeUserEvent;
 use App\Service\Oauth;
 use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
@@ -488,6 +489,12 @@ class AccountApiController extends Controller
 
             $em->persist($subscription);
             $em->flush();
+
+            // notify author
+            $this->container->get('event_dispatcher')->dispatch(
+                SubscribeUserEvent::NAME,
+                new SubscribeUserEvent($account, $author)
+            );
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -611,8 +618,8 @@ class AccountApiController extends Controller
             if ($recommendedPublications) {
                 foreach ($recommendedPublications as $publication) {
                     //  get subscribers
-                    $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
-                    $publication->setSubscribersCount(count($subscribers));
+                    $subscribersCount = $em->getRepository(Account::class)->getPublicationSubscribersCount($publication);
+                    $publication->setSubscribersCount($subscribersCount[0]['totalCount']);
 
                     $publication->setMembersCount(count($publication->getMembers()));
 
@@ -635,8 +642,8 @@ class AccountApiController extends Controller
             if ($recommendedAuthors) {
                 foreach ($recommendedAuthors as $author) {
                     //  get subscribers
-                    $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author);
-                    $author->setSubscribersCount(count($subscribers));
+                    $subscribersCount = $em->getRepository(Account::class)->getAuthorSubscribersCount($author);
+                    $author->setSubscribersCount($subscribersCount[0]['totalCount']);
 
                     //  check if user subscribed to author
                     $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
@@ -673,7 +680,7 @@ class AccountApiController extends Controller
         /**
          * @var Publication[] $trendingPublications
          */
-        $trendingPublications = $em->getRepository(Publication::class)->getTrendingPublications(16);
+        $trendingPublications = $em->getRepository(Publication::class)->findBy([], ['trendingPosition' => 'DESC'], 16);
         if ($trendingPublications) {
             foreach ($trendingPublications as $publication) {
                 //  get subscribers
@@ -697,7 +704,7 @@ class AccountApiController extends Controller
         /**
          * @var Account[] $trendingAuthors
          */
-        $trendingAuthors = $em->getRepository(Account::class)->getTrendingAuthors(16);
+        $trendingAuthors = $em->getRepository(Account::class)->findBy([], ['trendingPosition' => 'DESC'], 16);
         if ($trendingAuthors) {
             foreach ($trendingAuthors as $author) {
                 //  get subscribers
@@ -716,7 +723,7 @@ class AccountApiController extends Controller
         $trendingAuthors = $this->get('serializer')->normalize($trendingAuthors, null, ['groups' => ['accountBase', 'accountSubscribed']]);
 
         //  HIGHLIGHTS
-        $highlights = $em->getRepository(ContentUnit::class)->getBoostedArticlesWithCover(20);
+        $highlights = $em->getRepository(ContentUnit::class)->getHighlights(20);
         if ($highlights) {
             try {
                 $highlights = $contentUnitService->prepare($highlights, true);
@@ -724,7 +731,7 @@ class AccountApiController extends Controller
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
-        $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'highlight', 'tag', 'file', 'accountBase', 'publication']]);
 
         return new JsonResponse([
             'preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles],
