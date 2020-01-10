@@ -11,7 +11,9 @@ namespace App\EventSubscriber;
 use App\Entity\Account;
 use App\Entity\ContentUnitTag;
 use App\Entity\NotificationType;
+use App\Entity\Subscription;
 use App\Entity\UserPreference;
+use App\Event\ArticleNewEvent;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
@@ -81,6 +83,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             PublicationMembershipCancelEvent::NAME => 'onPublicationMembershipCancelEvent',
             PublicationMembershipLeaveEvent::NAME => 'onPublicationMembershipLeaveEvent',
             UserPreferenceEvent::NAME => 'onUserPreferenceEvent',
+            ArticleNewEvent::NAME => 'onArticleNewEvent',
         ];
     }
 
@@ -284,6 +287,32 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $this->userNotificationService->notify($publicationOwner, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param ArticleNewEvent $event
+     */
+    public function onArticleNewEvent(ArticleNewEvent $event)
+    {
+        try {
+            $publisher = $event->getPublisher();
+            $article = $event->getArticle();
+
+            //  get subscribers
+            /**
+             * @var Subscription[] $subscribers
+             */
+            $subscribers = $publisher->getSubscribers();
+            if (count($subscribers)) {
+                $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['new_article']['key'], $publisher, $article->getUri());
+
+                foreach ($subscribers as $subscriber) {
+                    $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
+                }
+            }
+        } catch (\Throwable $e) {
+            echo $e->getMessage();exit();
         }
     }
 

@@ -30,3 +30,6 @@
 
 /public/uploads/draft/*
 !/public/uploads/draft/.gitkeep
+
+/public/uploads/network/*
+!/public/uploads/network/.gitkeep

@@ -694,4 +694,28 @@ class ContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * @param int $datetime
+     * @return array|null
+     */
+    public function getArticleAfterDate(int $datetime)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->groupBy('cu2.contentId');
+
+        $query = $this->createQueryBuilder('cu');
+        return $query->select('cu, a')
+            ->join('cu.author', 'a')
+            ->join('cu.transaction', 't')
+            ->where('t.timeSigned > :datetime')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameters(['datetime' => $datetime])
+            ->getQuery()
+            ->getResult();
+    }
 }
