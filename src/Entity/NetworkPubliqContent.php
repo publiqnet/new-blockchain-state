@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 1/9/20
- * Time: 4:44 PM
+ * Date: 1/13/20
+ * Time: 1:47 PM
  */
 
 namespace App\Entity;
@@ -14,12 +14,12 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
- * NetworkPbqContent
+ * NetworkPubliqContent
  *
- * @ORM\Table(name="network_pbq_content")
+ * @ORM\Table(name="network_publiq_content")
  * @ORM\Entity
  */
-class NetworkPbqContent
+class NetworkPubliqContent
 {
     /**
      * @var int

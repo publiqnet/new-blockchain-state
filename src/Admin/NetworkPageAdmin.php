@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 1/9/20
- * Time: 4:17 PM
+ * Date: 1/13/20
+ * Time: 11:38 AM
  */
 
 namespace App\Admin;
@@ -15,8 +15,24 @@ use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Route\RouteCollection;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 
-class NetworkPagePbqAdmin extends AbstractAdmin
+class NetworkPageAdmin extends AbstractAdmin
 {
+    protected $pageType;
+
+    public function getPageType()
+    {
+        return $this->pageType;
+    }
+
+    public function __construct($code, $class, $baseControllerName, $type)
+    {
+        parent::__construct($code, $class, $baseControllerName);
+
+        $this->pageType = $type;
+        $this->baseRouteName = 'admin_type_'.$type;
+        $this->baseRoutePattern = $type.'_page';
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -26,7 +42,7 @@ class NetworkPagePbqAdmin extends AbstractAdmin
         $query->andWhere(
             $query->expr()->eq($query->getRootAliases()[0] . '.slug', ':slug')
         );
-        $query->setParameter('slug', 'pbq');
+        $query->setParameter('slug', $this->pageType);
         return $query;
     }
 

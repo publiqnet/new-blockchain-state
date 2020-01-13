@@ -70,8 +70,8 @@ services:
             - { name: sonata.admin, manager_type: orm, label: Contents, group: Home }
         public: true
     admin.networkpagepbq:
-        class: App\Admin\NetworkPagePbqAdmin
-        arguments: [~, App\Entity\NetworkPage, ~]
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'pbq']
         tags:
             - { name: sonata.admin, manager_type: orm, label: Main, group: PBQ }
         public: true
@@ -80,6 +80,24 @@ services:
         arguments: [~, App\Entity\NetworkPbqContent, ~]
         tags:
             - { name: sonata.admin, manager_type: orm, label: Contents, group: PBQ }
+        public: true
+    admin.networkpagepubliq:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'publiq']
+        tags:
+        - { name: sonata.admin, manager_type: orm, label: Main, group: PUBLIQ }
+        public: true
+    admin.networkpagepubliqdaemon:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'publiq_daemon']
+        tags:
+        - { name: sonata.admin, manager_type: orm, label: Daemon, group: PUBLIQ }
+        public: true
+    admin.networkpubliqcontent:
+        class: App\Admin\NetworkPubliqContentAdmin
+        arguments: [~, App\Entity\NetworkPubliqContent, ~]
+        tags:
+        - { name: sonata.admin, manager_type: orm, label: Contents, group: PUBLIQ }
         public: true
     admin.networksupportcontent:
         class: App\Admin\NetworkSupportContentAdmin

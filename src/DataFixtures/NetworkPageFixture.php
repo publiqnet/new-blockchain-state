@@ -16,7 +16,9 @@ use Doctrine\Common\Persistence\ObjectManager;
 class NetworkPageFixture extends Fixture implements FixtureGroupInterface
 {
     const items = [
-        'pbq' => 'PBQ Utility token'
+        'pbq' => 'PBQ Utility token',
+        'publiq' => 'PUBLIQ Network',
+        'publiq_daemon' => 'PUBLIQ Daemon',
     ];
 
     public static function getGroups(): array
