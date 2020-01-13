@@ -137,7 +137,7 @@ class NetworkPage
     /**
      * @param string $content
      */
-    public function setContent(string $content)
+    public function setContent(?string $content)
     {
         $this->content = $content;
     }
@@ -208,7 +208,7 @@ class NetworkPage
     /**
      * @param string $githubLinkTitle
      */
-    public function setGithubLinkTitle(string $githubLinkTitle)
+    public function setGithubLinkTitle(?string $githubLinkTitle)
     {
         $this->githubLinkTitle = $githubLinkTitle;
     }
@@ -224,7 +224,7 @@ class NetworkPage
     /**
      * @param string $githubLink
      */
-    public function setGithubLink(string $githubLink)
+    public function setGithubLink(?string $githubLink)
     {
         $this->githubLink = $githubLink;
     }
@@ -240,7 +240,7 @@ class NetworkPage
     /**
      * @param string $dockerLinkTitle
      */
-    public function setDockerLinkTitle(string $dockerLinkTitle)
+    public function setDockerLinkTitle(?string $dockerLinkTitle)
     {
         $this->dockerLinkTitle = $dockerLinkTitle;
     }
@@ -256,7 +256,7 @@ class NetworkPage
     /**
      * @param string $dockerLink
      */
-    public function setDockerLink(string $dockerLink)
+    public function setDockerLink(?string $dockerLink)
     {
         $this->dockerLink = $dockerLink;
     }
