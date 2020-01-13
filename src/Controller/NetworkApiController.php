@@ -69,7 +69,7 @@ class NetworkApiController extends Controller
             //  last week
             $date->modify('+1 month');
             $date->modify('-1 week');
-            $rewards[$rewardType]['lastWeel'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
+            $rewards[$rewardType]['lastWeek'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
 
             //  last day
             $date->modify('+1 week');
@@ -133,7 +133,7 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastWeel'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
 
         //  last day
         $date->modify('+1 week');
