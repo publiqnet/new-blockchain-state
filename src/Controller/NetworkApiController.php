@@ -8,6 +8,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
@@ -40,6 +41,8 @@ class NetworkApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Tag(name="Network")
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \Doctrine\ORM\NonUniqueResultException
      */
     public function getTopRewards()
     {
@@ -47,6 +50,7 @@ class NetworkApiController extends Controller
 
         $rewards = [];
         $miners = [];
+        $channels = [];
 
         //  REWARDS
         $rewardTypes = ['author', 'channel', 'miner', 'storage'];
@@ -99,9 +103,52 @@ class NetworkApiController extends Controller
         //  get last block
         $lastBlock = $em->getRepository(Block::class)->findOneBy([], ['id' => 'DESC']);
 
+        //  CHANNELS
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        //  lifetime
+        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary();
+        foreach ($channelsRes as $channelsResSingle) {
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle);
+            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+        }
+        $channels['lifetime'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+
+        //  last month
+        $date->modify('-1 month');
+        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary($date->getTimestamp());
+        foreach ($channelsRes as $channelsResSingle) {
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
+            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+        }
+        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+
+        //  last week
+        $date->modify('+1 month');
+        $date->modify('-1 week');
+        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary($date->getTimestamp());
+        foreach ($channelsRes as $channelsResSingle) {
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
+            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+        }
+        $channels['lastWeel'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+
+        //  last day
+        $date->modify('+1 week');
+        $date->modify('-1 day');
+        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary($date->getTimestamp());
+        foreach ($channelsRes as $channelsResSingle) {
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
+            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+        }
+        $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+
         return new JsonResponse([
             'rewards' => $rewards,
             'miners' => $miners,
+            'channels' => $channels,
             'supply' => [
                 'issued' => ['whole' => 250000000 + $lastBlock->getNumber() * 1000, 'fraction' => 0],
                 'scheduled' => ['whole' => 500000000, 'fraction' => 0],

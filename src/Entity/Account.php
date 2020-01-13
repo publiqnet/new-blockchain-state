@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="account")
- * @ORM\Entity()
+ * @ORM\Entity(repositoryClass="App\Repository\AccountRepository")
  */
 class Account
 {
@@ -31,7 +31,7 @@ class Account
     /**
      * @var string
      * @ORM\Column(name="public_key", type="string", length=128, nullable=false, unique=true)
-     * @Groups({"explorerAccountLight", "explorerAccount", "trackerAccountLight"})
+     * @Groups({"explorerAccountLight", "explorerAccount", "trackerAccountLight", "networkAccountLight"})
      */
     private $publicKey;
 
@@ -60,6 +60,7 @@ class Account
     /**
      * @var string
      * @ORM\Column(type="string", length=64, nullable=true)
+     * @Groups({"networkAccountLight"})
      */
     private $url;
 
@@ -142,6 +143,18 @@ class Account
      * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatistics", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $serviceStatistics;
+
+    /**
+     * @var int
+     * @Groups({"networkAccountLight"})
+     */
+    private $publishedContentsCount;
+
+    /**
+     * @var int
+     * @Groups({"networkAccountLight"})
+     */
+    private $contributorsCount;
 
     public function __construct()
     {
@@ -422,5 +435,37 @@ class Account
     public function getBoostedContentUnits()
     {
         return $this->boostedContentUnits;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPublishedContentsCount()
+    {
+        return $this->publishedContentsCount;
+    }
+
+    /**
+     * @param int $publishedContentsCount
+     */
+    public function setPublishedContentsCount(int $publishedContentsCount)
+    {
+        $this->publishedContentsCount = $publishedContentsCount;
+    }
+
+    /**
+     * @return int
+     */
+    public function getContributorsCount()
+    {
+        return $this->contributorsCount;
+    }
+
+    /**
+     * @param int $contributorsCount
+     */
+    public function setContributorsCount(int $contributorsCount)
+    {
+        $this->contributorsCount = $contributorsCount;
     }
 }
