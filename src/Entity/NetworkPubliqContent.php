@@ -33,7 +33,7 @@ class NetworkPubliqContent
     /**
      * @var string
      * @ORM\Column(type="string")
-     * @Groups({"networkPbqContent"})
+     * @Groups({"networkPubliqContent"})
      * @Assert\NotBlank()
      */
     private $title;
@@ -41,28 +41,28 @@ class NetworkPubliqContent
     /**
      * @var string
      * @ORM\Column(type="text", nullable=true)
-     * @Groups({"networkPbqContent"})
+     * @Groups({"networkPubliqContent"})
      */
     private $content;
 
     /**
      * @var string
      * @ORM\Column(type="string", nullable=true)
-     * @Groups({"networkPbqContent"})
+     * @Groups({"networkPubliqContent"})
      */
     private $link;
 
     /**
      * @var string
      * @ORM\Column(type="string", nullable=true)
-     * @Groups({"networkPbqContent"})
+     * @Groups({"networkPubliqContent"})
      */
     private $image;
 
     /**
      * @var string
      * @ORM\Column(type="string", nullable=true)
-     * @Groups({"networkPbqContent"})
+     * @Groups({"networkPubliqContent"})
      */
     private $imageHover;
 

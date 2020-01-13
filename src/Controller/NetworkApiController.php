@@ -13,6 +13,7 @@ use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
 use App\Entity\NetworkPage;
 use App\Entity\NetworkPbqContent;
+use App\Entity\NetworkPubliqContent;
 use App\Entity\NetworkSupportContent;
 use App\Entity\Reward;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -178,28 +179,66 @@ class NetworkApiController extends Controller
         $networkFilePath = $this->getParameter('network_file_path');
 
         $pagePbq = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'pbq']);
-        if ($pagePbq) {
-            $pagePbq = $this->get('serializer')->normalize($pagePbq, null, ['groups' => ['networkPage']]);
+        $pagePbq = $this->get('serializer')->normalize($pagePbq, null, ['groups' => ['networkPage']]);
 
-            /**
-             * @var NetworkPbqContent[] $pbqContents
-             */
-            $pbqContents = $em->getRepository(NetworkPbqContent::class)->findAll();
-            if ($pbqContents) {
-                foreach ($pbqContents as $pbqContent) {
-                    if ($pbqContent->getImage()) {
-                        $pbqContent->setImage($networkFilePath . '/' . $pbqContent->getImage());
-                    }
-                    if ($pbqContent->getImageHover()) {
-                        $pbqContent->setImageHover($networkFilePath . '/' . $pbqContent->getImageHover());
-                    }
+        /**
+         * @var NetworkPbqContent[] $pbqContents
+         */
+        $pbqContents = $em->getRepository(NetworkPbqContent::class)->findAll();
+        if ($pbqContents) {
+            foreach ($pbqContents as $pbqContent) {
+                if ($pbqContent->getImage()) {
+                    $pbqContent->setImage($networkFilePath . '/' . $pbqContent->getImage());
+                }
+                if ($pbqContent->getImageHover()) {
+                    $pbqContent->setImageHover($networkFilePath . '/' . $pbqContent->getImageHover());
                 }
             }
-            $pbqContents = $this->get('serializer')->normalize($pbqContents, null, ['groups' => ['networkPbqContent']]);
-
-            return new JsonResponse(['main' => $pagePbq, 'contents' => $pbqContents]);
         }
+        $pbqContents = $this->get('serializer')->normalize($pbqContents, null, ['groups' => ['networkPbqContent']]);
 
-        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        return new JsonResponse(['main' => $pagePbq, 'contents' => $pbqContents]);
+    }
+
+    /**
+     * @Route("/page/publiq", methods={"GET"}, name="network_page_publiq")
+     * @SWG\Get(
+     *     summary="Get PUBLIQ page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPagePubliq()
+    {
+        $em = $this->getDoctrine()->getManager();
+        $networkFilePath = $this->getParameter('network_file_path');
+
+        $pagePubliq = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'publiq']);
+        $pagePubliq = $this->get('serializer')->normalize($pagePubliq, null, ['groups' => ['networkPage']]);
+
+        $pagePubliqDaemon = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'publiq_daemon']);
+        $pagePubliqDaemon = $this->get('serializer')->normalize($pagePubliqDaemon, null, ['groups' => ['networkPage']]);
+
+        /**
+         * @var NetworkPbqContent[] $pbqContents
+         */
+        $publiqContents = $em->getRepository(NetworkPubliqContent::class)->findAll();
+        if ($publiqContents) {
+            foreach ($publiqContents as $publiqContent) {
+                if ($publiqContent->getImage()) {
+                    $publiqContent->setImage($networkFilePath . '/' . $publiqContent->getImage());
+                }
+                if ($publiqContent->getImageHover()) {
+                    $publiqContent->setImageHover($networkFilePath . '/' . $publiqContent->getImageHover());
+                }
+            }
+        }
+        $publiqContents = $this->get('serializer')->normalize($publiqContents, null, ['groups' => ['networkPubliqContent']]);
+
+        return new JsonResponse(['main' => $pagePubliq, 'daemon' => $pagePubliqDaemon, 'contents' => $publiqContents]);
     }
 }
