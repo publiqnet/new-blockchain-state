@@ -68,6 +68,34 @@ class NetworkPage
      */
     protected $slug;
 
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkPageDaemon"})
+     */
+    private $githubLinkTitle;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkPageDaemon"})
+     */
+    private $githubLink;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkPageDaemon"})
+     */
+    private $dockerLinkTitle;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkPageDaemon"})
+     */
+    private $dockerLink;
+
 
     public function __toString()
     {
@@ -167,5 +195,69 @@ class NetworkPage
     public function setSlug(string $slug)
     {
         $this->slug = $slug;
+    }
+
+    /**
+     * @return string
+     */
+    public function getGithubLinkTitle(): ?string
+    {
+        return $this->githubLinkTitle;
+    }
+
+    /**
+     * @param string $githubLinkTitle
+     */
+    public function setGithubLinkTitle(string $githubLinkTitle)
+    {
+        $this->githubLinkTitle = $githubLinkTitle;
+    }
+
+    /**
+     * @return string
+     */
+    public function getGithubLink(): ?string
+    {
+        return $this->githubLink;
+    }
+
+    /**
+     * @param string $githubLink
+     */
+    public function setGithubLink(string $githubLink)
+    {
+        $this->githubLink = $githubLink;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDockerLinkTitle(): ?string
+    {
+        return $this->dockerLinkTitle;
+    }
+
+    /**
+     * @param string $dockerLinkTitle
+     */
+    public function setDockerLinkTitle(string $dockerLinkTitle)
+    {
+        $this->dockerLinkTitle = $dockerLinkTitle;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDockerLink(): ?string
+    {
+        return $this->dockerLink;
+    }
+
+    /**
+     * @param string $dockerLink
+     */
+    public function setDockerLink(string $dockerLink)
+    {
+        $this->dockerLink = $dockerLink;
     }
 }

@@ -93,6 +93,18 @@ services:
         tags:
         - { name: sonata.admin, manager_type: orm, label: Daemon, group: PUBLIQ }
         public: true
+    admin.networkpagepubliqdaemonmainnet:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'publiq_daemon_mainnet']
+        tags:
+        - { name: sonata.admin, manager_type: orm, label: Mainnet, group: PUBLIQ }
+        public: true
+    admin.networkpagepubliqdaemontestnet:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'publiq_daemon_testnet']
+        tags:
+        - { name: sonata.admin, manager_type: orm, label: Testnet, group: PUBLIQ }
+        public: true
     admin.networkpubliqcontent:
         class: App\Admin\NetworkPubliqContentAdmin
         arguments: [~, App\Entity\NetworkPubliqContent, ~]

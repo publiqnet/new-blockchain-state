@@ -19,6 +19,8 @@ class NetworkPageFixture extends Fixture implements FixtureGroupInterface
         'pbq' => 'PBQ Utility token',
         'publiq' => 'PUBLIQ Network',
         'publiq_daemon' => 'PUBLIQ Daemon',
+        'publiq_daemon_mainnet' => 'Mainnet',
+        'publiq_daemon_testnet' => 'Testnet',
     ];
 
     public static function getGroups(): array

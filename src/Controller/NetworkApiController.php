@@ -270,6 +270,12 @@ class NetworkApiController extends Controller
         $pagePubliqDaemon = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'publiq_daemon']);
         $pagePubliqDaemon = $this->get('serializer')->normalize($pagePubliqDaemon, null, ['groups' => ['networkPage']]);
 
+        $pagePubliqDaemonMainnet = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'publiq_daemon_mainnet']);
+        $pagePubliqDaemonMainnet = $this->get('serializer')->normalize($pagePubliqDaemonMainnet, null, ['groups' => ['networkPage', 'networkPageDaemon']]);
+
+        $pagePubliqDaemonTestnet = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'publiq_daemon_testnet']);
+        $pagePubliqDaemonTestnet = $this->get('serializer')->normalize($pagePubliqDaemonTestnet, null, ['groups' => ['networkPage', 'networkPageDaemon']]);
+
         /**
          * @var NetworkPbqContent[] $pbqContents
          */
@@ -286,6 +292,6 @@ class NetworkApiController extends Controller
         }
         $publiqContents = $this->get('serializer')->normalize($publiqContents, null, ['groups' => ['networkPubliqContent']]);
 
-        return new JsonResponse(['main' => $pagePubliq, 'daemon' => $pagePubliqDaemon, 'contents' => $publiqContents]);
+        return new JsonResponse(['main' => $pagePubliq, 'daemon' => $pagePubliqDaemon, 'mainnet' => $pagePubliqDaemonMainnet, 'testnet' => $pagePubliqDaemonTestnet, 'contents' => $publiqContents]);
     }
 }

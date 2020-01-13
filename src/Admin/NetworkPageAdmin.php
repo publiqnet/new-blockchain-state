@@ -60,6 +60,13 @@ class NetworkPageAdmin extends AbstractAdmin
                 'required' => false,
                 'config' => ['uiColor' => '#ffffff', 'toolbar' => [['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'Bold', 'Italic', 'Underline', '-', 'Undo', 'Redo', '-', 'Link', 'Unlink', '-', 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Format', 'Styles', 'Source', 'Maximize']]]
             ]);
+
+        if ($this->pageType == 'publiq_daemon_mainnet' || $this->pageType == 'publiq_daemon_testnet') {
+            $formMapper->add('githubLinkTitle', TextType::class);
+            $formMapper->add('githubLink', TextType::class);
+            $formMapper->add('dockerLinkTitle', TextType::class);
+            $formMapper->add('dockerLink', TextType::class);
+        }
     }
 
     protected function configureListFields(ListMapper $listMapper)
