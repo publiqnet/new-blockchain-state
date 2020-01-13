@@ -62,10 +62,10 @@ class NetworkPageAdmin extends AbstractAdmin
             ]);
 
         if ($this->pageType == 'publiq_daemon_mainnet' || $this->pageType == 'publiq_daemon_testnet') {
-            $formMapper->add('githubLinkTitle', TextType::class);
-            $formMapper->add('githubLink', TextType::class);
-            $formMapper->add('dockerLinkTitle', TextType::class);
-            $formMapper->add('dockerLink', TextType::class);
+            $formMapper->add('githubLinkTitle', TextType::class, ['required' => false]);
+            $formMapper->add('githubLink', TextType::class, ['required' => false]);
+            $formMapper->add('dockerLinkTitle', TextType::class, ['required' => false]);
+            $formMapper->add('dockerLink', TextType::class, ['required' => false]);
         }
     }
 
