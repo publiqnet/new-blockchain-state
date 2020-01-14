@@ -154,6 +154,12 @@ class Account
      * @var int
      * @Groups({"networkAccountLight"})
      */
+    private $distributedContentsCount;
+
+    /**
+     * @var int
+     * @Groups({"networkAccountLight"})
+     */
     private $contributorsCount;
 
     /**
@@ -469,6 +475,22 @@ class Account
     public function setPublishedContentsCount(int $publishedContentsCount)
     {
         $this->publishedContentsCount = $publishedContentsCount;
+    }
+
+    /**
+     * @return int
+     */
+    public function getDistributedContentsCount()
+    {
+        return $this->distributedContentsCount;
+    }
+
+    /**
+     * @param int $distributedContentsCount
+     */
+    public function setDistributedContentsCount(int $distributedContentsCount)
+    {
+        $this->distributedContentsCount = $distributedContentsCount;
     }
 
     /**

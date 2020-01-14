@@ -51,7 +51,11 @@ class AccountRepository extends EntityRepository
     public function getChannelsSummary(int $timestamp = 0)
     {
         return $this->createQueryBuilder('a')
-            ->select('a, (select COUNT(cu.id) from App:ContentUnit cu join App:Transaction t with t.contentUnit = cu where cu.channel = a and t.timeSigned > :timestamp) as publishedContentsCount')
+            ->select('
+                a, 
+                (select COUNT(cu.id) from App:ContentUnit cu join App:Transaction t with t.contentUnit = cu where cu.channel = a and t.timeSigned > :timestamp) as publishedContentsCount, 
+                (select COALESCE(SUM(cuv.viewsCount), 0) from App:ContentUnitViews cuv where cuv.channel = a and cuv.viewsTime > :timestamp) as distributedContentsCount
+            ')
             ->where('a.channel = 1')
             ->setParameters(['timestamp' => $timestamp])
             ->orderBy('publishedContentsCount', 'desc')
