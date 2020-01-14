@@ -177,7 +177,7 @@ class NetworkShowcaseProject
     /**
      * @return bool
      */
-    public function isPOAuth(): bool
+    public function isPOAuth(): ?bool
     {
         return $this->pOAuth;
     }
