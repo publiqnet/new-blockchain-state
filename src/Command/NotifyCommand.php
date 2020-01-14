@@ -106,6 +106,8 @@ class NotifyCommand extends ContainerAwareCommand
             return null;
         }
 
+        $datetime = $datetime - 10 * 60;
+
         /**
          * @var ContentUnit[] $articles
          */
