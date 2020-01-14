@@ -19,7 +19,9 @@ class NetworkShowcaseProjectAdmin extends AbstractAdmin
     {
         $formMapper
             ->add('title', TextType::class)
-            ->add('link');
+            ->add('description')
+            ->add('link')
+            ->add('pOAuth', null, ['label' => 'pOAuth']);
     }
 
     protected function configureListFields(ListMapper $listMapper)
@@ -27,6 +29,7 @@ class NetworkShowcaseProjectAdmin extends AbstractAdmin
         $listMapper
             ->addIdentifier('title')
             ->add('link')
+            ->add('pOAuth', null, ['label' => 'pOAuth'])
             ->add('created', null, ['header_style' => 'width: 180px'])
             ->add('updated', null, ['label' => 'Last Updated', 'header_style' => 'width: 180px']);
     }

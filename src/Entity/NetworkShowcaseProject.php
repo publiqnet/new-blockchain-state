@@ -46,6 +46,20 @@ class NetworkShowcaseProject
     private $link;
 
     /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkShowcaseProject"})
+     */
+    private $description;
+
+    /**
+     * @var bool
+     * @ORM\Column(type="boolean", options={"default": 0})
+     * @Groups({"networkShowcaseProject"})
+     */
+    private $pOAuth;
+
+    /**
      * @var \DateTime $created
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime", nullable=false)
@@ -139,8 +153,40 @@ class NetworkShowcaseProject
     /**
      * @param string $link
      */
-    public function setLink(string $link)
+    public function setLink(?string $link)
     {
         $this->link = $link;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    /**
+     * @param string $description
+     */
+    public function setDescription(?string $description)
+    {
+        $this->description = $description;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isPOAuth(): bool
+    {
+        return $this->pOAuth;
+    }
+
+    /**
+     * @param bool $pOAuth
+     */
+    public function setPOAuth(bool $pOAuth)
+    {
+        $this->pOAuth = $pOAuth;
     }
 }

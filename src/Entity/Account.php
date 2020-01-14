@@ -31,7 +31,7 @@ class Account
     /**
      * @var string
      * @ORM\Column(name="public_key", type="string", length=128, nullable=false, unique=true)
-     * @Groups({"explorerAccountLight", "explorerAccount", "trackerAccountLight", "networkAccountLight"})
+     * @Groups({"explorerAccountLight", "explorerAccount", "trackerAccountLight", "networkAccountLight", "networkAccountReward"})
      */
     private $publicKey;
 
@@ -155,6 +155,24 @@ class Account
      * @Groups({"networkAccountLight"})
      */
     private $contributorsCount;
+
+    /**
+     * @var string
+     * @Groups({"networkAccountReward"})
+     */
+    private $rewardType;
+
+    /**
+     * @var string
+     * @Groups({"networkAccountReward"})
+     */
+    private $totalWhole;
+
+    /**
+     * @var int
+     * @Groups({"networkAccountReward"})
+     */
+    private $totalFraction;
 
     public function __construct()
     {
@@ -467,5 +485,53 @@ class Account
     public function setContributorsCount(int $contributorsCount)
     {
         $this->contributorsCount = $contributorsCount;
+    }
+
+    /**
+     * @return string
+     */
+    public function getRewardType()
+    {
+        return $this->rewardType;
+    }
+
+    /**
+     * @param string $rewardType
+     */
+    public function setRewardType(string $rewardType)
+    {
+        $this->rewardType = $rewardType;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalWhole()
+    {
+        return $this->totalWhole;
+    }
+
+    /**
+     * @param int $totalWhole
+     */
+    public function setTotalWhole(int $totalWhole)
+    {
+        $this->totalWhole = $totalWhole;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalFraction()
+    {
+        return $this->totalFraction;
+    }
+
+    /**
+     * @param int $totalFraction
+     */
+    public function setTotalFraction(int $totalFraction)
+    {
+        $this->totalFraction = $totalFraction;
     }
 }

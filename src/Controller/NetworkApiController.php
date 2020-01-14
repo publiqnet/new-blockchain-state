@@ -17,7 +17,6 @@ use App\Entity\NetworkPbqContent;
 use App\Entity\NetworkPubliqContent;
 use App\Entity\NetworkShowcaseProject;
 use App\Entity\NetworkSupportContent;
-use App\Entity\Reward;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -54,37 +53,73 @@ class NetworkApiController extends Controller
         $channels = [];
 
         //  REWARDS
-        $rewardTypes = ['author', 'channel', 'miner', 'storage'];
-        foreach ($rewardTypes as $rewardType) {
-            $timezone = new \DateTimeZone('UTC');
-            $date = new \DateTime();
-            $date->setTimezone($timezone);
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
 
-            //  lifetime
-            $rewards[$rewardType]['lifetime'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType);
+        //  last month
+        $date->modify('-1 month');
+        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
+        if ($rewardsRes) {
+            foreach ($rewardsRes as $rewardsResSingle) {
+                $whole = $rewardsResSingle->getTotalWhole();
+                $fraction = $rewardsResSingle->getTotalFraction();
 
-            //  last month
-            $date->modify('-1 month');
-            $rewards[$rewardType]['lastMonth'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
+                while ($fraction > 99999999) {
+                    $whole++;
+                    $fraction -= 100000000;
+                }
 
-            //  last week
-            $date->modify('+1 month');
-            $date->modify('-1 week');
-            $rewards[$rewardType]['lastWeek'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
-
-            //  last day
-            $date->modify('+1 week');
-            $date->modify('-1 day');
-            $rewards[$rewardType]['lastDay'] = $em->getRepository(Reward::class)->getTopRewardsByType($rewardType, $date->getTimestamp());
+                $rewardsResSingle->setTotalWhole($whole);
+                $rewardsResSingle->setTotalFraction($fraction);
+            }
         }
+        $rewards['lastMonth'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
+
+        //  last week
+        $date->modify('+1 month');
+        $date->modify('-1 week');
+        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
+        if ($rewardsRes) {
+            foreach ($rewardsRes as $rewardsResSingle) {
+                $whole = $rewardsResSingle->getTotalWhole();
+                $fraction = $rewardsResSingle->getTotalFraction();
+
+                while ($fraction > 99999999) {
+                    $whole++;
+                    $fraction -= 100000000;
+                }
+
+                $rewardsResSingle->setTotalWhole($whole);
+                $rewardsResSingle->setTotalFraction($fraction);
+            }
+        }
+        $rewards['lastWeek'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
+
+        //  last day
+        $date->modify('+1 week');
+        $date->modify('-1 day');
+        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
+        if ($rewardsRes) {
+            foreach ($rewardsRes as $rewardsResSingle) {
+                $whole = $rewardsResSingle->getTotalWhole();
+                $fraction = $rewardsResSingle->getTotalFraction();
+
+                while ($fraction > 99999999) {
+                    $whole++;
+                    $fraction -= 100000000;
+                }
+
+                $rewardsResSingle->setTotalWhole($whole);
+                $rewardsResSingle->setTotalFraction($fraction);
+            }
+        }
+        $rewards['lastDay'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
 
         //  MINERS
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
         $date->setTimezone($timezone);
-
-        //  lifetime
-        $miners['lifetime'] = $em->getRepository(Block::class)->getMiners();
 
         //  last month
         $date->modify('-1 month');
@@ -108,14 +143,6 @@ class NetworkApiController extends Controller
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
         $date->setTimezone($timezone);
-
-        //  lifetime
-        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary();
-        foreach ($channelsRes as $channelsResSingle) {
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle);
-            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
-        }
-        $channels['lifetime'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
 
         //  last month
         $date->modify('-1 month');

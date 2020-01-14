@@ -59,4 +59,27 @@ class AccountRepository extends EntityRepository
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
     }
+
+    /**
+     * @param int $timestamp
+     * @param int $count
+     * @return Account[]|null
+     */
+    public function getTotalRewardSummary(int $timestamp = 0, int $count = 100)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a, r.rewardType, SUM(r.whole) as totalWhole, SUM(r.fraction) as totalFraction')
+            ->join('a.rewards', 'r')
+            ->join('r.block', 'b')
+            ->where('b.signTime > :timestamp')
+            ->andWhere('r.rewardType in (\'miner\', \'channel\', \'author\', \'storage\')')
+            ->setParameters(['timestamp' => $timestamp])
+            ->addGroupBy('a.id')
+            ->addGroupBy('r.rewardType')
+            ->addOrderBy('totalWhole', 'DESC')
+            ->addOrderBy('totalFraction', 'DESC')
+            ->setMaxResults($count)
+            ->getQuery()
+            ->getResult('AGGREGATES_HYDRATOR');
+    }
 }
