@@ -85,31 +85,43 @@ services:
         class: App\Admin\NetworkPageAdmin
         arguments: [~, App\Entity\NetworkPage, ~, 'publiq']
         tags:
-        - { name: sonata.admin, manager_type: orm, label: Main, group: PUBLIQ }
+            - { name: sonata.admin, manager_type: orm, label: Main, group: PUBLIQ }
         public: true
     admin.networkpagepubliqdaemon:
         class: App\Admin\NetworkPageAdmin
         arguments: [~, App\Entity\NetworkPage, ~, 'publiq_daemon']
         tags:
-        - { name: sonata.admin, manager_type: orm, label: Daemon, group: PUBLIQ }
+            - { name: sonata.admin, manager_type: orm, label: Daemon, group: PUBLIQ }
         public: true
     admin.networkpagepubliqdaemonmainnet:
         class: App\Admin\NetworkPageAdmin
         arguments: [~, App\Entity\NetworkPage, ~, 'publiq_daemon_mainnet']
         tags:
-        - { name: sonata.admin, manager_type: orm, label: Mainnet, group: PUBLIQ }
+            - { name: sonata.admin, manager_type: orm, label: Mainnet, group: PUBLIQ }
         public: true
     admin.networkpagepubliqdaemontestnet:
         class: App\Admin\NetworkPageAdmin
         arguments: [~, App\Entity\NetworkPage, ~, 'publiq_daemon_testnet']
         tags:
-        - { name: sonata.admin, manager_type: orm, label: Testnet, group: PUBLIQ }
+            - { name: sonata.admin, manager_type: orm, label: Testnet, group: PUBLIQ }
         public: true
     admin.networkpubliqcontent:
         class: App\Admin\NetworkPubliqContentAdmin
         arguments: [~, App\Entity\NetworkPubliqContent, ~]
         tags:
-        - { name: sonata.admin, manager_type: orm, label: Contents, group: PUBLIQ }
+            - { name: sonata.admin, manager_type: orm, label: Contents, group: PUBLIQ }
+        public: true
+    admin.networkpageshowcase:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'showcase']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Main, group: Showcase }
+        public: true
+    admin.networkpageshowcaseproject:
+        class: App\Admin\NetworkShowcaseProjectAdmin
+        arguments: [~, App\Entity\NetworkShowcaseProject, ~, 'showcase']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Projects, group: Showcase }
         public: true
     admin.networksupportcontent:
         class: App\Admin\NetworkSupportContentAdmin

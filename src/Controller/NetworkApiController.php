@@ -15,6 +15,7 @@ use App\Entity\NetworkHomeSlider;
 use App\Entity\NetworkPage;
 use App\Entity\NetworkPbqContent;
 use App\Entity\NetworkPubliqContent;
+use App\Entity\NetworkShowcaseProject;
 use App\Entity\NetworkSupportContent;
 use App\Entity\Reward;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -293,5 +294,30 @@ class NetworkApiController extends Controller
         $publiqContents = $this->get('serializer')->normalize($publiqContents, null, ['groups' => ['networkPubliqContent']]);
 
         return new JsonResponse(['main' => $pagePubliq, 'daemon' => $pagePubliqDaemon, 'mainnet' => $pagePubliqDaemonMainnet, 'testnet' => $pagePubliqDaemonTestnet, 'contents' => $publiqContents]);
+    }
+
+    /**
+     * @Route("/page/showcase", methods={"GET"}, name="network_page_showcase")
+     * @SWG\Get(
+     *     summary="Get Showcase page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPageShowcase()
+    {
+        $em = $this->getDoctrine()->getManager();
+        
+        $pageShowcase = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'showcase']);
+        $pageShowcase = $this->get('serializer')->normalize($pageShowcase, null, ['groups' => ['networkPage']]);
+
+        $pageShowcaseProjects = $em->getRepository(NetworkShowcaseProject::class)->findAll();
+        $pageShowcaseProjects = $this->get('serializer')->normalize($pageShowcaseProjects, null, ['groups' => ['networkShowcaseProject']]);
+
+        return new JsonResponse(['main' => $pageShowcase, 'projects' => $pageShowcaseProjects]);
     }
 }

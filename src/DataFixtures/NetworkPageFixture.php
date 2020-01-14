@@ -21,6 +21,7 @@ class NetworkPageFixture extends Fixture implements FixtureGroupInterface
         'publiq_daemon' => 'PUBLIQ Daemon',
         'publiq_daemon_mainnet' => 'Mainnet',
         'publiq_daemon_testnet' => 'Testnet',
+        'showcase' => 'PUBLIQ Protocol dApps',
     ];
 
     public static function getGroups(): array
