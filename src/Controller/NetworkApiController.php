@@ -311,7 +311,7 @@ class NetworkApiController extends Controller
     public function getPageShowcase()
     {
         $em = $this->getDoctrine()->getManager();
-        
+
         $pageShowcase = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'showcase']);
         $pageShowcase = $this->get('serializer')->normalize($pageShowcase, null, ['groups' => ['networkPage']]);
 
