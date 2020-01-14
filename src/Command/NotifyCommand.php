@@ -109,7 +109,7 @@ class NotifyCommand extends ContainerAwareCommand
         /**
          * @var ContentUnit[] $articles
          */
-        $articles = $this->em->getRepository(ContentUnit::class)->getArticleAfterDate($datetime);
+        $articles = $this->em->getRepository(ContentUnit::class)->getArticleConfirmedAfterDate($datetime);
         if ($articles) {
             foreach ($articles as $article) {
                 // notify author to share

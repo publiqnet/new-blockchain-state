@@ -699,7 +699,7 @@ class ContentUnitRepository extends EntityRepository
      * @param int $datetime
      * @return array|null
      */
-    public function getArticleAfterDate(int $datetime)
+    public function getArticleConfirmedAfterDate(int $datetime)
     {
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery->select('max(cu2.id)')
@@ -712,7 +712,8 @@ class ContentUnitRepository extends EntityRepository
         return $query->select('cu, a')
             ->join('cu.author', 'a')
             ->join('cu.transaction', 't')
-            ->where('t.timeSigned > :datetime')
+            ->join('t.block', 'b')
+            ->where('b.signTime > :datetime')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->setParameters(['datetime' => $datetime])
             ->getQuery()
