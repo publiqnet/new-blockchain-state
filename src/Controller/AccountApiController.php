@@ -439,6 +439,9 @@ class AccountApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $subscriptionsAuthors = $em->getRepository(Account::class)->getUserSubscriptions($account);
         $subscriptionsPublications = $em->getRepository(Publication::class)->getUserSubscriptions($account);
