@@ -514,6 +514,9 @@ class PublicationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $owned = $em->getRepository(Publication::class)->getUserPublicationsOwner($account);
         $membership = $em->getRepository(Publication::class)->getUserPublicationsMember($account);
@@ -589,6 +592,9 @@ class PublicationApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         switch ($type) {
             case 'owned';
