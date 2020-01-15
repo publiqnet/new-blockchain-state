@@ -40,7 +40,7 @@ class ServiceStatistics
     private $transaction;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatisticsDetail", mappedBy="serviceStatistic", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatisticsDetail", mappedBy="serviceStatistics", cascade={"remove"}, fetch="EXTRA_LAZY")
      */
     private $details;
 
