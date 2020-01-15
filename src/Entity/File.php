@@ -88,6 +88,11 @@ class File
      */
     private $storageUpdates;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatisticsDetail", mappedBy="file", fetch="EXTRA_LAZY")
+     */
+    private $servedDetails;
+
 
     public function __construct()
     {
@@ -95,6 +100,7 @@ class File
         $this->storages = new ArrayCollection();
         $this->covers = new ArrayCollection();
         $this->storageUpdates = new ArrayCollection();
+        $this->servedDetails = new ArrayCollection();
     }
 
     /**
@@ -239,5 +245,13 @@ class File
     public function getStorageUpdates()
     {
         return $this->storageUpdates;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getServedDetails()
+    {
+        return $this->servedDetails;
     }
 }

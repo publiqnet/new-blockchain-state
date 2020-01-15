@@ -8,6 +8,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -39,6 +40,16 @@ class ServiceStatistics
     private $transaction;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatisticsDetail", mappedBy="serviceStatistic", cascade={"remove"}, fetch="EXTRA_LAZY")
+     */
+    private $details;
+
+    public function __construct()
+    {
+        $this->details = new ArrayCollection();
+    }
+
+    /**
      * @return mixed
      */
     public function getId()
@@ -68,5 +79,13 @@ class ServiceStatistics
     public function getTransaction()
     {
         return $this->transaction;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDetails()
+    {
+        return $this->details;
     }
 }

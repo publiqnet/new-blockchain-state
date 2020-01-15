@@ -159,6 +159,11 @@ class ContentUnit
      */
     private $description;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatisticsDetail", mappedBy="contentUnit", fetch="EXTRA_LAZY")
+     */
+    private $servedDetails;
+
 
     public function __construct()
     {
@@ -167,6 +172,7 @@ class ContentUnit
         $this->viewsPerChannel = new ArrayCollection();
         $this->viewLogs = new ArrayCollection();
         $this->viewLogsHistory = new ArrayCollection();
+        $this->servedDetails = new ArrayCollection();
     }
 
     /**
@@ -524,5 +530,13 @@ class ContentUnit
     public function setDescription(string $description)
     {
         $this->description = $description;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getServedDetails()
+    {
+        return $this->servedDetails;
     }
 }

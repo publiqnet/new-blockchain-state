@@ -86,4 +86,18 @@ class AccountRepository extends EntityRepository
             ->getQuery()
             ->getResult('AGGREGATES_HYDRATOR');
     }
+
+    /**
+     * @param string $type
+     * @return Account[]|null
+     */
+    public function getActiveNodes(string $type)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a')
+            ->where('a.' . $type . ' = 1')
+            ->andWhere('a.url is not null')
+            ->getQuery()
+            ->getResult();
+    }
 }

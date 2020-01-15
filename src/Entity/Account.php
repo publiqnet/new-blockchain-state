@@ -146,19 +146,19 @@ class Account
 
     /**
      * @var int
-     * @Groups({"networkAccountLight"})
+     * @Groups({"networkAccountChannel"})
      */
     private $publishedContentsCount;
 
     /**
      * @var int
-     * @Groups({"networkAccountLight"})
+     * @Groups({"networkAccountChannel"})
      */
     private $distributedContentsCount;
 
     /**
      * @var int
-     * @Groups({"networkAccountLight"})
+     * @Groups({"networkAccountChannel"})
      */
     private $contributorsCount;
 
@@ -180,6 +180,11 @@ class Account
      */
     private $totalFraction;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ServiceStatisticsDetail", mappedBy="storage", fetch="EXTRA_LAZY")
+     */
+    private $servedDetails;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -196,6 +201,7 @@ class Account
         $this->storageUpdates = new ArrayCollection();
         $this->views = new ArrayCollection();
         $this->serviceStatistics = new ArrayCollection();
+        $this->servedDetails = new ArrayCollection();
     }
 
     public function __toString()
@@ -555,5 +561,13 @@ class Account
     public function setTotalFraction(int $totalFraction)
     {
         $this->totalFraction = $totalFraction;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getServedDetails()
+    {
+        return $this->servedDetails;
     }
 }

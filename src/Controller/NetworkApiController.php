@@ -51,6 +51,7 @@ class NetworkApiController extends Controller
         $rewards = [];
         $miners = [];
         $channels = [];
+        $nodes = [];
 
         //  REWARDS
         $timezone = new \DateTimeZone('UTC');
@@ -151,7 +152,7 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
 
         //  last week
         $date->modify('+1 month');
@@ -161,7 +162,7 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
 
         //  last day
         $date->modify('+1 week');
@@ -171,12 +172,23 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight']]);
+        $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
+
+        //  ACTIVE NODES
+        $activeChannels = $em->getRepository(Account::class)->getActiveNodes('channel');
+        $nodes['channel'] = $this->get('serializer')->normalize($activeChannels, null, ['groups' => ['networkAccountLight']]);
+
+        $activeStorages = $em->getRepository(Account::class)->getActiveNodes('storage');
+        $nodes['storage'] = $this->get('serializer')->normalize($activeStorages, null, ['groups' => ['networkAccountLight']]);
+
+        $activeMiners = $em->getRepository(Account::class)->getActiveNodes('miner');
+        $nodes['miner'] = $this->get('serializer')->normalize($activeMiners, null, ['groups' => ['networkAccountLight']]);
 
         return new JsonResponse([
             'rewards' => $rewards,
             'miners' => $miners,
             'channels' => $channels,
+            'activeNodes' => $nodes,
             'supply' => [
                 'issued' => ['whole' => 250000000 + $lastBlock->getNumber() * 1000, 'fraction' => 0],
                 'scheduled' => ['whole' => 500000000, 'fraction' => 0],
