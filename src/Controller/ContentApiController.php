@@ -732,82 +732,6 @@ class ContentApiController extends Controller
     }
 
     /**
-     * @Route("s-my/{count}/{boostedCount}/{fromUri}", methods={"GET"})
-     * @SWG\Get(
-     *     summary="Get My contents",
-     *     consumes={"application/json"},
-     *     produces={"application/json"},
-     * )
-     * @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
-     * @SWG\Response(response=200, description="Success")
-     * @SWG\Response(response=404, description="User not found")
-     * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Content")
-     * @param int $count
-     * @param int $boostedCount
-     * @param string $fromUri
-     * @param CUService $contentUnitService
-     * @return JsonResponse
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
-     */
-    public function myContents(int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
-    {
-        $em = $this->getDoctrine()->getManager();
-
-        /**
-         * @var Account $account
-         */
-        $account = $this->getUser();
-        if (!$account) {
-            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
-        }
-
-        $fromContentUnit = null;
-        if ($fromUri) {
-            $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
-        }
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit, true);
-
-        //  prepare data to return
-        if ($contentUnits) {
-            try {
-                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
-        }
-
-        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, null, $account);
-        if ($boostedContentUnits) {
-            try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
-        }
-
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'boost', 'boostedContentUnitMain', 'transactionLight']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
-
-        //  check if more content exist
-        $more = false;
-        if (count($contentUnits) > $count) {
-            unset($contentUnits[$count]);
-            $more = true;
-        }
-
-        //  add boosted articles into random positions of main articles list
-        for ($i = 0; $i < count($boostedContentUnits); $i++) {
-            $aaa = [$boostedContentUnits[$i]];
-            array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
-        }
-
-        $contentUnits = $contentUnitService->prepareTags($contentUnits);
-
-        return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
-    }
-
-    /**
      * @Route("s/{publicKey}/{count}/{boostedCount}/{fromUri}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get custom user contents",
@@ -848,18 +772,24 @@ class ContentApiController extends Controller
         if ($fromUri) {
             $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
         }
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
+
+        if ($account === $author) {
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit, true);
+            $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, null, $account);
+        } else {
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
+            $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
+        }
 
         //  prepare data to return
         if ($contentUnits) {
             try {
-                $contentUnits = $contentUnitService->prepare($contentUnits);
+                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
 
-        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
                 $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
@@ -868,8 +798,13 @@ class ContentApiController extends Controller
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        if ($account === $author) {
+            $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'boost', 'boostedContentUnitMain', 'transactionLight']]);
+            $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        } else {
+            $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+            $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
+        }
 
         //  check if more content exist
         $more = false;
