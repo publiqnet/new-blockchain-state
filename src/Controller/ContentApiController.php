@@ -1278,7 +1278,7 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="uri", type="string"),
      *             @SWG\Property(property="background", type="string"),
      *             @SWG\Property(property="font", type="string"),
-     *             @SWG\Property(property="class", type="string")
+     *             @SWG\Property(property="tagClass", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -1314,12 +1314,12 @@ class ContentApiController extends Controller
             $uri = $content['uri'];
             $background = $content['background'];
             $font = $content['font'];
-            $class = $content['class'];
+            $tagClass = $content['tagClass'];
         } else {
             $uri = $request->request->get('uri');
             $background = $request->request->get('background');
             $font = $request->request->get('font');
-            $class = $request->request->get('class');
+            $tagClass = $request->request->get('tagClass');
         }
 
         try {
@@ -1345,7 +1345,7 @@ class ContentApiController extends Controller
             $contentUnit->setHighlight(true);
             $contentUnit->setHighlightBackground($background);
             $contentUnit->setHighlightFont($font);
-            $contentUnit->setHighlightClass($class);
+            $contentUnit->setHighlightTagClass($tagClass);
             $em->persist($contentUnit);
             $em->flush();
 

@@ -166,7 +166,7 @@ class SearchApiController extends Controller
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
-        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
         $articles = $contentUnitService->prepareTags($articles);
 
         $articlesMore = false;
@@ -306,7 +306,7 @@ class SearchApiController extends Controller
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
-        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $articles = $this->get('serializer')->normalize($articles, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
         $articles = $contentUnitService->prepareTags($articles);
 
         $more = false;
