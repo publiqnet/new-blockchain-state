@@ -52,8 +52,9 @@ class NetworkApiController extends Controller
         $miners = [];
         $channels = [];
         $nodes = [];
+        $storages = [];
 
-        //  REWARDS
+        //  REWARDS ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
         $date->setTimezone($timezone);
@@ -117,7 +118,7 @@ class NetworkApiController extends Controller
         }
         $rewards['lastDay'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
 
-        //  MINERS
+        //  MINERS  ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
         $date->setTimezone($timezone);
@@ -140,7 +141,7 @@ class NetworkApiController extends Controller
         //  get last block
         $lastBlock = $em->getRepository(Block::class)->findOneBy([], ['id' => 'DESC']);
 
-        //  CHANNELS
+        //  CHANNELS    ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
         $date->setTimezone($timezone);
@@ -174,7 +175,29 @@ class NetworkApiController extends Controller
         }
         $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
 
-        //  ACTIVE NODES
+        //  STORAGE ///////////////////////////////////////////////////////////////////////////////////////
+        $timezone = new \DateTimeZone('UTC');
+        $date = new \DateTime();
+        $date->setTimezone($timezone);
+
+        //  last month
+        $date->modify('-1 month');
+        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp());
+        $storages['lastMonth'] = $this->get('serializer')->normalize($storageRes, null, ['groups' => ['networkAccountLight', 'networkAccountStorage']]);
+
+        //  last week
+        $date->modify('+1 month');
+        $date->modify('-1 week');
+        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp());
+        $storages['lastWeek'] = $this->get('serializer')->normalize($storageRes, null, ['groups' => ['networkAccountLight', 'networkAccountStorage']]);
+
+        //  last day
+        $date->modify('+1 week');
+        $date->modify('-1 day');
+        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp());
+        $storages['lastDay'] = $this->get('serializer')->normalize($storageRes, null, ['groups' => ['networkAccountLight', 'networkAccountStorage']]);
+
+        //  ACTIVE NODES    ///////////////////////////////////////////////////////////////////////////////////////
         $activeChannels = $em->getRepository(Account::class)->getActiveNodes('channel');
         $nodes['channel'] = $this->get('serializer')->normalize($activeChannels, null, ['groups' => ['networkAccountLight']]);
 
@@ -188,6 +211,7 @@ class NetworkApiController extends Controller
             'rewards' => $rewards,
             'miners' => $miners,
             'channels' => $channels,
+            'storages' => $storages,
             'activeNodes' => $nodes,
             'supply' => [
                 'issued' => ['whole' => 250000000 + $lastBlock->getNumber() * 1000, 'fraction' => 0],

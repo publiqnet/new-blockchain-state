@@ -152,7 +152,7 @@ class Account
 
     /**
      * @var int
-     * @Groups({"networkAccountChannel"})
+     * @Groups({"networkAccountChannel", "networkAccountStorage"})
      */
     private $distributedContentsCount;
 

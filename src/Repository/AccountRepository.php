@@ -66,6 +66,25 @@ class AccountRepository extends EntityRepository
 
     /**
      * @param int $timestamp
+     * @return Account[]|null
+     */
+    public function getStorageSummary(int $timestamp = 0)
+    {
+        return $this->createQueryBuilder('a')
+            ->select('
+                a, 
+                (select COALESCE(SUM(ssd.count), 0) from App:ServiceStatisticsDetail ssd join App:Transaction t with t.serviceStatistic = ssd.serviceStatistics where ssd.storage = a and t.timeSigned > :timestamp) as distributedContentsCount
+            ')
+            ->where('a.storage = 1')
+            ->setParameters(['timestamp' => $timestamp])
+            ->orderBy('distributedContentsCount', 'desc')
+            ->groupBy('a.id')
+            ->getQuery()
+            ->getResult('AGGREGATES_HYDRATOR');
+    }
+
+    /**
+     * @param int $timestamp
      * @param int $count
      * @return Account[]|null
      */
