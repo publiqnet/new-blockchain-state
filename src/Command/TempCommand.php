@@ -10,8 +10,6 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\Block;
-use App\Entity\ContentUnit;
-use App\Entity\File;
 use App\Entity\ServiceStatisticsDetail;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -138,41 +136,43 @@ class TempCommand extends ContainerAwareCommand
                             $serverAddressAccount = $this->checkAccount($serverAddress);
 
                             if ($serverAddressAccount->isChannel()) {
-                                $servedFiles = $serviceStatistics->getFileItems();
-
                                 $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
                                 if ($transactionEntity && $transactionEntity->getServiceStatistic()) {
                                     $serviceStatistic = $transactionEntity->getServiceStatistic();
+                                    $summary = [];
 
                                     /**
-                                     * @var ServiceStatisticsFile $servedFile
+                                     * @var ServiceStatisticsFile[] $servedFiles
                                      */
+                                    $servedFiles = $serviceStatistics->getFileItems();
                                     foreach ($servedFiles as $servedFile) {
-                                        $servedFileUri = $servedFile->getFileUri();
-                                        $servedFileUnitUri = $servedFile->getUnitUri();
-
-                                        $servedFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $servedFileUri]);
-                                        $servedFileUnitEntity = $this->em->getRepository(ContentUnit::class)->findOneBy(['uri' => $servedFileUnitUri]);
-
-                                        if ($servedFileEntity && $servedFileUnitEntity) {
-                                            /**
-                                             * @var ServiceStatisticsCount[] $servedFileCounts
-                                             */
-                                            $servedFileCounts = $servedFile->getCountItems();
-                                            foreach ($servedFileCounts as $servedFileCount) {
-                                                $count = $servedFileCount->getCount();
-                                                $storageAddress = $servedFileCount->getPeerAddress();
-
-                                                $storageEntity = $this->checkAccount($storageAddress);
-
-                                                $serviceStatisticsDetail = new ServiceStatisticsDetail();
-                                                $serviceStatisticsDetail->setServiceStatistics($serviceStatistic);
-                                                $serviceStatisticsDetail->setStorage($storageEntity);
-                                                $serviceStatisticsDetail->setContentUnit($servedFileUnitEntity);
-                                                $serviceStatisticsDetail->setFile($servedFileEntity);
-                                                $serviceStatisticsDetail->setCount($count);
+                                        /**
+                                         * @var ServiceStatisticsCount[] $servedFileCounts
+                                         */
+                                        $servedFileCounts = $servedFile->getCountItems();
+                                        foreach ($servedFileCounts as $servedFileCount) {
+                                            $count = $servedFileCount->getCount();
+                                            $storageAddress = $servedFileCount->getPeerAddress();
+                                            if (isset($summary[$storageAddress])) {
+                                                $summary[$storageAddress] += $count;
+                                            } else {
+                                                $summary[$storageAddress] = $count;
                                             }
                                         }
+                                    }
+
+                                    print_r($summary);exit();
+
+                                    foreach ($summary as $storageAddress => $count) {
+                                        $storageEntity = $this->checkAccount($storageAddress);
+
+                                        $serviceStatisticsDetail = new ServiceStatisticsDetail();
+                                        $serviceStatisticsDetail->setServiceStatistics($serviceStatistic);
+                                        $serviceStatisticsDetail->setStorage($storageEntity);
+                                        $serviceStatisticsDetail->setCount($count);
+
+                                        $this->em->persist($serviceStatisticsDetail);
+                                        $this->em->flush();
                                     }
                                 }
                             }
@@ -182,9 +182,7 @@ class TempCommand extends ContainerAwareCommand
             }
         }
 
-        $this->em->flush();
         $this->em->clear();
-
         $this->em->commit();
 
         $this->io->writeln(sprintf('Finished at with index=%s: %s', $index, date('Y-m-d H:i:s')));

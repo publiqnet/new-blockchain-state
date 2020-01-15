@@ -37,16 +37,6 @@ class ServiceStatisticsDetail
     private $storage;
 
     /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="servedDetails", fetch="EXTRA_LAZY")
-     */
-    private $contentUnit;
-
-    /**
-     * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="servedDetails", fetch="EXTRA_LAZY")
-     */
-    private $file;
-
-    /**
      * @ORM\Column(type="integer")
      */
     private $count;
@@ -90,38 +80,6 @@ class ServiceStatisticsDetail
     public function setStorage($storage)
     {
         $this->storage = $storage;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getContentUnit()
-    {
-        return $this->contentUnit;
-    }
-
-    /**
-     * @param mixed $contentUnit
-     */
-    public function setContentUnit($contentUnit)
-    {
-        $this->contentUnit = $contentUnit;
-    }
-
-    /**
-     * @return mixed
-     */
-    public function getFile()
-    {
-        return $this->file;
-    }
-
-    /**
-     * @param mixed $file
-     */
-    public function setFile($file)
-    {
-        $this->file = $file;
     }
 
     /**
