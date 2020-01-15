@@ -98,7 +98,7 @@ class ContentUnit
                 $contentUnit->setBoosted($boosted);
             }
 
-            if ($author) {
+            if ($author == $contentUnit->getAuthor()) {
                 //  get article next & previous versions
                 $previousVersions = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
                 if ($previousVersions) {

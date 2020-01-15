@@ -161,7 +161,7 @@ class SearchApiController extends Controller
         $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $defaultCount + 1);
         if ($articles) {
             try {
-                $articles = $contentUnitService->prepare($articles);
+                $articles = $contentUnitService->prepare($articles, null, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
@@ -271,7 +271,8 @@ class SearchApiController extends Controller
      * @Route("/article/{word}/{count}/{fromUri}", methods={"POST"})
      * @SWG\Post(
      *     summary="Search for Article",
-     *     consumes={"application/json"}
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=409, description="Error - see description for more information")
@@ -288,6 +289,11 @@ class SearchApiController extends Controller
         $em = $this->getDoctrine()->getManager();
 
         /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
          * @var ContentUnit $publication
          */
         $fromContentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $fromUri]);
@@ -295,7 +301,7 @@ class SearchApiController extends Controller
         $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $count + 1, $fromContentUnit);
         if ($articles) {
             try {
-                $articles = $contentUnitService->prepare($articles);
+                $articles = $contentUnitService->prepare($articles, null, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }

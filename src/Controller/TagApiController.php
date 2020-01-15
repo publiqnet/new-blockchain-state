@@ -99,7 +99,7 @@ class TagApiController extends Controller
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }

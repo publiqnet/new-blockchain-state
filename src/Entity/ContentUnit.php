@@ -210,6 +210,12 @@ class ContentUnit
      */
     private $highlightFont;
 
+    /**
+     * @ORM\Column(name="highlight_class", type="string", nullable=true)
+     * @Groups({"highlight"})
+     */
+    private $highlightClass;
+
 
     public function __construct()
     {
@@ -696,5 +702,21 @@ class ContentUnit
     public function setHighlight($highlight)
     {
         $this->highlight = $highlight;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHighlightClass()
+    {
+        return $this->highlightClass;
+    }
+
+    /**
+     * @param mixed $highlightClass
+     */
+    public function setHighlightClass($highlightClass)
+    {
+        $this->highlightClass = $highlightClass;
     }
 }

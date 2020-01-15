@@ -690,12 +690,7 @@ class ContentApiController extends Controller
         if ($fromUri) {
             $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
         }
-
-        if ($account) {
-            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit, true);
-        } else {
-            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getArticles($count + 1, $fromContentUnit);
-        }
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getArticles($count + 1, $fromContentUnit);
 
         //  prepare data to return
         if ($contentUnits) {
@@ -709,18 +704,89 @@ class ContentApiController extends Controller
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
+
+        //  check if more content exist
+        $more = false;
+        if (count($contentUnits) > $count) {
+            unset($contentUnits[$count]);
+            $more = true;
+        }
+
+        //  add boosted articles into random positions of main articles list
+        for ($i = 0; $i < count($boostedContentUnits); $i++) {
+            $aaa = [$boostedContentUnits[$i]];
+            array_splice($contentUnits, rand(0, count($contentUnits) - 1), 0, $aaa);
+        }
+
+        $contentUnits = $contentUnitService->prepareTags($contentUnits);
+
+        return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
+    }
+
+    /**
+     * @Route("s-my/{count}/{boostedCount}/{fromUri}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get My contents",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param int $count
+     * @param int $boostedCount
+     * @param string $fromUri
+     * @param CUService $contentUnitService
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function myContents(int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
+
+        $fromContentUnit = null;
+        if ($fromUri) {
+            $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
+        }
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit, true);
+
+        //  prepare data to return
+        if ($contentUnits) {
+            try {
+                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
+            } catch (Exception $e) {
+                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
+            }
+        }
+
+        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, null, $account);
+        if ($boostedContentUnits) {
+            try {
                 $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
 
-        if ($account) {
-            $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'boost', 'boostedContentUnitMain', 'transactionLight']]);
-        } else {
-            $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
-        }
-
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'boost', 'boostedContentUnitMain', 'transactionLight']]);
         $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
 
         //  check if more content exist
@@ -748,6 +814,7 @@ class ContentApiController extends Controller
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
+     * @SWG\Parameter(name="X-API-TOKEN", in="header", required=false, type="string")
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
@@ -767,8 +834,13 @@ class ContentApiController extends Controller
         /**
          * @var Account $account
          */
-        $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
-        if (!$account) {
+        $account = $this->getUser();
+
+        /**
+         * @var Account $author
+         */
+        $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
+        if (!$author) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
@@ -776,7 +848,7 @@ class ContentApiController extends Controller
         if ($fromUri) {
             $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
         }
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit);
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
 
         //  prepare data to return
         if ($contentUnits) {
@@ -790,7 +862,7 @@ class ContentApiController extends Controller
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
@@ -1036,7 +1108,7 @@ class ContentApiController extends Controller
         //  prepare data to return
         if ($relatedArticles) {
             try {
-                $relatedArticles = $contentUnitService->prepare($relatedArticles);
+                $relatedArticles = $contentUnitService->prepare($relatedArticles, null, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
@@ -1270,7 +1342,8 @@ class ContentApiController extends Controller
      *             type="object",
      *             @SWG\Property(property="uri", type="string"),
      *             @SWG\Property(property="background", type="string"),
-     *             @SWG\Property(property="font", type="string")
+     *             @SWG\Property(property="font", type="string"),
+     *             @SWG\Property(property="class", type="string")
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -1306,10 +1379,12 @@ class ContentApiController extends Controller
             $uri = $content['uri'];
             $background = $content['background'];
             $font = $content['font'];
+            $class = $content['class'];
         } else {
             $uri = $request->request->get('uri');
             $background = $request->request->get('background');
             $font = $request->request->get('font');
+            $class = $request->request->get('class');
         }
 
         try {
@@ -1335,6 +1410,7 @@ class ContentApiController extends Controller
             $contentUnit->setHighlight(true);
             $contentUnit->setHighlightBackground($background);
             $contentUnit->setHighlightFont($font);
+            $contentUnit->setHighlightClass($class);
             $em->persist($contentUnit);
             $em->flush();
 
