@@ -25,6 +25,11 @@ class IndexNumber
     protected $id;
 
     /**
+     * @ORM\Column(type="integer")
+     */
+    private $tempNumber;
+
+    /**
      * @return mixed
      */
     public function getId()
@@ -38,5 +43,21 @@ class IndexNumber
     public function setId($id)
     {
         $this->id = $id;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getTempNumber()
+    {
+        return $this->tempNumber;
+    }
+
+    /**
+     * @param mixed $tempNumber
+     */
+    public function setTempNumber($tempNumber)
+    {
+        $this->tempNumber = $tempNumber;
     }
 }

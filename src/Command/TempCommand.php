@@ -10,6 +10,7 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\Block;
+use App\Entity\IndexNumber;
 use App\Entity\ServiceStatisticsDetail;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
@@ -90,7 +91,15 @@ class TempCommand extends ContainerAwareCommand
 
         $this->em->beginTransaction();
 
-        $index = 0;
+        /**
+         * @var IndexNumber $indexNumber
+         */
+        $indexNumber = $this->em->getRepository(IndexNumber::class)->findOneBy([], ['id' => 'DESC']);
+        $index = $indexNumber->getTempNumber();
+        if (!$index) {
+            $index = 31649;
+        }
+
         $this->io->writeln(sprintf('Started at with index=%s: %s', ($index ? $index + 1 : $index), date('Y-m-d H:i:s')));
 
         /**
@@ -161,8 +170,6 @@ class TempCommand extends ContainerAwareCommand
                                         }
                                     }
 
-                                    print_r($summary);exit();
-
                                     foreach ($summary as $storageAddress => $count) {
                                         $storageEntity = $this->checkAccount($storageAddress);
 
@@ -181,6 +188,14 @@ class TempCommand extends ContainerAwareCommand
                 }
             }
         }
+
+        /**
+         * @var IndexNumber $indexNumber
+         */
+        $indexNumber = $this->em->getRepository(IndexNumber::class)->findOneBy([], ['id' => 'DESC']);
+        $indexNumber->setTempNumber($index);
+        $this->em->persist($indexNumber);
+        $this->em->flush();
 
         $this->em->clear();
         $this->em->commit();
