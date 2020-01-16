@@ -153,6 +153,12 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, label: Communication, group: Brand }
         public: true
+    admin.networkpagebrandassets:
+        class: App\Admin\NetworkBrandAssetsContentAdmin
+        arguments: [~, App\Entity\NetworkBrandAssetsContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Assets, group: Brand }
+        public: true
     admin.networksupportcontent:
         class: App\Admin\NetworkSupportContentAdmin
         arguments: [~, App\Entity\NetworkSupportContent, ~]

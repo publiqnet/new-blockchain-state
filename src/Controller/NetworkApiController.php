@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Block;
+use App\Entity\NetworkBrandAssetsContent;
 use App\Entity\NetworkBrandColourContent;
 use App\Entity\NetworkBrandCommunicationContent;
 use App\Entity\NetworkBrandLogoContent;
@@ -409,6 +410,7 @@ class NetworkApiController extends Controller
         $colourContentsReturn = [];
         $typographyContentsReturn = [];
         $communicationContentsReturn = [];
+        $assetsContentsReturn = [];
 
         $pageBrand = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'brand']);
         $pageBrand = $this->get('serializer')->normalize($pageBrand, null, ['groups' => ['networkPage']]);
@@ -469,12 +471,27 @@ class NetworkApiController extends Controller
             }
         }
 
+        $assetsContents = $em->getRepository(NetworkBrandAssetsContent::class)->findAll();
+        if ($assetsContents) {
+            foreach ($assetsContents as $assetsContent) {
+                if ($assetsContent->getImage()) {
+                    $assetsContent->setImage($networkFilePath . '/' . $assetsContent->getImage());
+                }
+            }
+            $assetsContents = $this->get('serializer')->normalize($assetsContents, null, ['groups' => ['networkBrandContent']]);
+
+            for ($i=0; $i<count($assetsContents); $i++) {
+                $assetsContentsReturn[$assetsContents[$i]['slug']] = $assetsContents[$i];
+            }
+        }
+
         return new JsonResponse([
             'main' => $pageBrand,
             'logo' => $logoContentsReturn,
             'colour' => $colourContentsReturn,
             'typography' => $typographyContentsReturn,
-            'communication' => $communicationContentsReturn
+            'communication' => $communicationContentsReturn,
+            'assets' => $assetsContentsReturn,
         ]);
     }
 }

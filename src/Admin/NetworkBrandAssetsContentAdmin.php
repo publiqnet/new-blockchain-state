@@ -3,13 +3,12 @@
  * Created by PhpStorm.
  * User: Grigor
  * Date: 1/16/20
- * Time: 12:04 PM
+ * Time: 4:13 PM
  */
 
 namespace App\Admin;
 
-use App\Entity\NetworkBrandColourContent;
-use FOS\CKEditorBundle\Form\Type\CKEditorType;
+use App\Entity\NetworkBrandAssetsContent;
 use Sonata\AdminBundle\Admin\AbstractAdmin;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Form\FormMapper;
@@ -18,7 +17,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpFoundation\File\File;
 
-class NetworkBrandColourContentAdmin extends AbstractAdmin
+class NetworkBrandAssetsContentAdmin extends AbstractAdmin
 {
     private $image = null;
 
@@ -34,7 +33,7 @@ class NetworkBrandColourContentAdmin extends AbstractAdmin
         $fieldOptionsImage = ['required' => false, 'data_class' => null];
 
         /**
-         * @var NetworkBrandColourContent $object
+         * @var NetworkBrandAssetsContent $object
          */
         $object = $this->getSubject();
 
@@ -49,10 +48,8 @@ class NetworkBrandColourContentAdmin extends AbstractAdmin
 
         $formMapper
             ->add('title', TextType::class)
-            ->add('content', CKEditorType::class, [
-                'required' => false,
-                'config' => ['uiColor' => '#ffffff', 'toolbar' => [['JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'Bold', 'Italic', 'Underline', '-', 'Undo', 'Redo', '-', 'Link', 'Unlink', '-', 'NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Format', 'Styles', 'TextColor', 'Source', 'Maximize']]]
-            ])
+            ->add('subtitle', TextType::class, ['required' => false])
+            ->add('link', TextType::class, ['required' => false])
             ->add('image', FileType::class, $fieldOptionsImage);
     }
 
@@ -60,6 +57,8 @@ class NetworkBrandColourContentAdmin extends AbstractAdmin
     {
         $listMapper
             ->addIdentifier('title')
+            ->add('subtitle')
+            ->add('link')
             ->add('created', null, ['header_style' => 'width: 180px'])
             ->add('updated', null, ['label' => 'Last Updated', 'header_style' => 'width: 180px']);
     }
@@ -83,7 +82,7 @@ class NetworkBrandColourContentAdmin extends AbstractAdmin
     }
 
     /**
-     * @param NetworkBrandColourContent $object
+     * @param NetworkBrandAssetsContent $object
      * @throws \Exception
      */
     private function manageFileUpload($object)
