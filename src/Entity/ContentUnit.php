@@ -32,7 +32,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="uri", type="string", length=64, unique=true)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo", "contentUnitNotification"})
      */
     private $uri;
 
@@ -44,7 +44,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="title", type="string", length=256, nullable=false)
-     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo"})
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo", "contentUnitNotification"})
      */
     private $title;
 
@@ -210,6 +210,17 @@ class ContentUnit
      */
     private $highlightFont;
 
+    /**
+     * @ORM\Column(name="highlight_tag_class", type="string", nullable=true)
+     * @Groups({"highlight"})
+     */
+    private $highlightTagClass;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Notification", mappedBy="contentUnit", cascade="remove")
+     */
+    private $notifications;
+
 
     public function __construct()
     {
@@ -219,6 +230,7 @@ class ContentUnit
         $this->tags = new ArrayCollection();
         $this->viewLogs = new ArrayCollection();
         $this->viewLogsHistory = new ArrayCollection();
+        $this->notifications = new ArrayCollection();
     }
 
     /**
@@ -696,5 +708,29 @@ class ContentUnit
     public function setHighlight($highlight)
     {
         $this->highlight = $highlight;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHighlightTagClass()
+    {
+        return $this->highlightTagClass;
+    }
+
+    /**
+     * @param mixed $highlightTagClass
+     */
+    public function setHighlightTagClass($highlightTagClass)
+    {
+        $this->highlightTagClass = $highlightTagClass;
+    }
+
+    /**
+     * Get notifications
+     */
+    public function getNotifications()
+    {
+        return $this->notifications;
     }
 }

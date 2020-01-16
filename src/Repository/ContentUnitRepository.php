@@ -298,9 +298,10 @@ class ContentUnitRepository extends EntityRepository
     /**
      * @param int $count
      * @param $excludes
+     * @param Account|null $excludeAuthor
      * @return array|null
      */
-    public function getBoostedArticles(int $count, $excludes = null)
+    public function getBoostedArticles(int $count, $excludes = null, Account $excludeAuthor = null)
     {
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
@@ -323,6 +324,20 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere('cu NOT IN (:excludes)')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
+                ->setMaxResults($count)
+                ->orderBy('RAND()')
+                ->groupBy('cu.id')
+                ->getQuery()
+                ->getResult();
+        } elseif ($excludeAuthor) {
+            return $query->select('cu')
+                ->join('cu.boosts', 'bcu')
+                ->where('bcu.startTimePoint <= :date')
+                ->andWhere('bcu.cancelled = 0')
+                ->andWhere('bcu.endTimePoint >= :date')
+                ->andWhere('cu.author <> :author')
+                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+                ->setParameters(['date' => $date->getTimestamp(), 'author' => $excludeAuthor])
                 ->setMaxResults($count)
                 ->orderBy('RAND()')
                 ->groupBy('cu.id')

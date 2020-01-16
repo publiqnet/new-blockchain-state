@@ -1689,6 +1689,7 @@ class PublicationApiController extends Controller
      *     summary="Get Publication contents",
      *     consumes={"application/json"},
      *     produces={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=404, description="Publication not found")
@@ -1705,6 +1706,11 @@ class PublicationApiController extends Controller
     public function contents(string $slug, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
         $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
 
         /**
          * @var Publication $publication
@@ -1724,7 +1730,7 @@ class PublicationApiController extends Controller
         //  prepare data to return
         if ($contentUnits) {
             try {
-                $contentUnits = $contentUnitService->prepare($contentUnits);
+                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
@@ -1733,14 +1739,14 @@ class PublicationApiController extends Controller
         $boostedContentUnits = $em->getRepository(ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
 
         //  check if more content exist
         $more = false;

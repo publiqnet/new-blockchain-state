@@ -99,14 +99,14 @@ class TagApiController extends Controller
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true);
+                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
             } catch (Exception $e) {
                 return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
             }
         }
 
-        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
-        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication']]);
+        $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
+        $boostedContentUnits = $this->get('serializer')->normalize($boostedContentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
 
         //  check if more content exist
         $more = false;

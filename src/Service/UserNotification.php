@@ -10,6 +10,7 @@ namespace App\Service;
 
 use App\Entity\NotificationType;
 use App\Entity\Publication;
+use App\Entity\ContentUnit;
 use App\Entity\UserNotification as UN;
 use App\Entity\Notification;
 use App\Entity\Account;
@@ -40,11 +41,12 @@ class UserNotification
      * @param Account $performer
      * @param string $data
      * @param Publication|null $publication
+     * @param ContentUnit|null $contentUnit
      * @return Notification
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function createNotification(string $notificationKey, Account $performer = null, string $data = null, Publication $publication = null): Notification
+    public function createNotification(string $notificationKey, Account $performer = null, string $data = null, Publication $publication = null, ContentUnit $contentUnit = null): Notification
     {
         $notificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => $notificationKey]);
 
@@ -53,6 +55,7 @@ class UserNotification
         if ($performer) $notification->setPerformer($performer);
         if ($data) $notification->setData($data);
         if ($publication) $notification->setPublication($publication);
+        if ($contentUnit) $notification->setContentUnit($contentUnit);
 
         $this->em->persist($notification);
         $this->em->flush();
