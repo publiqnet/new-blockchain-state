@@ -22,6 +22,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class PublicAddressesCommand extends ContainerAwareCommand
 {
+    const IP_API_KEY = '7497f55fbeb3c1ee6dccec11d2f44305';
+
     use LockableTrait;
 
     protected static $defaultName = 'state:tracker-public-addresses';
@@ -93,6 +95,8 @@ class PublicAddressesCommand extends ContainerAwareCommand
                         if ($sslPort) {
                             $url .= ':' . $sslPort;
                         }
+
+                        $locationCheckAddress = $sslIpAddress;
                     } else {
                         $ipAddress = $publicAddress->getIpAddress()->getRemote()->getAddress();
                         $port = $publicAddress->getIpAddress()->getRemote()->getPort();
@@ -101,10 +105,27 @@ class PublicAddressesCommand extends ContainerAwareCommand
                         if ($port) {
                             $url .= ':' . $port;
                         }
+
+                        $locationCheckAddress = $ipAddress;
                     }
 
                     $nodeEntity->setMiner(true);
                     $nodeEntity->setUrl($url);
+
+
+                    //  get location
+                    $locationData = file_get_contents('http://api.ipapi.com/' . $locationCheckAddress . '?access_key=' . self::IP_API_KEY . '&format=1');
+                    if ($locationData) {
+                        $locationData = json_decode($locationData, true);
+                        $lat = $locationData['latitude'];
+                        $lng = $locationData['longitude'];
+
+                        if ($lat !== null && $lng !== null) {
+                            $nodeEntity->setLat($lat);
+                            $nodeEntity->setLng($lng);
+                        }
+                    }
+
                     $this->em->persist($nodeEntity);
                     $this->em->flush();
                 }

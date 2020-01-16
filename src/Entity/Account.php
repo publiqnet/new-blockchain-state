@@ -65,6 +65,20 @@ class Account
     private $url;
 
     /**
+     * @var string
+     * @ORM\Column(type="string", length=64, nullable=true)
+     * @Groups({"networkAccountLight"})
+     */
+    private $lat;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", length=64, nullable=true)
+     * @Groups({"networkAccountLight"})
+     */
+    private $lng;
+
+    /**
      * @ORM\Column(name="blockchain", type="boolean")
      */
     private $blockchain = 0;
@@ -407,6 +421,38 @@ class Account
     public function setUrl($url)
     {
         $this->url = $url;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLat()
+    {
+        return $this->lat;
+    }
+
+    /**
+     * @param mixed $lat
+     */
+    public function setLat($lat)
+    {
+        $this->lat = $lat;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLng()
+    {
+        return $this->lng;
+    }
+
+    /**
+     * @param mixed $lng
+     */
+    public function setLng($lng)
+    {
+        $this->lng = $lng;
     }
 
     /**
