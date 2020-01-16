@@ -69,6 +69,13 @@ class Notification
      */
     private $userNotifications;
 
+    /**
+     * @var ContentUnit
+     * @ORM\ManyToOne(targetEntity="App\Entity\ContentUnit", inversedBy="notifications")
+     * @Groups({"notification"})
+     */
+    private $contentUnit;
+
     public function __construct()
     {
         $this->userNotifications = new ArrayCollection();
@@ -115,7 +122,7 @@ class Notification
     }
 
     /**
-     * @return string
+     * @return NotificationType
      */
     public function getType()
     {
@@ -168,5 +175,21 @@ class Notification
     public function setPublication(Publication $publication)
     {
         $this->publication = $publication;
+    }
+
+    /**
+     * @return ContentUnit | null
+     */
+    public function getContentUnit()
+    {
+        return $this->contentUnit;
+    }
+
+    /**
+     * @param ContentUnit $contentUnit
+     */
+    public function setContentUnit(ContentUnit $contentUnit)
+    {
+        $this->contentUnit = $contentUnit;
     }
 }

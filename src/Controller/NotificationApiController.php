@@ -291,8 +291,11 @@ class NotificationApiController extends Controller
         $unreadNotifications = $em->getRepository(UserNotification::class)->getUserUnreadNotifications($account);
         $unseenNotifications = $em->getRepository(UserNotification::class)->getUserUnseenNotifications($account);
 
+        /**
+         * @var Notification[] $notifications
+         */
         $notifications = $em->getRepository(Notification::class)->getUserNotifications($account, $count + 1, $fromId);
-        $notifications = $this->get('serializer')->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase']]);
+        $notifications = $this->get('serializer')->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase', 'contentUnitNotification']]);
 
         $notificationsRewrited = [];
         for ($i=0; $i<count($notifications); $i++) {

@@ -328,7 +328,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
         try {
             $article = $event->getArticle();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['share_article']['key'], null, $article->getUri());
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['share_article']['key'], null, $article->getUri(), null, $article);
             $this->userNotificationService->notify($article->getAuthor(), $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now

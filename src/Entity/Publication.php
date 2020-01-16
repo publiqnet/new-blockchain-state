@@ -113,7 +113,6 @@ class Publication
 
     /**
      * @ORM\OneToMany(targetEntity="App\Entity\Notification", mappedBy="publication", cascade="remove")
-     * @Groups({"publicationMembers"})
      */
     private $notifications;
 
