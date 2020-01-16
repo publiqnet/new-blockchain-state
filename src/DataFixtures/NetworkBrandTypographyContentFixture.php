@@ -2,32 +2,27 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 1/9/20
- * Time: 4:11 PM
+ * Date: 1/16/20
+ * Time: 12:08 PM
  */
 
 namespace App\DataFixtures;
 
-use App\Entity\NetworkPage;
+use App\Entity\NetworkBrandTypographyContent;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\Persistence\ObjectManager;
 
-class NetworkPageFixture extends Fixture implements FixtureGroupInterface
+class NetworkBrandTypographyContentFixture extends Fixture implements FixtureGroupInterface
 {
     const items = [
-        'pbq' => 'PBQ Utility token',
-        'publiq' => 'PUBLIQ Network',
-        'publiq_daemon' => 'PUBLIQ Daemon',
-        'publiq_daemon_mainnet' => 'Mainnet',
-        'publiq_daemon_testnet' => 'Testnet',
-        'showcase' => 'PUBLIQ Protocol dApps',
-        'brand' => 'Brand',
+        'main' => 'Typography',
+        'styles' => 'Styles',
     ];
 
     public static function getGroups(): array
     {
-        return ['networkPage'];
+        return ['networkBrandTypographyContent'];
     }
 
     /**
@@ -39,9 +34,9 @@ class NetworkPageFixture extends Fixture implements FixtureGroupInterface
     {
         $contents = self::items;
         foreach ($contents as $key => $content) {
-            $networkPageObj = $manager->getRepository(NetworkPage::class)->findOneBy(['slug' => $key]);
+            $networkPageObj = $manager->getRepository(NetworkBrandTypographyContent::class)->findOneBy(['slug' => $key]);
             if (!$networkPageObj) {
-                $networkPageObj = new NetworkPage();
+                $networkPageObj = new NetworkBrandTypographyContent();
 
                 $networkPageObj->setSlug($key);
                 $networkPageObj->setTitle($content);

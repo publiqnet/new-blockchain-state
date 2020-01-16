@@ -10,6 +10,10 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Block;
+use App\Entity\NetworkBrandColourContent;
+use App\Entity\NetworkBrandCommunicationContent;
+use App\Entity\NetworkBrandLogoContent;
+use App\Entity\NetworkBrandTypographyContent;
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
 use App\Entity\NetworkPage;
@@ -382,5 +386,95 @@ class NetworkApiController extends Controller
         $pageShowcaseProjects = $this->get('serializer')->normalize($pageShowcaseProjects, null, ['groups' => ['networkShowcaseProject']]);
 
         return new JsonResponse(['main' => $pageShowcase, 'projects' => $pageShowcaseProjects]);
+    }
+
+    /**
+     * @Route("/page/brand", methods={"GET"}, name="network_page_brand")
+     * @SWG\Get(
+     *     summary="Get Brand page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPageBrand()
+    {
+        $em = $this->getDoctrine()->getManager();
+        $networkFilePath = $this->getParameter('network_file_path');
+
+        $logoContentsReturn = [];
+        $colourContentsReturn = [];
+        $typographyContentsReturn = [];
+        $communicationContentsReturn = [];
+
+        $pageBrand = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'brand']);
+        $pageBrand = $this->get('serializer')->normalize($pageBrand, null, ['groups' => ['networkPage']]);
+
+        $logoContents = $em->getRepository(NetworkBrandLogoContent::class)->findAll();
+        if ($logoContents) {
+            foreach ($logoContents as $logoContent) {
+                if ($logoContent->getImage()) {
+                    $logoContent->setImage($networkFilePath . '/' . $logoContent->getImage());
+                }
+            }
+            $logoContents = $this->get('serializer')->normalize($logoContents, null, ['groups' => ['networkBrandContent']]);
+
+            for ($i=0; $i<count($logoContents); $i++) {
+                $logoContentsReturn[$logoContents[$i]['slug']] = $logoContents[$i];
+            }
+        }
+
+        $colourContents = $em->getRepository(NetworkBrandColourContent::class)->findAll();
+        if ($colourContents) {
+            foreach ($colourContents as $colourContent) {
+                if ($colourContent->getImage()) {
+                    $colourContent->setImage($networkFilePath . '/' . $colourContent->getImage());
+                }
+            }
+            $colourContents = $this->get('serializer')->normalize($colourContents, null, ['groups' => ['networkBrandContent']]);
+
+            for ($i=0; $i<count($colourContents); $i++) {
+                $colourContentsReturn[$colourContents[$i]['slug']] = $colourContents[$i];
+            }
+        }
+
+        $typographyContents = $em->getRepository(NetworkBrandTypographyContent::class)->findAll();
+        if ($typographyContents) {
+            foreach ($typographyContents as $typographyContent) {
+                if ($typographyContent->getImage()) {
+                    $typographyContent->setImage($networkFilePath . '/' . $typographyContent->getImage());
+                }
+            }
+            $typographyContents = $this->get('serializer')->normalize($typographyContents, null, ['groups' => ['networkBrandContent']]);
+
+            for ($i=0; $i<count($typographyContents); $i++) {
+                $typographyContentsReturn[$typographyContents[$i]['slug']] = $typographyContents[$i];
+            }
+        }
+
+        $communicationContents = $em->getRepository(NetworkBrandCommunicationContent::class)->findAll();
+        if ($communicationContents) {
+            foreach ($communicationContents as $communicationContent) {
+                if ($communicationContent->getImage()) {
+                    $communicationContent->setImage($networkFilePath . '/' . $communicationContent->getImage());
+                }
+            }
+            $communicationContents = $this->get('serializer')->normalize($communicationContents, null, ['groups' => ['networkBrandContent']]);
+
+            for ($i=0; $i<count($communicationContents); $i++) {
+                $communicationContentsReturn[$communicationContents[$i]['slug']] = $communicationContents[$i];
+            }
+        }
+
+        return new JsonResponse([
+            'main' => $pageBrand,
+            'logo' => $logoContentsReturn,
+            'colour' => $colourContentsReturn,
+            'typography' => $typographyContentsReturn,
+            'communication' => $communicationContentsReturn
+        ]);
     }
 }

@@ -15,6 +15,7 @@ use App\Entity\CancelBoostedContentUnit;
 use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
 use App\Entity\Reward;
+use App\Entity\ServiceStatisticsDetail;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
 use App\Service\Custom;
@@ -35,6 +36,8 @@ use PubliqAPI\Model\Content;
 use PubliqAPI\Model\RewardLog;
 use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
+use PubliqAPI\Model\ServiceStatisticsCount;
+use PubliqAPI\Model\ServiceStatisticsFile;
 use PubliqAPI\Model\SponsorContentUnit;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
@@ -478,6 +481,42 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $serviceStatisticsEntity->setAccount($serverAddressAccount);
                                 $this->em->persist($serviceStatisticsEntity);
                                 $this->em->flush();
+
+                                if ($serverAddressAccount->isChannel()) {
+                                    $summary = [];
+
+                                    /**
+                                     * @var ServiceStatisticsFile[] $servedFiles
+                                     */
+                                    $servedFiles = $serviceStatistics->getFileItems();
+                                    foreach ($servedFiles as $servedFile) {
+                                        /**
+                                         * @var ServiceStatisticsCount[] $servedFileCounts
+                                         */
+                                        $servedFileCounts = $servedFile->getCountItems();
+                                        foreach ($servedFileCounts as $servedFileCount) {
+                                            $count = $servedFileCount->getCount();
+                                            $storageAddress = $servedFileCount->getPeerAddress();
+                                            if (isset($summary[$storageAddress])) {
+                                                $summary[$storageAddress] += $count;
+                                            } else {
+                                                $summary[$storageAddress] = $count;
+                                            }
+                                        }
+                                    }
+
+                                    foreach ($summary as $storageAddress => $count) {
+                                        $storageEntity = $this->checkAccount($storageAddress);
+
+                                        $serviceStatisticsDetail = new ServiceStatisticsDetail();
+                                        $serviceStatisticsDetail->setServiceStatistics($serviceStatisticsEntity);
+                                        $serviceStatisticsDetail->setStorage($storageEntity);
+                                        $serviceStatisticsDetail->setCount($count);
+
+                                        $this->em->persist($serviceStatisticsDetail);
+                                        $this->em->flush();
+                                    }
+                                }
 
                                 //  add transaction record without relation
                                 $this->addTransaction('ServiceStatistics', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, null, null, $serviceStatisticsEntity);

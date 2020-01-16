@@ -123,6 +123,36 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, label: Projects, group: Showcase }
         public: true
+    admin.networkpagebrand:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'brand']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Main, group: Brand }
+        public: true
+    admin.networkpagebrandlogo:
+        class: App\Admin\NetworkBrandLogoContentAdmin
+        arguments: [~, App\Entity\NetworkBrandLogoContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Logo, group: Brand }
+        public: true
+    admin.networkpagebrandcolour:
+        class: App\Admin\NetworkBrandColourContentAdmin
+        arguments: [~, App\Entity\NetworkBrandColourContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Colours, group: Brand }
+        public: true
+    admin.networkpagebrandtypography:
+        class: App\Admin\NetworkBrandTypographyContentAdmin
+        arguments: [~, App\Entity\NetworkBrandTypographyContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Typography, group: Brand }
+        public: true
+    admin.networkpagebrandcommunication:
+        class: App\Admin\NetworkBrandCommunicationContentAdmin
+        arguments: [~, App\Entity\NetworkBrandCommunicationContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Communication, group: Brand }
+        public: true
     admin.networksupportcontent:
         class: App\Admin\NetworkSupportContentAdmin
         arguments: [~, App\Entity\NetworkSupportContent, ~]
