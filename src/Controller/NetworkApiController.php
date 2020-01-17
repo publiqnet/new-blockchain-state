@@ -205,13 +205,32 @@ class NetworkApiController extends Controller
 
         //  ACTIVE NODES    ///////////////////////////////////////////////////////////////////////////////////////
         $activeChannels = $em->getRepository(Account::class)->getActiveNodes('channel');
-        $nodes['channel'] = $this->get('serializer')->normalize($activeChannels, null, ['groups' => ['networkAccountLight']]);
+        if ($activeChannels) {
+            $activeChannels = $this->get('serializer')->normalize($activeChannels, null, ['groups' => ['networkAccountLight']]);
+            foreach ($activeChannels as $activeChannel) {
+                $activeChannel['type'] = 'channel';
+                $nodes[] = $activeChannel;
+            }
+        }
+
 
         $activeStorages = $em->getRepository(Account::class)->getActiveNodes('storage');
-        $nodes['storage'] = $this->get('serializer')->normalize($activeStorages, null, ['groups' => ['networkAccountLight']]);
+        if ($activeStorages) {
+            $activeStorages = $this->get('serializer')->normalize($activeStorages, null, ['groups' => ['networkAccountLight']]);
+            foreach ($activeStorages as $activeStorage) {
+                $activeStorage['type'] = 'storage';
+                $nodes[] = $activeStorage;
+            }
+        }
 
-        $activeMiners = $em->getRepository(Account::class)->getActiveNodes('miner');
-        $nodes['miner'] = $this->get('serializer')->normalize($activeMiners, null, ['groups' => ['networkAccountLight']]);
+        $activeMiners = $em->getRepository(Account::class)->getActiveMiners();
+        if ($activeMiners) {
+            $activeMiners = $this->get('serializer')->normalize($activeMiners, null, ['groups' => ['networkAccountLight']]);
+            foreach ($activeMiners as $activeMiner) {
+                $activeMiner['type'] = 'miner';
+                $nodes[] = $activeMiner;
+            }
+        }
 
         return new JsonResponse([
             'rewards' => $rewards,

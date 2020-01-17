@@ -119,4 +119,17 @@ class AccountRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return Account[]|null
+     */
+    public function getActiveMiners()
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a')
+            ->join('a.signedBlocks', 'b')
+            ->where('a.url is not null')
+            ->getQuery()
+            ->getResult();
+    }
 }
