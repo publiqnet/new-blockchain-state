@@ -159,6 +159,18 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, label: Assets, group: Brand }
         public: true
+    admin.networkpagedocs:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'docs']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Main, group: Docs }
+        public: true
+    admin.networkpagedocscontents:
+        class: App\Admin\NetworkDocsContentAdmin
+        arguments: [~, App\Entity\NetworkDocsContent, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Contents, group: Docs }
+        public: true
     admin.networksupportcontent:
         class: App\Admin\NetworkSupportContentAdmin
         arguments: [~, App\Entity\NetworkSupportContent, ~]

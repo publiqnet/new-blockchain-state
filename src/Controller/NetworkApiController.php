@@ -15,6 +15,7 @@ use App\Entity\NetworkBrandColourContent;
 use App\Entity\NetworkBrandCommunicationContent;
 use App\Entity\NetworkBrandLogoContent;
 use App\Entity\NetworkBrandTypographyContent;
+use App\Entity\NetworkDocsContent;
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
 use App\Entity\NetworkPage;
@@ -492,6 +493,34 @@ class NetworkApiController extends Controller
             'typography' => $typographyContentsReturn,
             'communication' => $communicationContentsReturn,
             'assets' => $assetsContentsReturn,
+        ]);
+    }
+
+    /**
+     * @Route("/page/docs", methods={"GET"}, name="network_page_docs")
+     * @SWG\Get(
+     *     summary="Get Docs page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPageDocs()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $pageDocs = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'docs']);
+        $pageDocs = $this->get('serializer')->normalize($pageDocs, null, ['groups' => ['networkPage']]);
+
+        $contents = $em->getRepository(NetworkDocsContent::class)->findAll();
+        $contents = $this->get('serializer')->normalize($contents, null, ['groups' => ['networkDocsContent']]);
+
+        return new JsonResponse([
+            'main' => $pageDocs,
+            'contents' => $contents,
         ]);
     }
 }
