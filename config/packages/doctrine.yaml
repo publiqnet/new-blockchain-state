@@ -14,6 +14,8 @@ doctrine:
         default_table_options:
             charset: utf8mb4
             collate: utf8mb4_unicode_ci
+        options:
+            1002: "SET NAMES 'utf8mb4'"
 
         url: '%env(resolve:DATABASE_URL)%'
     orm:
