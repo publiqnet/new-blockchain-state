@@ -155,7 +155,7 @@ class FileDetailsCommand extends ContainerAwareCommand
                                 $file->setMimeType($fileDetails->getMimeType());
                                 $file->setSize($fileDetails->getSize());
                                 if ($file->getMimeType() == 'text/html') {
-                                    $fileText = file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri());
+                                    $fileText = utf8_encode(file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri()));
                                     $file->setContent($fileText);
                                 }
 

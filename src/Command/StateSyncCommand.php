@@ -258,7 +258,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                             $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
                                             $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
                                         }
-                                        $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                        $contentUnitTitle = utf8_encode(trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5))));
                                         $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
                                     } else {
                                         $contentUnitText = $storageData;
