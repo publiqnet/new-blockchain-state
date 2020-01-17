@@ -93,6 +93,7 @@ class FileDetailsCommand extends ContainerAwareCommand
                 $channel = $contentUnit->getChannel();
                 if ($channel->getUrl()) {
                     $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
+                    $storageData = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $storageData);
                     if ($storageData) {
                         $contentUnitTitle = 'Unknown';
                         $coverUri = null;
@@ -155,7 +156,8 @@ class FileDetailsCommand extends ContainerAwareCommand
                                 $file->setMimeType($fileDetails->getMimeType());
                                 $file->setSize($fileDetails->getSize());
                                 if ($file->getMimeType() == 'text/html') {
-                                    $fileText = utf8_encode(file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri()));
+                                    $fileText = file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri());
+                                    $fileText = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $fileText);
                                     $file->setContent($fileText);
                                 }
 

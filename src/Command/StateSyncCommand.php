@@ -251,6 +251,7 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitText = null;
                             if ($channelAccount->getUrl()) {
                                 $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                                $storageData = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $storageData);
                                 if ($storageData) {
                                     if (strpos($storageData, '</h1>')) {
                                         if (strpos($storageData, '<h1>') > 0) {
@@ -258,7 +259,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                             $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
                                             $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
                                         }
-                                        $contentUnitTitle = utf8_encode(trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5))));
+                                        $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
                                         $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
                                     } else {
                                         $contentUnitText = $storageData;
@@ -784,6 +785,7 @@ class StateSyncCommand extends ContainerAwareCommand
                     $contentUnitText = null;
                     if ($channelAccount->getUrl()) {
                         $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                        $storageData = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $storageData);
                         if ($storageData) {
                             if (strpos($storageData, '</h1>')) {
                                 if (strpos($storageData, '<h1>') > 0) {
