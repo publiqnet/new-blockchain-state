@@ -39,7 +39,6 @@ use PubliqAPI\Model\Role;
 use PubliqAPI\Model\ServiceStatistics;
 use PubliqAPI\Model\SponsorContentUnit;
 use PubliqAPI\Model\SponsorContentUnitApplied;
-use PubliqAPI\Model\StorageFileDetailsResponse;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
 use PubliqAPI\Model\Transfer;
@@ -355,29 +354,6 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
                                     $contentUnitEntity->setContent($contentEntity);
                                     $this->em->persist($contentUnitEntity);
-
-                                    $contentUnitEntityFiles = $contentUnitEntity->getFiles();
-                                    if ($contentUnitEntityFiles && $channelAccount->getUrl()) {
-                                        /**
-                                         * @var \App\Entity\File $contentUnitEntityFile
-                                         */
-                                        foreach ($contentUnitEntityFiles as $contentUnitEntityFile) {
-                                            //  get file details
-                                            if (!$contentUnitEntityFile->getMimeType()) {
-                                                $fileDetails = $this->blockChainService->getFileDetails($contentUnitEntityFile->getUri(), $channelAccount->getUrl());
-                                                if ($fileDetails instanceof StorageFileDetailsResponse) {
-                                                    $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
-                                                    $contentUnitEntityFile->setSize($fileDetails->getSize());
-                                                    if ($fileDetails->getMimeType() == 'text/html') {
-                                                        $fileText = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $contentUnitEntityFile->getUri());
-                                                        $contentUnitEntityFile->setContent($fileText);
-                                                    }
-
-                                                    $this->em->persist($contentUnitEntityFile);
-                                                }
-                                            }
-                                        }
-                                    }
                                 }
                                 $this->em->persist($contentEntity);
                                 $this->em->flush();
@@ -904,37 +880,12 @@ class StateSyncCommand extends ContainerAwareCommand
                         $contentEntity = new \App\Entity\Content();
                         $contentEntity->setContentId($contentId);
                         $contentEntity->setChannel($channelAccount);
-                        $this->em->persist($contentEntity);
-                        $this->em->flush();
-
                         foreach ($contentUnitUris as $uri) {
                             $contentUnitEntity = $this->em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
                             $contentUnitEntity->setContent($contentEntity);
                             $this->em->persist($contentUnitEntity);
-
-                            $contentUnitEntityFiles = $contentUnitEntity->getFiles();
-                            if ($contentUnitEntityFiles && $channelAccount->getUrl()) {
-                                /**
-                                 * @var \App\Entity\File $contentUnitEntityFile
-                                 */
-                                foreach ($contentUnitEntityFiles as $contentUnitEntityFile) {
-                                    //  get file details
-                                    if (!$contentUnitEntityFile->getMimeType()) {
-                                        $fileDetails = $this->blockChainService->getFileDetails($contentUnitEntityFile->getUri(), $channelAccount->getUrl());
-                                        if ($fileDetails instanceof StorageFileDetailsResponse) {
-                                            $contentUnitEntityFile->setMimeType($fileDetails->getMimeType());
-                                            $contentUnitEntityFile->setSize($fileDetails->getSize());
-                                            if ($fileDetails->getMimeType() == 'text/html') {
-                                                $fileText = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $contentUnitEntityFile->getUri());
-                                                $contentUnitEntityFile->setContent($fileText);
-                                            }
-
-                                            $this->em->persist($contentUnitEntityFile);
-                                        }
-                                    }
-                                }
-                            }
                         }
+                        $this->em->persist($contentEntity);
                         $this->em->flush();
 
                         //  add transaction record with relation to content
