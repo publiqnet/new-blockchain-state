@@ -16,6 +16,7 @@ use App\Entity\NetworkBrandCommunicationContent;
 use App\Entity\NetworkBrandLogoContent;
 use App\Entity\NetworkBrandTypographyContent;
 use App\Entity\NetworkDocsContent;
+use App\Entity\NetworkFeedback;
 use App\Entity\NetworkHomeContent;
 use App\Entity\NetworkHomeSlider;
 use App\Entity\NetworkPage;
@@ -23,9 +24,12 @@ use App\Entity\NetworkPbqContent;
 use App\Entity\NetworkPubliqContent;
 use App\Entity\NetworkShowcaseProject;
 use App\Entity\NetworkSupportContent;
+use App\Form\NetworkFeedbackType;
+use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -541,5 +545,85 @@ class NetworkApiController extends Controller
             'main' => $pageDocs,
             'contents' => $contents,
         ]);
+    }
+
+    /**
+     * @Route("/page/contacts", methods={"GET"}, name="network_page_contacts")
+     * @SWG\Get(
+     *     summary="Get Contacts page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getPageContacts()
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $pageContacts = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'contacts']);
+        $pageContacts = $this->get('serializer')->normalize($pageContacts, null, ['groups' => ['networkPage']]);
+
+        return new JsonResponse([
+            'main' => $pageContacts,
+        ]);
+    }
+
+    /**
+     * @Route("/feedback", methods={"POST"}, name="network_form_feedback")
+     * @SWG\Parameter(
+     *     name="issue",
+     *     in="body",
+     *     @Model(type=NetworkFeedbackType::class)
+     * )
+     * @SWG\Response(
+     *     response=201,
+     *     description="send user issue to email"
+     * )
+     * @SWG\Tag(name="Network")
+     *
+     * @param Request $request
+     * @return Response
+     */
+    public function submitFeedback(Request $request)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $request->request->add(['network_feedback' => json_decode($content, true)]);
+        }
+
+        $feedback = new NetworkFeedback();
+
+        $form = $this->createForm(NetworkFeedbackType::class, $feedback);
+        $form->handleRequest($request);
+
+        //  id form submitted
+        if (!$form->isSubmitted()) {
+            return new JsonResponse(['message' => 'Please submit form'], Response::HTTP_CONFLICT);
+        }
+
+        //  is form valid
+        if (!$form->isValid()) {
+            $errors = [];
+
+            $all = $form->all();
+            foreach ($all as $key => $value) {
+                if (!$form->get($key)->isValid()) {
+                    $errors[$key] = (string) $form->get($key)->getErrors();
+                }
+            }
+
+            return new JsonResponse($errors, Response::HTTP_CONFLICT);
+        }
+
+        $em->persist($feedback);
+        $em->flush();
+
+        return new Response(null, Response::HTTP_NO_CONTENT);
     }
 }

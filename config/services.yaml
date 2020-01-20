@@ -171,6 +171,18 @@ services:
         tags:
             - { name: sonata.admin, manager_type: orm, label: Contents, group: Docs }
         public: true
+    admin.networkpagecontacts:
+        class: App\Admin\NetworkPageAdmin
+        arguments: [~, App\Entity\NetworkPage, ~, 'contacts']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Main, group: Contacts }
+        public: true
+    admin.networkpagecontactsfeedback:
+        class: App\Admin\NetworkFeedbackAdmin
+        arguments: [~, App\Entity\NetworkFeedback, ~]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Feedback, group: Contacts }
+        public: true
     admin.networksupportcontent:
         class: App\Admin\NetworkSupportContentAdmin
         arguments: [~, App\Entity\NetworkSupportContent, ~]

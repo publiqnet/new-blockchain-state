@@ -24,6 +24,7 @@ class NetworkPageFixture extends Fixture implements FixtureGroupInterface
         'showcase' => 'PUBLIQ Protocol dApps',
         'brand' => 'Brand',
         'docs' => 'Docs',
+        'contacts' => 'Contact us',
     ];
 
     public static function getGroups(): array
