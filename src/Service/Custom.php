@@ -24,9 +24,12 @@ class Custom
      */
     private $em;
 
-    function __construct(EntityManagerInterface $em)
+    private $captchaSecretKey;
+
+    function __construct(EntityManagerInterface $em, $captchaSecretKey)
     {
         $this->em = $em;
+        $this->captchaSecretKey = $captchaSecretKey;
     }
 
     /**
@@ -133,5 +136,25 @@ class Custom
         $this->em->flush();
 
         return $userIdentifier;
+    }
+
+    /**
+     * @param string $token
+     * @return boolean
+     */
+    public function verifyCaptcha(string $token)
+    {
+        $data = ['secret' => $this->captchaSecretKey, 'response' => $token];
+
+        $ch = curl_init("https://www.google.com/recaptcha/api/siteverify");
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $result = curl_exec($ch);
+        curl_close($ch);
+
+        $result = json_decode($result, true);
+
+        return $result['success'];
     }
 }

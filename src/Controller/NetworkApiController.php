@@ -25,6 +25,7 @@ use App\Entity\NetworkPubliqContent;
 use App\Entity\NetworkShowcaseProject;
 use App\Entity\NetworkSupportContent;
 use App\Form\NetworkFeedbackType;
+use App\Service\Custom;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -568,6 +569,7 @@ class NetworkApiController extends Controller
 
         return new JsonResponse([
             'main' => $pageContacts,
+            'captchaKey' => $this->getParameter('recaptcha_site_key')
         ]);
     }
 
@@ -585,9 +587,10 @@ class NetworkApiController extends Controller
      * @SWG\Tag(name="Network")
      *
      * @param Request $request
+     * @param Custom $customService
      * @return Response
      */
-    public function submitFeedback(Request $request)
+    public function submitFeedback(Request $request, Custom $customService)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -619,6 +622,13 @@ class NetworkApiController extends Controller
             }
 
             return new JsonResponse($errors, Response::HTTP_CONFLICT);
+        }
+
+        //  check CAPTCHA
+        $captchaResponse = $request->get('network_feedback')['g-recaptcha-response'];
+        $verified = $customService->verifyCaptcha($captchaResponse);
+        if (!$verified) {
+            return new JsonResponse(['message' => 'Captcha verification failed'], Response::HTTP_CONFLICT);
         }
 
         $em->persist($feedback);

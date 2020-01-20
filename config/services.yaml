@@ -5,6 +5,8 @@
 # https://symfony.com/doc/current/best_practices/configuration.html#application-related-configuration
 parameters:
     channel_address: '%env(CHANNEL_ADDRESS)%'
+    recaptcha_secret_key: '%env(RECAPTCHA_SECRET_KEY)%'
+    recaptcha_site_key: '%env(RECAPTCHA_SITE_KEY)%'
     locale: 'en'
     json_path: '../public/jsons/'
     network_file_path: 'uploads/network'
@@ -43,7 +45,7 @@ services:
         arguments: ['%env(STATE_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ORDER_ENDPOINT)%', '%env(CHANNEL_PRIVATE_KEY)%']
 
     App\Service\Custom:
-        arguments: ['@doctrine.orm.entity_manager']
+        arguments: ['@doctrine.orm.entity_manager', '%env(RECAPTCHA_SECRET_KEY)%']
 
     json:
         class: App\Service\Json
