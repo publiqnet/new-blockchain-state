@@ -88,6 +88,8 @@ class PublicAddressesCommand extends ContainerAwareCommand
                 $nodeAddress = $publicAddress->getNodeAddress();
                 $nodeEntity = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $nodeAddress]);
                 if ($nodeEntity) {
+                    $currentUrl = $nodeEntity->getUrl();
+
                     $sslIpAddress = $publicAddress->getSslIpAddress()->getRemote()->getAddress();
                     $sslPort = $publicAddress->getSslIpAddress()->getRemote()->getPort();
                     if ($sslIpAddress) {
@@ -113,16 +115,18 @@ class PublicAddressesCommand extends ContainerAwareCommand
                     $nodeEntity->setUrl($url);
 
 
-                    //  get location
-                    $locationData = file_get_contents('http://api.ipapi.com/' . $locationCheckAddress . '?access_key=' . self::IP_API_KEY . '&format=1');
-                    if ($locationData) {
-                        $locationData = json_decode($locationData, true);
-                        $lat = $locationData['latitude'];
-                        $lng = $locationData['longitude'];
+                    //  get location if url has changed
+                    if ($currentUrl != $url) {
+                        $locationData = file_get_contents('http://api.ipapi.com/' . $locationCheckAddress . '?access_key=' . self::IP_API_KEY . '&format=1');
+                        if ($locationData) {
+                            $locationData = json_decode($locationData, true);
+                            $lat = $locationData['latitude'];
+                            $lng = $locationData['longitude'];
 
-                        if ($lat !== null && $lng !== null) {
-                            $nodeEntity->setLat($lat);
-                            $nodeEntity->setLng($lng);
+                            if ($lat !== null && $lng !== null) {
+                                $nodeEntity->setLat($lat);
+                                $nodeEntity->setLng($lng);
+                            }
                         }
                     }
 
