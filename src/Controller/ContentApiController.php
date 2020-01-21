@@ -1640,4 +1640,59 @@ class ContentApiController extends Controller
 
         return new JsonResponse(['active' => $active, 'passive' => $passive, 'summary' => $boostSummary]);
     }
+
+
+    /**
+     * @Route("-fixing/{uri}", methods={"GET"}, name="get_content_by_uri_for_fix")
+     * @SWG\Get(
+     *     summary="Get content to fix",
+     *     consumes={"application/json"},
+     *     produces={"application/json"}
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=404, description="User not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Content")
+     * @param string $uri
+     * @return JsonResponse
+     */
+    public function fixEncoding(string $uri)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var \App\Entity\ContentUnit $contentUnit
+         */
+        $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
+        if (!$contentUnit) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        $channel = $contentUnit->getChannel();
+        if ($channel->getUrl()) {
+            $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $uri);
+            if (!mb_check_encoding($storageData, 'UTF-8')) {
+                $storageData = utf8_encode($storageData);
+            }
+
+            if ($storageData) {
+                if (strpos($storageData, '</h1>')) {
+                    if (strpos($storageData, '<h1>') > 0) {
+                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                    }
+                    $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+
+                    $contentUnit->setTitle($contentUnitTitle);
+                    $em->persist($contentUnit);
+                    $em->flush();
+
+                    return new JsonResponse(['ok']);
+                }
+            }
+        }
+
+        return new JsonResponse(['chOK']);
+    }
 }

@@ -251,7 +251,10 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitText = null;
                             if ($channelAccount->getUrl()) {
                                 $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
-                                $storageData = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $storageData);
+                                if (!mb_check_encoding($storageData, 'UTF-8')) {
+                                    $storageData = utf8_encode($storageData);
+                                }
+
                                 if ($storageData) {
                                     if (strpos($storageData, '</h1>')) {
                                         if (strpos($storageData, '<h1>') > 0) {
@@ -785,7 +788,10 @@ class StateSyncCommand extends ContainerAwareCommand
                     $contentUnitText = null;
                     if ($channelAccount->getUrl()) {
                         $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
-                        $storageData = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $storageData);
+                        if (!mb_check_encoding($storageData, 'UTF-8')) {
+                            $storageData = utf8_encode($storageData);
+                        }
+
                         if ($storageData) {
                             if (strpos($storageData, '</h1>')) {
                                 if (strpos($storageData, '<h1>') > 0) {
