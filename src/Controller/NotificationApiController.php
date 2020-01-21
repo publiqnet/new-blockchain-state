@@ -14,6 +14,8 @@ use App\Entity\UserNotification;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mercure\PublisherInterface;
+use Symfony\Component\Mercure\Update;
 use Symfony\Component\Routing\Annotation\Route;
 use Swagger\Annotations as SWG;
 
@@ -316,5 +318,39 @@ class NotificationApiController extends Controller
         }
 
         return new JsonResponse(['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]);
+    }
+
+    /**
+     * @Route("-test/{text}", methods={"POST"})
+     * @SWG\Post(
+     *     summary="POST Mercure",
+     *     consumes={"application/json"},
+     *     produces={"application/json"}
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Notification")
+     * @param PublisherInterface $publisher
+     * @param string $text
+     * @return Response
+     */
+    public function testPost(PublisherInterface $publisher, string $text)
+    {
+        $storageData = file_get_contents('https://south.publiq.network:14123/storage?file=jFpFQeKofomBiud3a75BXGbcgzbmW4FqnS5hmcA91kz');
+//        $storageData = preg_replace('/[\x00-\x1F\x80-\xFF]/', '�', $storageData);
+        var_dump($storageData);exit();
+
+
+
+        $update = new Update(
+            'http://example.com/books/1',
+            json_encode(['status' => 'OutOfStock'])
+        );
+
+        // The Publisher service is an invokable object
+        $publisher($update);
+
+        return new Response('published!');
     }
 }
