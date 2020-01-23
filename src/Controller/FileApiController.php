@@ -216,7 +216,7 @@ class FileApiController extends Controller
             $fileName = $fileUri . '.' . $file->guessExtension();
             $file->move($draftPath, $fileName);
 
-            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
+            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName, 'url' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
         }
 
         return new JsonResponse('', Response::HTTP_CONFLICT);

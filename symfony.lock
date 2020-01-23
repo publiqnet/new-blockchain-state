@@ -95,6 +95,9 @@
     "knplabs/knp-menu-bundle": {
         "version": "2.2.2"
     },
+    "lcobucci/jwt": {
+        "version": "3.3.1"
+    },
     "monolog/monolog": {
         "version": "1.23.0"
     },
@@ -137,11 +140,11 @@
     "psr/container": {
         "version": "1.0.0"
     },
+    "psr/link": {
+        "version": "1.0.0"
+    },
     "psr/log": {
         "version": "1.0.2"
-    },
-    "psr/simple-cache": {
-        "version": "1.0.1"
     },
     "publiq/publiq-models-php": {
         "version": "1.0.x-dev"
@@ -265,6 +268,9 @@
     "symfony/dotenv": {
         "version": "v4.1.4"
     },
+    "symfony/error-handler": {
+        "version": "v4.4.2"
+    },
     "symfony/event-dispatcher": {
         "version": "v4.1.4"
     },
@@ -301,6 +307,9 @@
             "ref": "87c585d24de9f43bca80ebcfd5cf5cb39445d95f"
         }
     },
+    "symfony/http-client": {
+        "version": "v4.4.2"
+    },
     "symfony/http-foundation": {
         "version": "v4.1.4"
     },
@@ -315,6 +324,21 @@
     },
     "symfony/lock": {
         "version": "v4.1.4"
+    },
+    "symfony/mercure": {
+        "version": "v0.3.0"
+    },
+    "symfony/mercure-bundle": {
+        "version": "0.2",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "master",
+            "version": "0.2",
+            "ref": "a37d3438e4bd4f9f924c516996bc29e25f66b07e"
+        },
+        "files": [
+            "config/packages/mercure.yaml"
+        ]
     },
     "symfony/mime": {
         "version": "v4.3.1"
@@ -463,6 +487,9 @@
     },
     "symfony/var-exporter": {
         "version": "v4.3.1"
+    },
+    "symfony/web-link": {
+        "version": "v4.4.3"
     },
     "symfony/web-profiler-bundle": {
         "version": "3.3",

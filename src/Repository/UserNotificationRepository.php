@@ -108,6 +108,12 @@ class UserNotificationRepository extends EntityRepository
             ->getResult();
     }
 
+    /**
+     * @param Account $user
+     * @return int
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
     public function getNumberOfUnreadByUser(Account $user)
     {
         return intval(

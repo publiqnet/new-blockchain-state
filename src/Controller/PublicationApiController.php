@@ -716,6 +716,9 @@ class PublicationApiController extends Controller
             if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
                 $memberStatus = $publicationMember->getStatus();
 
+                /**
+                 * @var Account $publicationOwner
+                 */
                 $publicationOwner = $em->getRepository(Account::class)->getPublicationOwner($publication);
                 if ($publicationOwner) {
                     //  check if user subscribed to author
@@ -728,11 +731,11 @@ class PublicationApiController extends Controller
                 }
                 $publicationOwner = $this->get('serializer')->normalize($publicationOwner, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
+                /**
+                 * @var Account[] $publicationEditors
+                 */
                 $publicationEditors = $em->getRepository(Account::class)->getPublicationEditors($publication);
                 if ($publicationEditors) {
-                    /**
-                     * @var Account $publicationEditor
-                     */
                     foreach ($publicationEditors as $publicationEditor) {
                         //  check if user subscribed to author
                         $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationEditor]);
@@ -745,11 +748,11 @@ class PublicationApiController extends Controller
                 }
                 $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
+                /**
+                 * @var Account[] $publicationContributors
+                 */
                 $publicationContributors = $em->getRepository(Account::class)->getPublicationContributors($publication);
                 if ($publicationContributors) {
-                    /**
-                     * @var Account $publicationContributor
-                     */
                     foreach ($publicationContributors as $publicationContributor) {
                         //  check if user subscribed to author
                         $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationContributor]);
@@ -1764,5 +1767,61 @@ class PublicationApiController extends Controller
         $contentUnits = $contentUnitService->prepareTags($contentUnits);
 
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
+    }
+
+    /**
+     * @Route("/{slug}/article/{uri}", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Remove Article from Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=403, description="User has no permission")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @param string $uri
+     * @return JsonResponse
+     */
+    public function deleteArticle(string $slug, string $uri)
+    {
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        /**
+         * @var ContentUnit $article
+         */
+        $article = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $uri]);
+        if (!$article) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is an article author or publication owner / editor
+        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+        if ($publicationMember && ($account == $article->getAuthor() || $publicationMember->getStatus() == PublicationMember::TYPES['editor'] || $publicationMember->getStatus() == PublicationMember::TYPES['owner'])) {
+            $article->setPublication(null);
+            $em->persist($article);
+            $em->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
     }
 }

@@ -16,7 +16,11 @@ use App\Entity\Notification;
 use App\Entity\Account;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Symfony\Component\Mercure\Jwt\StaticJwtProvider;
+use Symfony\Component\Mercure\Publisher;
+use Symfony\Component\Mercure\Update;
 
 class UserNotification
 {
@@ -24,16 +28,14 @@ class UserNotification
      * @var EntityManager
      */
     private $em;
+    private $mercureHub;
+    private $mercureSecretKey;
 
-    /**
-     * @var RequestStack
-     */
-    private $requestStack;
-
-    public function __construct(EntityManagerInterface $em, RequestStack $requestStack)
+    public function __construct(EntityManagerInterface $em, string $mercureHub, string $mercureSecretKey)
     {
         $this->em = $em;
-        $this->requestStack = $requestStack;
+        $this->mercureHub = $mercureHub;
+        $this->mercureSecretKey = $mercureSecretKey;
     }
 
     /**
@@ -80,6 +82,24 @@ class UserNotification
 
         $this->em->persist($userNotification);
         $this->em->flush();
+
+        //  MERCURE
+        $token = (new Builder())
+            ->set('mercure', ['publish' => ["http://publiq.site/user/" . $user->getPublicKey()]])
+            ->sign(new Sha256(), $this->mercureSecretKey)
+            ->getToken();
+
+        $jwtProvider = new StaticJwtProvider($token);
+        $publisher = new Publisher($this->mercureHub, $jwtProvider);
+
+        $update = new Update(
+            'http://publiq.site/notification',
+            json_encode(['notification' => true]),
+            ["http://publiq.site/user/" . $user->getPublicKey()]
+        );
+
+        // The Publisher service is an invokable object
+        $publisher($update);
 
         return $userNotification;
     }
