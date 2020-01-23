@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mercure</title>
+</head>
+<body>
+
+<script>
+    const eventSource = new EventSource('https://stage-mercure.publiq.network?topic=' + encodeURIComponent('http://publiq.site/notification'));
+    eventSource.onmessage = event => {
+        // Will be called every time an update is published by the server
+        console.log(JSON.parse(event.data));
+    }
+</script>
+
+</body>
+</html>
