@@ -1770,7 +1770,7 @@ class PublicationApiController extends Controller
     }
 
     /**
-     * @Route("/{slug}/{uri}", methods={"DELETE"})
+     * @Route("/{slug}/article/{uri}", methods={"DELETE"})
      * @SWG\Delete(
      *     summary="Remove Article from Publication",
      *     consumes={"application/json"},
