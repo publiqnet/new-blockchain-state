@@ -64,7 +64,7 @@ services:
         arguments: ['@doctrine.orm.entity_manager', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%thumbnail_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%', '%env(FB_CLIENT_ID)%', '%env(FB_CLIENT_SECRET)%']
 
     App\Service\UserNotification:
-        arguments: ['@doctrine.orm.entity_manager', '%env(MERCURE_PUBLISH_URL)%', '%env(MERCURE_JWT_SECRET)%']
+        arguments: ['@doctrine.orm.entity_manager', '@serializer', '%env(MERCURE_PUBLISH_URL)%', '%env(MERCURE_JWT_SECRET)%']
 
     json:
         class: App\Service\Json
