@@ -14,6 +14,7 @@
         "beberlei/doctrineextensions": "^1.2",
         "doctrine/doctrine-bundle": "^1.9",
         "doctrine/orm": "^2.6",
+        "lcobucci/jwt": "^3.3",
         "nelmio/api-doc-bundle": "^3.3",
         "nelmio/cors-bundle": "^1.5",
         "presta/sitemap-bundle": "^1.7",
@@ -41,6 +42,7 @@
         "symfony/templating": "*",
         "symfony/twig-bundle": "*",
         "symfony/validator": "4.4.*",
+        "symfony/web-link": "4.4.*",
         "symfony/yaml": "*",
         "tooleks/php-avg-color-picker": "^1.1"
     },

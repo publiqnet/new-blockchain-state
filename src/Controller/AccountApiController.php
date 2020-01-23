@@ -25,6 +25,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
 
 /**
  * Class AccountApiController
@@ -117,6 +119,13 @@ class AccountApiController extends Controller
             $account['token'] = $account['apiKey'];
             unset($account['apiKey']);
 
+            //  create jwt token
+            $token = (new Builder())
+                ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+                ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
+                ->getToken();
+            $account['jwtToken'] = (string) $token;
+
             return new JsonResponse($account);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
@@ -143,9 +152,19 @@ class AccountApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
         unset($account['apiKey']);
+
+        //  create jwt token
+        $token = (new Builder())
+            ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+            ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
+            ->getToken();
+        $account['jwtToken'] = (string) $token;
 
         return new JsonResponse($account);
     }

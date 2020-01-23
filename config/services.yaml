@@ -18,6 +18,8 @@ parameters:
     router.request_context.host: '%env(MAIN_DOMAIN_HOST)%'
     router.request_context.scheme: '%env(MAIN_DOMAIN_SCHEME)%'
     backend_endpoint: '%env(BACKEND_ENDPOINT)%'
+    mercure_token: '%env(MERCURE_JWT_TOKEN)%'
+    mercure_secret_key: '%env(MERCURE_JWT_SECRET)%'
 
 services:
     # default configuration for services in *this* file
@@ -60,6 +62,9 @@ services:
 
     App\Service\Custom:
         arguments: ['@doctrine.orm.entity_manager', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%thumbnail_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%', '%env(FB_CLIENT_ID)%', '%env(FB_CLIENT_SECRET)%']
+
+    App\Service\UserNotification:
+        arguments: ['@doctrine.orm.entity_manager', '%env(MERCURE_PUBLISH_URL)%', '%env(MERCURE_JWT_SECRET)%']
 
     json:
         class: App\Service\Json

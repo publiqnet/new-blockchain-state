@@ -95,6 +95,9 @@
     "knplabs/knp-menu-bundle": {
         "version": "2.2.2"
     },
+    "lcobucci/jwt": {
+        "version": "3.3.1"
+    },
     "monolog/monolog": {
         "version": "1.23.0"
     },
@@ -135,6 +138,9 @@
         "version": "1.0.1"
     },
     "psr/container": {
+        "version": "1.0.0"
+    },
+    "psr/link": {
         "version": "1.0.0"
     },
     "psr/log": {
@@ -481,6 +487,9 @@
     },
     "symfony/var-exporter": {
         "version": "v4.3.1"
+    },
+    "symfony/web-link": {
+        "version": "v4.4.3"
     },
     "symfony/web-profiler-bundle": {
         "version": "3.3",
