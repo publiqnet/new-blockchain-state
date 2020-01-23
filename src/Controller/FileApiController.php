@@ -199,14 +199,29 @@ class FileApiController extends Controller
             $replacementUri = $request->request->get('replacementUri');
         }
 
+        $backendEndpoint = $this->getParameter('backend_endpoint');
+        $draftPath = $this->getParameter('draft_path');
+
         /**
          * @var UploadedFile $file
          */
         $file = $request->files->get('file');
+        if ($file && $file->getClientMimeType()) {
+            $fileData = file_get_contents($file->getRealPath());
+            $fileDataHash = hash('sha256', $fileData);
+            $fileUri = $fileUri = base58::Encode($fileDataHash);
 
-        $backendEndpoint = $this->getParameter('backend_endpoint');
-        $draftPath = $this->getParameter('draft_path');
+            //  move file to draft files directory
+            $fileName = $fileUri . '.' . $file->guessExtension();
+            $file->move($draftPath, $fileName);
 
+            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName, 'url' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
+        }
+
+        /**
+         * @var UploadedFile $file
+         */
+        $file = $request->files->get('upload');
         if ($file && $file->getClientMimeType()) {
             $fileData = file_get_contents($file->getRealPath());
             $fileDataHash = hash('sha256', $fileData);
