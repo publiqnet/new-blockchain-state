@@ -81,6 +81,9 @@ class ContentApiController extends Controller
      */
     public function uploadContentUnit(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $channelAddress = $this->getParameter('channel_address');
 
@@ -161,6 +164,9 @@ class ContentApiController extends Controller
      */
     public function signContentUnit(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $publicationSlug = '';
         $tags = '';
@@ -425,6 +431,9 @@ class ContentApiController extends Controller
      */
     public function publishContent(Request $request, BlockChain $blockChain, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -550,6 +559,9 @@ class ContentApiController extends Controller
      */
     public function changeContentPublication(Request $request)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -679,7 +691,14 @@ class ContentApiController extends Controller
      */
     public function contents(int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -753,7 +772,14 @@ class ContentApiController extends Controller
      */
     public function authorContents(string $publicKey, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -848,7 +874,14 @@ class ContentApiController extends Controller
      */
     public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -1094,7 +1127,14 @@ class ContentApiController extends Controller
      */
     public function contentSeo(string $uri)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
@@ -1495,6 +1535,9 @@ class ContentApiController extends Controller
      */
     public function getBoosts(CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1655,9 +1698,13 @@ class ContentApiController extends Controller
      * @SWG\Tag(name="Content")
      * @param string $uri
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function fixEncoding(string $uri)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1677,13 +1724,7 @@ class ContentApiController extends Controller
 
             if ($storageData) {
                 if (strpos($storageData, '</h1>')) {
-                    if (strpos($storageData, '<h1>') > 0) {
-                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
-                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                    }
                     $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-
                     $contentUnit->setTitle($contentUnitTitle);
                     $em->persist($contentUnit);
                     $em->flush();

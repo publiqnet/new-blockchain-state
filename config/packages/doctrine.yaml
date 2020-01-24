@@ -42,3 +42,7 @@ doctrine:
             string_functions:
                 # Match against should have the path to the MatchAgainst class created in the previous step
                 MATCH_AGAINST: App\Extensions\Doctrine\MatchAgainst
+        filters:
+            channel_exclude_filter:
+                class: App\Filter\ChannelExcludeFilter
+                enabled: false

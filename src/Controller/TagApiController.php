@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\Tag;
 use App\Service\ContentUnit as CUService;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -40,6 +41,9 @@ class TagApiController extends Controller
      */
     public function getTags()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $tags = $em->getRepository(Tag::class)->getTagsByPopularity(40);
@@ -68,6 +72,9 @@ class TagApiController extends Controller
      */
     public function getArticlesByTag(string $tag, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

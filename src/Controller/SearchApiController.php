@@ -14,6 +14,7 @@ use App\Entity\Publication;
 use App\Entity\PublicationMember;
 use App\Entity\Subscription;
 use App\Service\ContentUnit as CUService;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -44,6 +45,9 @@ class SearchApiController extends Controller
      */
     public function default()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -115,6 +119,9 @@ class SearchApiController extends Controller
      */
     public function search(string $word, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $defaultCount = 5;
 
@@ -221,6 +228,9 @@ class SearchApiController extends Controller
      */
     public function searchPublication(string $word, int $count, string $fromSlug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -286,6 +296,9 @@ class SearchApiController extends Controller
      */
     public function searchArticle(string $word, int $count, string $fromUri, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -336,6 +349,9 @@ class SearchApiController extends Controller
      */
     public function searchAuthors(string $word, int $count, string $fromPublicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

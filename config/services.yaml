@@ -20,6 +20,8 @@ parameters:
     backend_endpoint: '%env(BACKEND_ENDPOINT)%'
     mercure_token: '%env(MERCURE_JWT_TOKEN)%'
     mercure_secret_key: '%env(MERCURE_JWT_SECRET)%'
+    environment: '%env(APP_ENV)%'
+    exclude_channels_addresses: '%env(EXCLUDE_CHANNELS_ADDRESSES)%'
 
 services:
     # default configuration for services in *this* file

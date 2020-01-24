@@ -14,6 +14,7 @@ use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\DraftFile;
 use App\Service\BlockChain;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Done;
@@ -54,6 +55,9 @@ class FileApiController extends Controller
      */
     public function images(int $count, string $fromUri)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $backendEndpoint = $this->getParameter('backend_endpoint');
 
@@ -121,6 +125,9 @@ class FileApiController extends Controller
      */
     public function imagesByTag(string $tag, int $count, string $fromUri)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $backendEndpoint = $this->getParameter('backend_endpoint');
 
@@ -269,6 +276,9 @@ class FileApiController extends Controller
      */
     public function signFile(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

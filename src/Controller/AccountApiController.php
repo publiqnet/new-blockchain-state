@@ -17,6 +17,7 @@ use App\Event\SubscribeUserEvent;
 use App\Service\Oauth;
 use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -88,7 +89,9 @@ class AccountApiController extends Controller
                 $account->setEmail($email);
             }
 
-            $account->setApiKey();
+            if ($this->getParameter('environment') == 'prod' || !$account->getApiKey()) {
+                $account->setApiKey();
+            }
 
             $em->persist($account);
             $em->flush();
@@ -228,6 +231,9 @@ class AccountApiController extends Controller
      */
     public function updateAccount(Request $request)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -360,7 +366,14 @@ class AccountApiController extends Controller
      */
     public function getAuthorStats(string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -422,6 +435,9 @@ class AccountApiController extends Controller
      */
     public function searchUsers($searchWord)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -452,6 +468,9 @@ class AccountApiController extends Controller
      */
     public function getSubscriptions()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -586,7 +605,11 @@ class AccountApiController extends Controller
      */
     public function getHomepageData(CUService $contentUnitService, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
         $preferredAuthorsArticles = null;
         $preferredTagsArticles = null;
         $firstArticle = null;
