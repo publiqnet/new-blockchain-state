@@ -17,6 +17,7 @@ use App\Event\SubscribeUserEvent;
 use App\Service\Oauth;
 use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -25,6 +26,8 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
 
 /**
  * Class AccountApiController
@@ -86,7 +89,9 @@ class AccountApiController extends Controller
                 $account->setEmail($email);
             }
 
-            $account->setApiKey();
+            if ($this->getParameter('environment') == 'prod' || !$account->getApiKey()) {
+                $account->setApiKey();
+            }
 
             $em->persist($account);
             $em->flush();
@@ -117,6 +122,13 @@ class AccountApiController extends Controller
             $account['token'] = $account['apiKey'];
             unset($account['apiKey']);
 
+            //  create jwt token
+            $token = (new Builder())
+                ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+                ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
+                ->getToken();
+            $account['jwtToken'] = (string) $token;
+
             return new JsonResponse($account);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
@@ -143,9 +155,19 @@ class AccountApiController extends Controller
          * @var Account $account
          */
         $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
 
         $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
         unset($account['apiKey']);
+
+        //  create jwt token
+        $token = (new Builder())
+            ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+            ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
+            ->getToken();
+        $account['jwtToken'] = (string) $token;
 
         return new JsonResponse($account);
     }
@@ -209,6 +231,9 @@ class AccountApiController extends Controller
      */
     public function updateAccount(Request $request)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -341,7 +366,14 @@ class AccountApiController extends Controller
      */
     public function getAuthorStats(string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -403,6 +435,9 @@ class AccountApiController extends Controller
      */
     public function searchUsers($searchWord)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -433,6 +468,9 @@ class AccountApiController extends Controller
      */
     public function getSubscriptions()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -567,7 +605,11 @@ class AccountApiController extends Controller
      */
     public function getHomepageData(CUService $contentUnitService, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
+
         $preferredAuthorsArticles = null;
         $preferredTagsArticles = null;
         $firstArticle = null;

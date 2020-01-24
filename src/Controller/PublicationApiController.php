@@ -25,6 +25,7 @@ use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
 use App\Service\Custom;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -71,6 +72,9 @@ class PublicationApiController extends Controller
      */
     public function createPublication(Request $request, ValidatorInterface $validator, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -222,6 +226,9 @@ class PublicationApiController extends Controller
      */
     public function updatePublication(Request $request, ValidatorInterface $validator, Custom $customService, $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -388,6 +395,9 @@ class PublicationApiController extends Controller
      */
     public function deletePublication($slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -447,6 +457,9 @@ class PublicationApiController extends Controller
      */
     public function getPublications($count = 10, $slug = null)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -508,6 +521,9 @@ class PublicationApiController extends Controller
      */
     public function getRelatedPublications()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -586,6 +602,9 @@ class PublicationApiController extends Controller
      */
     public function getRelatedPublicationsByType(string $type)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -675,6 +694,9 @@ class PublicationApiController extends Controller
      */
     public function getPublication($slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -716,6 +738,9 @@ class PublicationApiController extends Controller
             if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
                 $memberStatus = $publicationMember->getStatus();
 
+                /**
+                 * @var Account $publicationOwner
+                 */
                 $publicationOwner = $em->getRepository(Account::class)->getPublicationOwner($publication);
                 if ($publicationOwner) {
                     //  check if user subscribed to author
@@ -728,11 +753,11 @@ class PublicationApiController extends Controller
                 }
                 $publicationOwner = $this->get('serializer')->normalize($publicationOwner, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
+                /**
+                 * @var Account[] $publicationEditors
+                 */
                 $publicationEditors = $em->getRepository(Account::class)->getPublicationEditors($publication);
                 if ($publicationEditors) {
-                    /**
-                     * @var Account $publicationEditor
-                     */
                     foreach ($publicationEditors as $publicationEditor) {
                         //  check if user subscribed to author
                         $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationEditor]);
@@ -745,11 +770,11 @@ class PublicationApiController extends Controller
                 }
                 $publicationEditors = $this->get('serializer')->normalize($publicationEditors, null, ['groups' => ['accountBase', 'accountMemberStatus', 'accountSubscribed']]);
 
+                /**
+                 * @var Account[] $publicationContributors
+                 */
                 $publicationContributors = $em->getRepository(Account::class)->getPublicationContributors($publication);
                 if ($publicationContributors) {
-                    /**
-                     * @var Account $publicationContributor
-                     */
                     foreach ($publicationContributors as $publicationContributor) {
                         //  check if user subscribed to author
                         $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $publicationContributor]);
@@ -841,6 +866,9 @@ class PublicationApiController extends Controller
      */
     public function getPublicationSeo($slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -881,9 +909,13 @@ class PublicationApiController extends Controller
      * @param Request $request
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function inviteMember(Request $request, string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -995,9 +1027,13 @@ class PublicationApiController extends Controller
      * @param string $slug
      * @param string $identifier
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function cancelInvitation(string $slug, string $identifier)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1067,9 +1103,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function acceptInvitationBecomeMember(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1123,9 +1163,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function rejectInvitationBecomeMember(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1172,9 +1216,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function becomeMember(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1224,9 +1272,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function membershipCancel(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1274,9 +1326,13 @@ class PublicationApiController extends Controller
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function acceptRequestBecomeMember(string $slug, string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1341,9 +1397,13 @@ class PublicationApiController extends Controller
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function rejectRequestBecomeMember(string $slug, string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1420,9 +1480,13 @@ class PublicationApiController extends Controller
      * @param Request $request
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function changeMemberStatus(Request $request, string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1497,9 +1561,13 @@ class PublicationApiController extends Controller
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function deleteMember(string $slug, string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1561,9 +1629,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function leave(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1610,9 +1682,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function subscribe(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1655,9 +1731,13 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function unsubscribe(string $slug)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1705,6 +1785,9 @@ class PublicationApiController extends Controller
      */
     public function contents(string $slug, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -1764,5 +1847,65 @@ class PublicationApiController extends Controller
         $contentUnits = $contentUnitService->prepareTags($contentUnits);
 
         return new JsonResponse(['data' => $contentUnits, 'more' => $more]);
+    }
+
+    /**
+     * @Route("/{slug}/article/{uri}", methods={"DELETE"})
+     * @SWG\Delete(
+     *     summary="Remove Article from Publication",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=403, description="User has no permission")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @param string $uri
+     * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     */
+    public function deleteArticle(string $slug, string $uri)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+        if (!$account) {
+            return new JsonResponse(null, Response::HTTP_UNAUTHORIZED);
+        }
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        /**
+         * @var ContentUnit $article
+         */
+        $article = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $uri]);
+        if (!$article) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is an article author or publication owner / editor
+        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+        if ($publicationMember && ($account == $article->getAuthor() || $publicationMember->getStatus() == PublicationMember::TYPES['editor'] || $publicationMember->getStatus() == PublicationMember::TYPES['owner'])) {
+            $article->setPublication(null);
+            $em->persist($article);
+            $em->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
     }
 }

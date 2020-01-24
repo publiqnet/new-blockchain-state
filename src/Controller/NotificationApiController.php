@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\Notification;
 use App\Entity\UserNotification;
+use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,6 +40,9 @@ class NotificationApiController extends Controller
      */
     public function markAllAsReed()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -70,6 +74,9 @@ class NotificationApiController extends Controller
      */
     public function markAllAsSeen()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -100,9 +107,13 @@ class NotificationApiController extends Controller
      * @SWG\Tag(name="Notification")
      * @param int $notificationId
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function markAsReed(int $notificationId)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -144,9 +155,13 @@ class NotificationApiController extends Controller
      * @SWG\Tag(name="Notification")
      * @param int $notificationId
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function markAsUnread(int $notificationId)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -188,9 +203,13 @@ class NotificationApiController extends Controller
      * @SWG\Tag(name="Notification")
      * @param int $notificationId
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function delete(int $notificationId)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -230,9 +249,13 @@ class NotificationApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Notification")
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function deleteAll()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -278,6 +301,9 @@ class NotificationApiController extends Controller
      */
     public function getAll(int $count, int $fromId)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

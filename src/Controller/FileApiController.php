@@ -14,6 +14,7 @@ use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\DraftFile;
 use App\Service\BlockChain;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use PubliqAPI\Base\UriProblemType;
 use PubliqAPI\Model\Done;
@@ -54,6 +55,9 @@ class FileApiController extends Controller
      */
     public function images(int $count, string $fromUri)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $backendEndpoint = $this->getParameter('backend_endpoint');
 
@@ -121,6 +125,9 @@ class FileApiController extends Controller
      */
     public function imagesByTag(string $tag, int $count, string $fromUri)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $backendEndpoint = $this->getParameter('backend_endpoint');
 
@@ -199,14 +206,13 @@ class FileApiController extends Controller
             $replacementUri = $request->request->get('replacementUri');
         }
 
+        $backendEndpoint = $this->getParameter('backend_endpoint');
+        $draftPath = $this->getParameter('draft_path');
+
         /**
          * @var UploadedFile $file
          */
         $file = $request->files->get('file');
-
-        $backendEndpoint = $this->getParameter('backend_endpoint');
-        $draftPath = $this->getParameter('draft_path');
-
         if ($file && $file->getClientMimeType()) {
             $fileData = file_get_contents($file->getRealPath());
             $fileDataHash = hash('sha256', $fileData);
@@ -216,7 +222,23 @@ class FileApiController extends Controller
             $fileName = $fileUri . '.' . $file->guessExtension();
             $file->move($draftPath, $fileName);
 
-            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
+            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName, 'url' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
+        }
+
+        /**
+         * @var UploadedFile $file
+         */
+        $file = $request->files->get('upload');
+        if ($file && $file->getClientMimeType()) {
+            $fileData = file_get_contents($file->getRealPath());
+            $fileDataHash = hash('sha256', $fileData);
+            $fileUri = $fileUri = base58::Encode($fileDataHash);
+
+            //  move file to draft files directory
+            $fileName = $fileUri . '.' . $file->guessExtension();
+            $file->move($draftPath, $fileName);
+
+            return new JsonResponse(['uri' => $fileUri, 'link' => $backendEndpoint . '/' . $draftPath . '/' . $fileName, 'url' => $backendEndpoint . '/' . $draftPath . '/' . $fileName]);
         }
 
         return new JsonResponse('', Response::HTTP_CONFLICT);
@@ -254,6 +276,9 @@ class FileApiController extends Controller
      */
     public function signFile(Request $request, BlockChain $blockChain)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

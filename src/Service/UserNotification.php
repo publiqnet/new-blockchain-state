@@ -16,7 +16,12 @@ use App\Entity\Notification;
 use App\Entity\Account;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Lcobucci\JWT\Builder;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
+use Symfony\Component\Mercure\Jwt\StaticJwtProvider;
+use Symfony\Component\Mercure\Publisher;
+use Symfony\Component\Mercure\Update;
+use Symfony\Component\Serializer\Serializer;
 
 class UserNotification
 {
@@ -24,16 +29,19 @@ class UserNotification
      * @var EntityManager
      */
     private $em;
-
     /**
-     * @var RequestStack
+     * @var Serializer $serializer
      */
-    private $requestStack;
+    private $serializer;
+    private $mercureHub;
+    private $mercureSecretKey;
 
-    public function __construct(EntityManagerInterface $em, RequestStack $requestStack)
+    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey)
     {
         $this->em = $em;
-        $this->requestStack = $requestStack;
+        $this->serializer = $serializer;
+        $this->mercureHub = $mercureHub;
+        $this->mercureSecretKey = $mercureSecretKey;
     }
 
     /**
@@ -70,6 +78,7 @@ class UserNotification
      * @return \App\Entity\UserNotification
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function notify(Account $user, Notification $notification, bool $special = false)
     {
@@ -80,6 +89,56 @@ class UserNotification
 
         $this->em->persist($userNotification);
         $this->em->flush();
+
+        //  MERCURE
+        $token = (new Builder())
+            ->set('mercure', ['publish' => ["http://publiq.site/user/" . $user->getPublicKey()]])
+            ->sign(new Sha256(), $this->mercureSecretKey)
+            ->getToken();
+
+        $jwtProvider = new StaticJwtProvider($token);
+        $publisher = new Publisher($this->mercureHub, $jwtProvider);
+
+
+        //  get user last 10 notifications
+        $unreadNotifications = $this->em->getRepository(UN::class)->getUserUnreadNotifications($user);
+        $unseenNotifications = $this->em->getRepository(UN::class)->getUserUnseenNotifications($user);
+
+        /**
+         * @var Notification[] $notifications
+         */
+        $notifications = $this->em->getRepository(Notification::class)->getUserNotifications($user, 11);
+        $notifications = $this->serializer->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase', 'contentUnitNotification']]);
+
+        $notificationsRewrited = [];
+        for ($i=0; $i<count($notifications); $i++) {
+            $notification = $notifications[$i][0];
+
+            unset($notifications[$i][0]);
+            foreach ($notifications[$i] as $key => $notificationExtra) {
+                $notification[$key] = $notificationExtra;
+            }
+
+            $notificationsRewrited[] = $notification;
+        }
+
+        $more = false;
+        if (count($notificationsRewrited) > 10) {
+            unset($notificationsRewrited[10]);
+            $more = true;
+        }
+
+        $data = ['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)];
+
+
+        $update = new Update(
+            'http://publiq.site/notification',
+            json_encode(['type' => 'notification', 'data' => $data]),
+            ["http://publiq.site/user/" . $user->getPublicKey()]
+        );
+
+        // The Publisher service is an invokable object
+        $publisher($update);
 
         return $userNotification;
     }

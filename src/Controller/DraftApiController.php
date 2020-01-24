@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\Draft;
 use App\Entity\DraftFile;
+use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -64,6 +65,9 @@ class DraftApiController extends Controller
      */
     public function createDraft(Request $request)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -223,6 +227,9 @@ class DraftApiController extends Controller
      */
     public function updateDraft(Request $request, $id)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -367,6 +374,9 @@ class DraftApiController extends Controller
      */
     public function deleteDraft($id)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -419,6 +429,9 @@ class DraftApiController extends Controller
      */
     public function deleteAllDrafts()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -475,6 +488,9 @@ class DraftApiController extends Controller
      */
     public function getDraft($id)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -522,6 +538,9 @@ class DraftApiController extends Controller
      */
     public function getDrafts(int $count, $fromId)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

@@ -33,3 +33,6 @@
 
 /public/uploads/network/*
 !/public/uploads/network/.gitkeep
+
+/mercure/*
+!/mercure/.gitkeep

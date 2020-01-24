@@ -241,6 +241,7 @@ class StateSyncCommand extends ContainerAwareCommand
                             $authorAddress = $contentUnit->getAuthorAddresses()[0];
                             $channelAddress = $contentUnit->getChannelAddress();
                             $fileUris = $contentUnit->getFileUris();
+                            $fileUris = array_unique($fileUris);
                             $coverUri = null;
 
                             $authorAccount = $this->checkAccount($authorAddress);
@@ -778,6 +779,7 @@ class StateSyncCommand extends ContainerAwareCommand
                     $authorAddress = $contentUnit->getAuthorAddresses()[0];
                     $channelAddress = $contentUnit->getChannelAddress();
                     $fileUris = $contentUnit->getFileUris();
+                    $fileUris = array_unique($fileUris);
                     $coverUri = null;
 
                     $authorAccount = $this->checkAccount($authorAddress);
