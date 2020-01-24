@@ -5,7 +5,6 @@
 /var/
 /vendor/
 /.idea/
-/mercure/
 ###< symfony/framework-bundle ###
 
 ###> symfony/web-server-bundle ###
@@ -34,3 +33,6 @@
 
 /public/uploads/network/*
 !/public/uploads/network/.gitkeep
+
+/mercure/*
+!/mercure/.gitkeep
