@@ -128,13 +128,8 @@ class UserNotification
             $more = true;
         }
 
-        $data = ['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)];
-        $update = new Update(
-            'http://publiq.site/notification',
-            json_encode(['type' => 'notification', 'data' => $data]),
-            ["http://publiq.site/user/" . $user->getPublicKey()]
-        );
-        $publisher($update);
+        $data = [];
+        $data[] = ['type' => 'notification', 'data' => ['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]];
 
         //  check for special types
         $notificationType = $notification->getType();
@@ -142,13 +137,15 @@ class UserNotification
             $article = $notification->getContentUnit();
             $article = $this->serializer->normalize($article, null, ['groups' => ['contentUnitNotification']]);
 
-            $update = new Update(
-                'http://publiq.site/notification',
-                json_encode(['type' => 'article_published', 'data' => $article]),
-                ["http://publiq.site/user/" . $user->getPublicKey()]
-            );
-            $publisher($update);
+            $data[] = ['type' => 'article_published', 'data' => $article];
         }
+
+        $update = new Update(
+            'http://publiq.site/notification',
+            json_encode($data),
+            ["http://publiq.site/user/" . $user->getPublicKey()]
+        );
+        $publisher($update);
 
         return $userNotification;
     }
