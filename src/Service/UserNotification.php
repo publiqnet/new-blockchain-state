@@ -112,14 +112,14 @@ class UserNotification
 
         $notificationsRewrited = [];
         for ($i=0; $i<count($notifications); $i++) {
-            $notification = $notifications[$i][0];
+            $notificationSingle = $notifications[$i][0];
 
             unset($notifications[$i][0]);
             foreach ($notifications[$i] as $key => $notificationExtra) {
-                $notification[$key] = $notificationExtra;
+                $notificationSingle[$key] = $notificationExtra;
             }
 
-            $notificationsRewrited[] = $notification;
+            $notificationsRewrited[] = $notificationSingle;
         }
 
         $more = false;
@@ -129,16 +129,26 @@ class UserNotification
         }
 
         $data = ['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)];
-
-
         $update = new Update(
             'http://publiq.site/notification',
             json_encode(['type' => 'notification', 'data' => $data]),
             ["http://publiq.site/user/" . $user->getPublicKey()]
         );
-
-        // The Publisher service is an invokable object
         $publisher($update);
+
+        //  check for special types
+        $notificationType = $notification->getType();
+        if ($notificationType == NotificationType::TYPES['share_article']['key']) {
+            $article = $notification->getContentUnit();
+            $article = $this->serializer->normalize($article, null, ['groups' => ['contentUnitNotification']]);
+
+            $update = new Update(
+                'http://publiq.site/notification',
+                json_encode(['type' => 'article_published', 'data' => $article]),
+                ["http://publiq.site/user/" . $user->getPublicKey()]
+            );
+            $publisher($update);
+        }
 
         return $userNotification;
     }
