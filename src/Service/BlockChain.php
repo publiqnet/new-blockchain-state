@@ -375,7 +375,7 @@ class BlockChain
             return null;
         }
 
-        throw new \Exception('Issue with getting content unit data');
+        throw new \Exception('Issue with getting storage order token');
     }
 
     /**
