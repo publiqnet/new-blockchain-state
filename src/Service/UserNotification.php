@@ -133,7 +133,8 @@ class UserNotification
 
         //  check for special types
         $notificationType = $notification->getType();
-        if ($notificationType == NotificationType::TYPES['share_article']['key']) {
+        $shareArticleNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['share_article']['key']]);
+        if ($notificationType == $shareArticleNotificationType) {
             $article = $notification->getContentUnit();
             $article = $this->serializer->normalize($article, null, ['groups' => ['contentUnitNotification']]);
 
