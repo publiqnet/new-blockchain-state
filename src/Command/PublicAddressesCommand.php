@@ -116,7 +116,7 @@ class PublicAddressesCommand extends ContainerAwareCommand
 
 
                     //  get location if url has changed
-                    if ($currentUrl != $url) {
+                    if ($currentUrl != $url || $nodeEntity->getLat() === null) {
                         $locationData = file_get_contents('http://api.ipapi.com/' . $locationCheckAddress . '?access_key=' . self::IP_API_KEY . '&format=1');
                         if ($locationData) {
                             $locationData = json_decode($locationData, true);
