@@ -33,7 +33,7 @@ class Publication
     /**
      * @var string
      * @ORM\Column(type="string")
-     * @Groups({"publication", "publicationSeo", "trending"})
+     * @Groups({"publication", "publicationSeo", "trending", "publicationBase"})
      */
     private $slug;
 
@@ -42,7 +42,7 @@ class Publication
      *
      * @ORM\Column(name="title", type="string", length=256)
      * @Assert\NotBlank(message="Title can not be empty")
-     * @Groups({"publication", "publicationSeo", "trending"})
+     * @Groups({"publication", "publicationSeo", "trending", "publicationBase"})
      */
     private $title;
 
@@ -82,7 +82,7 @@ class Publication
      *         "image/jpg"
      *     }
      * )
-     * @Groups({"publication", "trending"})
+     * @Groups({"publication", "trending", "publicationBase"})
      */
     private $logo;
 

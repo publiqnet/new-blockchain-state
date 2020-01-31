@@ -139,12 +139,57 @@ class UserNotification
 
         //  check for special types
         $notificationType = $notification->getType();
+
         $shareArticleNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['share_article']['key']]);
         if ($notificationType == $shareArticleNotificationType) {
             $article = $notification->getContentUnit();
             $article = $this->serializer->normalize($article, null, ['groups' => ['contentUnitNotification']]);
 
             $data[] = ['type' => 'article_published', 'data' => $article];
+        }
+
+        $publicationInvitationNewNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['publication_invitation_new']['key']]);
+        if ($notificationType == $publicationInvitationNewNotificationType) {
+            $publication = $notification->getPublication();
+            $publication = $this->serializer->normalize($publication, null, ['groups' => ['publicationBase']]);
+
+            $inviter = $notification->getPerformer();
+            $inviter = $this->serializer->normalize($inviter, null, ['groups' => ['accountBase']]);
+
+            $data[] = ['type' => 'publication_invitation_new', 'data' => ['publication' => $publication, 'performer' => $inviter]];
+        }
+
+        $publicationInvitationCancelledNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['publication_invitation_cancelled']['key']]);
+        if ($notificationType == $publicationInvitationCancelledNotificationType) {
+            $publication = $notification->getPublication();
+            $publication = $this->serializer->normalize($publication, null, ['groups' => ['publicationBase']]);
+
+            $inviter = $notification->getPerformer();
+            $inviter = $this->serializer->normalize($inviter, null, ['groups' => ['accountBase']]);
+
+            $data[] = ['type' => 'publication_invitation_cancelled', 'data' => ['publication' => $publication, 'performer' => $inviter]];
+        }
+
+        $publicationInvitationAcceptedNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['publication_invitation_accepted']['key']]);
+        if ($notificationType == $publicationInvitationAcceptedNotificationType) {
+            $publication = $notification->getPublication();
+            $publication = $this->serializer->normalize($publication, null, ['groups' => ['publicationBase']]);
+
+            $inviter = $notification->getPerformer();
+            $inviter = $this->serializer->normalize($inviter, null, ['groups' => ['accountBase']]);
+
+            $data[] = ['type' => 'publication_invitation_accepted', 'data' => ['publication' => $publication, 'performer' => $inviter]];
+        }
+
+        $publicationInvitationRejectedNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['publication_invitation_rejected']['key']]);
+        if ($notificationType == $publicationInvitationRejectedNotificationType) {
+            $publication = $notification->getPublication();
+            $publication = $this->serializer->normalize($publication, null, ['groups' => ['publicationBase']]);
+
+            $inviter = $notification->getPerformer();
+            $inviter = $this->serializer->normalize($inviter, null, ['groups' => ['accountBase']]);
+
+            $data[] = ['type' => 'publication_invitation_rejected', 'data' => ['publication' => $publication, 'performer' => $inviter]];
         }
 
         $update = new Update(

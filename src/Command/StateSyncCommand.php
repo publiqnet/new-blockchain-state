@@ -1392,7 +1392,7 @@ class StateSyncCommand extends ContainerAwareCommand
             }
         }
 
-        $indexNumber->setLastNotifyTime($datetimeObj->getTimestamp());
+        $indexNumber->setLastNotifyTime($datetimeObj->getTimestamp() - 30);
         $this->em->persist($indexNumber);
         $this->em->flush();
 
