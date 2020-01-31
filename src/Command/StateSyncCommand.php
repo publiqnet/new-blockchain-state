@@ -1397,7 +1397,6 @@ class StateSyncCommand extends ContainerAwareCommand
         $this->em->flush();
 
         $this->io->success('Notifications sent');
-        $this->release();
 
         return null;
     }

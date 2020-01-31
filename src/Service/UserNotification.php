@@ -35,13 +35,15 @@ class UserNotification
     private $serializer;
     private $mercureHub;
     private $mercureSecretKey;
+    private $excludeChannelsAddresses;
 
-    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey)
+    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey, string $excludeChannelsAddresses)
     {
         $this->em = $em;
         $this->serializer = $serializer;
         $this->mercureHub = $mercureHub;
         $this->mercureSecretKey = $mercureSecretKey;
+        $this->excludeChannelsAddresses = $excludeChannelsAddresses;
     }
 
     /**
@@ -89,6 +91,10 @@ class UserNotification
 
         $this->em->persist($userNotification);
         $this->em->flush();
+
+        //  enable channel exclude filter
+        $this->em->getFilters()->enable('channel_exclude_filter');
+        $this->em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->excludeChannelsAddresses);
 
         //  MERCURE
         $token = (new Builder())
