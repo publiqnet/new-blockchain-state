@@ -80,6 +80,7 @@ class TokenAuthenticator extends AbstractGuardAuthenticator
             'get_content_by_uri',
             'get_author_data',
             'get_homepage_data',
+            'get_contents_feed',
         ])) {
             return null;
         }
