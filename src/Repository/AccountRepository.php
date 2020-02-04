@@ -166,15 +166,28 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function getAuthorSubscribers(Account $author)
+    public function getAuthorSubscribers(Account $author, int $count, int $from)
     {
-        return $this->createQueryBuilder('a')
-            ->select('a')
-            ->join('a.subscriptions', 's')
-            ->where('s.author = :author')
-            ->setParameters(['author' => $author])
-            ->getQuery()
-            ->getResult();
+        if ($from) {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.author = :author')
+                ->setParameters(['author' => $author])
+                ->setMaxResults($count)
+                ->setFirstResult($from)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.author = :author')
+                ->setParameters(['author' => $author])
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
     }
     public function getAuthorSubscribersCount(Account $author)
     {

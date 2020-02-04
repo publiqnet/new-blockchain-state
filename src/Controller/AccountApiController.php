@@ -498,7 +498,7 @@ class AccountApiController extends Controller
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
      * )
      * @SWG\Response(response=204, description="Success")
-     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=404, description="Author not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="User")
      * @param string $publicKey
@@ -542,6 +542,79 @@ class AccountApiController extends Controller
     }
 
     /**
+     * @Route("/{publicKey}/subscribers/{count}/{from}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get Author subscribers",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Author not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param string $publicKey
+     * @param int $count
+     * @param $from
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function subscribers(string $publicKey, int $count, $from)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Account $author
+         */
+        $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
+        if (!$author) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is subscribed
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['author' => $author, 'subscriber' => $account]);
+        if ($subscription || $account === $author) {
+            /**
+             * @var Account[] $subscribers
+             */
+            $subscribers = $em->getRepository(Account::class)->getAuthorSubscribers($author, ($count + 1), $from);
+            if ($subscribers) {
+                foreach ($subscribers as $subscriber) {
+                    //  get subscribers
+                    $subscribersCount = $em->getRepository(Account::class)->getAuthorSubscribersCount($subscriber);
+                    $subscriber->setSubscribersCount($subscribersCount[0]['totalCount']);
+
+                    //  check if user subscribed to author
+                    $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $subscriber]);
+                    if ($subscribed) {
+                        $subscriber->setSubscribed(true);
+                    } else {
+                        $subscriber->setSubscribed(false);
+                    }
+                }
+            }
+            $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+            $more = false;
+            if (count($subscribers) > $count) {
+                unset($subscribers[$count]);
+                $more = true;
+            }
+
+            return new JsonResponse(['subscribers' => $subscribers, 'more' => $more]);
+        }
+
+        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+    }
+
+    /**
      * @Route("/{publicKey}/subscribe", methods={"DELETE"})
      * @SWG\Delete(
      *     summary="Unsubscribe from Author",
@@ -554,9 +627,13 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
      */
     public function unsubscribe(string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**

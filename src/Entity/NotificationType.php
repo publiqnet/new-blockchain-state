@@ -20,7 +20,7 @@ class NotificationType
 {
     const TYPES = [
         'new_article' => ['key' => 'new_article', 'en' => '{{performer}} has posted a new article', 'jp' => '{{performer}}さんが新しい記事を投稿しました'],
-        'share_article' => ['key' => 'share_article', 'en' => 'Make sure to share your Story on social media to get more views', 'jp' => 'Make sure to share your Story on social media to get more views'],
+        'share_article' => ['key' => 'share_article', 'en' => 'Make sure to share {{article}} on social media to get more views', 'jp' => 'Make sure to share {{article}} on social media to get more views'],
         'article_reported' => ['key' => 'article_reported', 'en' => '{{performer}} has reported your article', 'jp' => '{{performer}}さんがあなたの記事を報告しました'],
         'new_transfer' => ['key' => 'new_transfer', 'en' => '{{performer}} has sent you a new transfer', 'jp' => '{{performer}}新しい送金を送ってくれました'],
         'subscribe_user' => ['key' => 'subscribe_user', 'en' => '{{performer}} has followed you', 'jp' => '{{performer}} has followed you'],
