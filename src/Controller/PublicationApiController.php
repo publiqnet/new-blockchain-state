@@ -712,15 +712,15 @@ class PublicationApiController extends Controller
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
-        //  get subscribers
-        $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication);
-
         //  get articles total views
         $totalViews = $em->getRepository(ContentUnit::class)->getPublicationArticlesTotalViews($publication);
 
         //  get articles count
         $storiesCount = $em->getRepository(ContentUnit::class)->getPublicationArticlesCount($publication);
         $publication->setStoriesCount(intval($storiesCount[0][1]));
+
+        //  get subscribers count
+        $subscribersCount = $em->getRepository(Account::class)->getPublicationSubscribersCount($publication);
 
         //  if authorized user check if user is owner of Publication
         $memberStatus = 0;
@@ -793,6 +793,8 @@ class PublicationApiController extends Controller
                 $publicationRequests = $em->getRepository(Account::class)->getPublicationRequests($publication);
                 $publicationRequests = $this->get('serializer')->normalize($publicationRequests, null, ['groups' => ['accountBase', 'accountMemberStatus']]);
 
+                //  get subscribers
+                $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication, 10);
                 if ($subscribers) {
                     /**
                      * @var Account $subscriber
@@ -818,14 +820,36 @@ class PublicationApiController extends Controller
                 $publication['invitations'] = $publicationInvitations;
                 $publication['requests'] = $publicationRequests;
                 $publication['subscribers'] = $subscribers;
-                $publication['subscribersCount'] = count($subscribers);
+                $publication['subscribersCount'] = $subscribersCount[0]['totalCount'];
                 $publication['membersCount'] = count($publicationEditors) + count($publicationContributors);
                 $publication['views'] = intval($totalViews[0][1]);
+                $publication['subscribersMore'] = ($subscribersCount[0]['totalCount'] > 10 ? true: false);
 
                 return new JsonResponse($publication);
             } elseif ($publicationMember) {
                 $memberStatus = $publicationMember->getStatus();
             }
+        }
+
+        //  check if user is subscribed return subscribers
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['publication' => $publication, 'subscriber' => $account]);
+        if ($subscription) {
+            /**
+             * @var Account[] $subscribers
+             */
+            $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication, 10);
+            if ($subscribers) {
+                foreach ($subscribers as $subscriber) {
+                    //  check if user subscribed to author
+                    $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $subscriber]);
+                    if ($subscribed) {
+                        $subscriber->setSubscribed(true);
+                    } else {
+                        $subscriber->setSubscribed(false);
+                    }
+                }
+            }
+            $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase', 'accountSubscribed']]);
         }
 
         $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
@@ -842,9 +866,13 @@ class PublicationApiController extends Controller
         }
 
         $publication['memberStatus'] = $memberStatus;
-        $publication['subscribersCount'] = count($subscribers);
+        $publication['subscribersCount'] = $subscribersCount[0]['totalCount'];
         $publication['membersCount'] = count($publicationMembers);
         $publication['views'] = intval($totalViews[0][1]);
+        if ($subscription) {
+            $publication['subscribers'] = $subscribers;
+            $publication['subscribersMore'] = ($subscribersCount[0]['totalCount'] > 10 ? true: false);
+        }
 
         return new JsonResponse($publication);
     }
@@ -1716,6 +1744,81 @@ class PublicationApiController extends Controller
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/{slug}/subscribers/{count}/{from}", methods={"GET"})
+     * @SWG\Get(
+     *     summary="Get Publication subscribers",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=204, description="Success")
+     * @SWG\Response(response=404, description="Publication not found")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="Publication")
+     * @param string $slug
+     * @param int $count
+     * @param $from
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function subscribers(string $slug, int $count, $from)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        /**
+         * @var Publication $publication
+         */
+        $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $slug]);
+        if (!$publication) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  check if user is a subscriber or a member of publication
+        $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['member' => $account, 'publication' => $publication]);
+
+        $subscription = $em->getRepository(Subscription::class)->findOneBy(['publication' => $publication, 'subscriber' => $account]);
+        if ($subscription || ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']]))) {
+            /**
+             * @var Account[] $subscribers
+             */
+            $subscribers = $em->getRepository(Account::class)->getPublicationSubscribers($publication, ($count + 1), $from);
+            if ($subscribers) {
+                foreach ($subscribers as $subscriber) {
+                    //  get subscribers
+                    $subscribersCount = $em->getRepository(Account::class)->getAuthorSubscribersCount($subscriber);
+                    $subscriber->setSubscribersCount($subscribersCount[0]['totalCount']);
+
+                    //  check if user subscribed to author
+                    $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $subscriber]);
+                    if ($subscribed) {
+                        $subscriber->setSubscribed(true);
+                    } else {
+                        $subscriber->setSubscribed(false);
+                    }
+                }
+            }
+            $subscribers = $this->get('serializer')->normalize($subscribers, null, ['groups' => ['accountBase', 'accountSubscribed']]);
+
+            $more = false;
+            if (count($subscribers) > $count) {
+                unset($subscribers[$count]);
+                $more = true;
+            }
+
+            return new JsonResponse(['subscribers' => $subscribers, 'more' => $more]);
+        }
+
+        return new JsonResponse(null, Response::HTTP_FORBIDDEN);
     }
 
     /**

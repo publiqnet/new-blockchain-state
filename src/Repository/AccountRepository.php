@@ -145,15 +145,28 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function getPublicationSubscribers(Publication $publication)
+    public function getPublicationSubscribers(Publication $publication, int $count = 10, int $from = 0)
     {
-        return $this->createQueryBuilder('a')
-            ->select('a')
-            ->join('a.subscriptions', 's')
-            ->where('s.publication = :publication')
-            ->setParameters(['publication' => $publication])
-            ->getQuery()
-            ->getResult();
+        if ($from) {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.publication = :publication')
+                ->setParameters(['publication' => $publication])
+                ->setMaxResults($count)
+                ->setFirstResult($from)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.publication = :publication')
+                ->setParameters(['publication' => $publication])
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
     }
     public function getPublicationSubscribersCount(Publication $publication)
     {
@@ -166,7 +179,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function getAuthorSubscribers(Account $author, int $count, int $from)
+    public function getAuthorSubscribers(Account $author, int $count = 10, int $from = 0)
     {
         if ($from) {
             return $this->createQueryBuilder('a')
