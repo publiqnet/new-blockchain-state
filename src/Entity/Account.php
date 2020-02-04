@@ -65,6 +65,12 @@ class Account
     private $url;
 
     /**
+     * @ORM\Column(type="array", nullable=true)
+     * @Groups({"networkAccountLight"})
+     */
+    private $sites;
+
+    /**
      * @var string
      * @ORM\Column(type="string", length=64, nullable=true)
      * @Groups({"networkAccountLight"})
@@ -615,5 +621,21 @@ class Account
     public function getServedDetails()
     {
         return $this->servedDetails;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getSites()
+    {
+        return $this->sites;
+    }
+
+    /**
+     * @param mixed $sites
+     */
+    public function setSites($sites)
+    {
+        $this->sites = $sites;
     }
 }
