@@ -687,6 +687,10 @@ class AccountApiController extends Controller
          */
         $em = $this->getDoctrine()->getManager();
 
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
+
         $preferredAuthorsArticles = null;
         $preferredTagsArticles = null;
         $firstArticle = null;
