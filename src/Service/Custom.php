@@ -259,8 +259,13 @@ class Custom
              */
             $cover = $contentUnit->getCover();
 
+            /**
+             * @var Account $channel
+             */
+            $channel = $contentUnit->getChannel();
+
             $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
-            copy($this->channelStorageEndpoint . '/storage?file=' . $cover->getUri(), $tempImage);
+            copy($channel->getUrl() . '/storage?file=' . $cover->getUri(), $tempImage);
 
             //  COVER MANIPULATION
             //  create instance of ImageWorkshop from cover

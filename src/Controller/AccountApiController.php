@@ -554,11 +554,11 @@ class AccountApiController extends Controller
      * @SWG\Tag(name="User")
      * @param string $publicKey
      * @param int $count
-     * @param $from
+     * @param int $from
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function subscribers(string $publicKey, int $count, $from)
+    public function subscribers(string $publicKey, int $count, int $from)
     {
         /**
          * @var EntityManager $em

@@ -1759,11 +1759,11 @@ class PublicationApiController extends Controller
      * @SWG\Tag(name="Publication")
      * @param string $slug
      * @param int $count
-     * @param $from
+     * @param int $from
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function subscribers(string $slug, int $count, $from)
+    public function subscribers(string $slug, int $count, int $from)
     {
         /**
          * @var EntityManager $em
