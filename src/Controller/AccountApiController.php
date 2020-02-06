@@ -14,6 +14,7 @@ use App\Entity\Draft;
 use App\Entity\Publication;
 use App\Entity\Subscription;
 use App\Event\SubscribeUserEvent;
+use App\Event\UnsubscribeUserEvent;
 use App\Service\Oauth;
 use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
@@ -654,6 +655,12 @@ class AccountApiController extends Controller
         if ($subscription) {
             $em->remove($subscription);
             $em->flush();
+
+            // notify author
+            $this->container->get('event_dispatcher')->dispatch(
+                UnsubscribeUserEvent::NAME,
+                new UnsubscribeUserEvent($account, $author)
+            );
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);

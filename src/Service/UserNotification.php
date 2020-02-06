@@ -273,6 +273,22 @@ class UserNotification
             $data[] = ['type' => 'publication_membership_cancelled_by_user', 'data' => ['publication' => $publication, 'performer' => $performer]];
         }
 
+        $subscriptionNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['subscribe_user']['key']]);
+        if ($notificationType == $subscriptionNotificationType) {
+            $performer = $notification->getPerformer();
+            $performer = $this->serializer->normalize($performer, null, ['groups' => ['accountBase']]);
+
+            $data[] = ['type' => 'subscribe_user', 'data' => ['performer' => $performer]];
+        }
+
+        $unsubscriptionNotificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => NotificationType::TYPES['unsubscribe_user']['key']]);
+        if ($notificationType == $unsubscriptionNotificationType) {
+            $performer = $notification->getPerformer();
+            $performer = $this->serializer->normalize($performer, null, ['groups' => ['accountBase']]);
+
+            $data[] = ['type' => 'unsubscribe_user', 'data' => ['performer' => $performer]];
+        }
+
         $update = new Update(
             'http://publiq.site/notification',
             json_encode($data),
