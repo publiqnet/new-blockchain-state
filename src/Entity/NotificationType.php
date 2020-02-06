@@ -24,7 +24,7 @@ class NotificationType
         'article_reported' => ['key' => 'article_reported', 'en' => '{{performer}} has reported your article', 'jp' => '{{performer}}さんがあなたの記事を報告しました'],
         'new_transfer' => ['key' => 'new_transfer', 'en' => '{{performer}} has sent you a new transfer', 'jp' => '{{performer}}新しい送金を送ってくれました'],
         'subscribe_user' => ['key' => 'subscribe_user', 'en' => '{{performer}} has followed you', 'jp' => '{{performer}} has followed you'],
-        'unsubscribe_user' => ['key' => 'subscribe_user', 'en' => '{{performer}} has unfollowed you', 'jp' => '{{performer}} has unfollowed you'],
+        'unsubscribe_user' => ['key' => 'unsubscribe_user', 'en' => '{{performer}} has unfollowed you', 'jp' => '{{performer}} has unfollowed you'],
         'publication_new_article' => ['key' => 'publication_new_article', 'en' => '{{performer}} has posted a new article in {{target}}', 'jp' => '{{performer}}さんが新しい記事を投稿しました{{target}}'],
         'publication_invitation_new' => ['key' => 'publication_invitation_new', 'en' => '{{performer}} has invited you to join {{target}}', 'jp' => '{{performer}}に参加するように招待されています{{target}}'],
         'publication_invitation_cancelled' => ['key' => 'publication_invitation_cancelled', 'en' => '{{performer}} has cancelled invitation to join {{target}}', 'jp' => '{{performer}}さんが参加の招待状をキャンセルしました{{target}}'],
