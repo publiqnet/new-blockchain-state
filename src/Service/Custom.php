@@ -243,15 +243,22 @@ class Custom
 
         $font = $assetsPath . '/OpenSansCondensed-Bold.ttf';
 
+        $authorName = null;
+        $authorBio = null;
+
         /**
          * @var Account $author
          */
         $author = $contentUnit->getAuthor();
-        $authorName = trim($author->getFirstName() . ' ' . $author->getLastName());
-        $authorBio = trim($author->getBio());
+        if ($author->getFirstName() || $author->getLastName()) {
+            $authorName = trim($author->getFirstName() . ' ' . $author->getLastName());
+            $authorBio = trim($author->getBio());
 
-        $authorName = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorName);
-        $authorBio = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorBio);
+            $authorName = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorName);
+            $authorBio = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorBio);
+        } else {
+            $authorName = $author->getPublicKey();
+        }
 
         if ($contentUnit->getCover() && $contentUnit->getCover()->getMimeType() != 'image/webp' && $contentUnit->getCover()->getMimeType() != 'image/gif') {
             /**
