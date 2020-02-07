@@ -164,7 +164,7 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
+        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  last week
         $date->modify('+1 month');
@@ -174,7 +174,7 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
+        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  last day
         $date->modify('+1 week');
@@ -184,7 +184,7 @@ class NetworkApiController extends Controller
             $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
             $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
         }
-        $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel']]);
+        $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  STORAGE ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');

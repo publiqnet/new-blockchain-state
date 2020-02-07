@@ -325,9 +325,6 @@
     "symfony/lock": {
         "version": "v4.1.4"
     },
-    "symfony/mime": {
-        "version": "v4.3.1"
-    },
     "symfony/monolog-bridge": {
         "version": "v4.1.4"
     },
@@ -354,9 +351,6 @@
     },
     "symfony/polyfill-php72": {
         "version": "v1.10.0"
-    },
-    "symfony/polyfill-php73": {
-        "version": "v1.11.0"
     },
     "symfony/process": {
         "version": "v4.1.4"

@@ -65,12 +65,6 @@ class Account
     private $url;
 
     /**
-     * @ORM\Column(type="array", nullable=true)
-     * @Groups({"networkAccountLight"})
-     */
-    private $sites;
-
-    /**
      * @var string
      * @ORM\Column(type="string", length=64, nullable=true)
      * @Groups({"networkAccountLight"})
@@ -205,6 +199,12 @@ class Account
      */
     private $servedDetails;
 
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Site", mappedBy="account")
+     * @Groups({"site"})
+     */
+    private $sites;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -222,6 +222,7 @@ class Account
         $this->views = new ArrayCollection();
         $this->serviceStatistics = new ArrayCollection();
         $this->servedDetails = new ArrayCollection();
+        $this->sites = new ArrayCollection();
     }
 
     public function __toString()
@@ -629,13 +630,5 @@ class Account
     public function getSites()
     {
         return $this->sites;
-    }
-
-    /**
-     * @param mixed $sites
-     */
-    public function setSites($sites)
-    {
-        $this->sites = $sites;
     }
 }
