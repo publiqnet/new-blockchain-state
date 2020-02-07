@@ -625,7 +625,7 @@ class NetworkApiController extends Controller
         }
 
         //  check CAPTCHA
-        $captchaResponse = $request->get('network_feedback')['g-recaptcha-response'];
+        $captchaResponse = $request->get('network_feedback')['g_recaptcha_response'];
         $verified = $customService->verifyCaptcha($captchaResponse);
         if (!$verified) {
             return new JsonResponse(['message' => 'Captcha verification failed'], Response::HTTP_CONFLICT);

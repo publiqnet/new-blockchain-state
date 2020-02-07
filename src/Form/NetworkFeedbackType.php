@@ -28,7 +28,7 @@ class NetworkFeedbackType extends AbstractType
             ->add('company', TextType::class)
             ->add('subject', TextType::class, ['constraints' => [new NotBlank()]])
             ->add('message', TextareaType::class, ['constraints' => [new NotBlank()]])
-            ->add('g-recaptcha-response', TextType::class, ['mapped' => false]);
+            ->add('g_recaptcha_response', TextType::class, ['mapped' => false]);
     }
 
     public function configureOptions(OptionsResolver $resolver)
