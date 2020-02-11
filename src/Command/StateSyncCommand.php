@@ -18,6 +18,7 @@ use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
 use App\Entity\PublicationArticle;
 use App\Entity\Reward;
+use App\Entity\Tag;
 use App\Entity\Transaction;
 use App\Event\ArticleNewEvent;
 use App\Event\ArticleShareEvent;
@@ -128,6 +129,9 @@ class StateSyncCommand extends ContainerAwareCommand
                 $this->em->flush();
             }
         }
+
+        //  get FOCUS channel
+        $focusChannel = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $this->getContainer()->getParameter('focccus_channels_addresses')]);
 
         $index = 0;
         /**
@@ -314,6 +318,27 @@ class StateSyncCommand extends ContainerAwareCommand
                                     }
 
                                     $this->em->flush();
+                                } elseif ($channelAccount == $focusChannel) {
+                                    //  GET TAGS
+                                    while (strpos($contentUnitText, '</h3>')){
+                                        $contentUnitTag = trim(strip_tags(substr($contentUnitText, 0, strpos($contentUnitText, '</h3>') + 5)));
+                                        $contentUnitText = substr($contentUnitText, strpos($contentUnitText, '</h3>') + 5);
+
+                                        $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTag]);
+                                        if (!$tagEntity) {
+                                            $tagEntity = new Tag();
+                                            $tagEntity->setName($contentUnitTag);
+                                            $this->em->persist($tagEntity);
+                                            $this->em->flush();
+                                        }
+
+                                        $contentUnitTagEntity = new ContentUnitTag();
+                                        $contentUnitTagEntity->setContentUnit($contentUnitEntity);
+                                        $contentUnitTagEntity->setContentUnitUri($contentUnitEntity->getUri());
+                                        $contentUnitTagEntity->setTag($tagEntity);
+                                        $this->em->persist($contentUnitTagEntity);
+                                        $this->em->flush();
+                                    }
                                 }
 
                                 //  add transaction record with relation to content unit

@@ -8,7 +8,10 @@
 
 namespace App\Command;
 
+use App\Entity\Account;
 use App\Entity\ContentUnit;
+use App\Entity\ContentUnitTag;
+use App\Entity\Tag;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -80,14 +83,40 @@ class TempCommand extends ContainerAwareCommand
         }
 
         /**
+         * @var Account $channel
+         */
+        $channel = $this->em->getRepository(Account::class)->find(1621);
+
+        /**
          * @var ContentUnit[] $articles
          */
-        $articles = $this->em->getRepository(ContentUnit::class)->getBoostedArticlesWithCover(9999);
+        $articles = $this->em->getRepository(ContentUnit::class)->findOneBy(['channel' => $channel]);
         if ($articles) {
             foreach ($articles as $article) {
-                $article->setHighlight(true);
-                $article->setHighlightFont('Vollkorn');
-                $this->em->persist($article);
+                $contentUnitText = $article->getText();
+
+                //  GET TAGS
+                while (strpos($contentUnitText, '</h3>')){
+                    $contentUnitTag = trim(strip_tags(substr($contentUnitText, 0, strpos($contentUnitText, '</h3>') + 5)));
+                    $contentUnitText = substr($contentUnitText, strpos($contentUnitText, '</h3>') + 5);
+
+                    $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($contentUnitTag);
+                        $this->em->persist($tagEntity);
+                        $this->em->flush();
+                    }
+
+                    $contentUnitTagEntity = new ContentUnitTag();
+                    $contentUnitTagEntity->setContentUnit($article);
+                    $contentUnitTagEntity->setContentUnitUri($article->getUri());
+                    $contentUnitTagEntity->setTag($tagEntity);
+                    $this->em->persist($contentUnitTagEntity);
+                    $this->em->flush();
+
+                    echo $article->getUri() . ' - ' . $contentUnitTag . PHP_EOL;
+                }
             }
 
             $this->em->flush();
