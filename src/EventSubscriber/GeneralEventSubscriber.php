@@ -26,6 +26,7 @@ use App\Event\PublicationMembershipRequestCancelEvent;
 use App\Event\PublicationMembershipRequestEvent;
 use App\Event\PublicationMembershipRequestRejectEvent;
 use App\Event\SubscribeUserEvent;
+use App\Event\UnsubscribeUserEvent;
 use App\Event\UserPreferenceEvent;
 use App\Service\UserNotification;
 use Doctrine\ORM\EntityManager;
@@ -88,6 +89,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             ArticleNewEvent::NAME => 'onArticleNewEvent',
             ArticleShareEvent::NAME => 'onArticleShareEvent',
             SubscribeUserEvent::NAME => 'onSubscribeUserEvent',
+            UnsubscribeUserEvent::NAME => 'onUnsubscribeUserEvent',
         ];
     }
 
@@ -345,6 +347,22 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $author = $event->getAuthor();
 
             $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['subscribe_user']['key'], $performer, "New subscription");
+            $this->userNotificationService->notify($author, $notification);
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param UnsubscribeUserEvent $event
+     */
+    public function onUnsubscribeUserEvent(UnsubscribeUserEvent $event)
+    {
+        try {
+            $performer = $event->getPerformer();
+            $author = $event->getAuthor();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['unsubscribe_user']['key'], $performer, "New unsubscription");
             $this->userNotificationService->notify($author, $notification);
         } catch (\Throwable $e) {
             // ignore all exceptions for now

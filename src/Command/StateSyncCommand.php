@@ -19,6 +19,8 @@ use App\Entity\IndexNumber;
 use App\Entity\PublicationArticle;
 use App\Entity\Reward;
 use App\Entity\Transaction;
+use App\Event\ArticleNewEvent;
+use App\Event\ArticleShareEvent;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -1202,6 +1204,9 @@ class StateSyncCommand extends ContainerAwareCommand
         $this->io->writeln(sprintf('Finished at with index=%s: %s', $index, date('Y-m-d H:i:s')));
         $this->io->success('BlockChain is synced now!');
 
+        //  send notifications
+        $this->sendNotifications();
+
         $this->release();
 
         return null;
@@ -1326,5 +1331,73 @@ class StateSyncCommand extends ContainerAwareCommand
         }
         $this->balances[$address]['whole'] += $whole * $sign;
         $this->balances[$address]['fraction'] += $fraction * $sign;
+    }
+
+    /**
+     * @return null
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
+    private function sendNotifications()
+    {
+        /**
+         * get the last index number - if not exist set default as 0
+         * @var IndexNumber $indexNumber
+         */
+        $indexNumber = $this->em->getRepository(IndexNumber::class)->findOneBy([], ['id' => 'DESC']);
+        if (!$indexNumber) {
+            $this->io->success('Done');
+            $this->release();
+
+            return null;
+        }
+
+        $timezone = new \DateTimeZone('UTC');
+        $datetimeObj = new \DateTime();
+        $datetimeObj->setTimezone($timezone);
+
+        $datetime = $indexNumber->getLastNotifyTime();
+        if ($datetime == 0) {
+            $indexNumber->setLastNotifyTime($datetimeObj->getTimestamp());
+            $this->em->persist($indexNumber);
+            $this->em->flush();
+
+            $this->io->success('Done');
+            $this->release();
+
+            return null;
+        }
+
+        //  enable channel exclude filter
+        $this->em->getFilters()->enable('channel_exclude_filter');
+        $this->em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getContainer()->getParameter('exclude_channels_addresses'));
+
+        /**
+         * @var \App\Entity\ContentUnit[] $articles
+         */
+        $articles = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticleConfirmedAfterDate($datetime);
+        if ($articles) {
+            foreach ($articles as $article) {
+                // notify author to share
+                $this->getContainer()->get('event_dispatcher')->dispatch(
+                    ArticleShareEvent::NAME,
+                    new ArticleShareEvent($article)
+                );
+
+                // notify subscribed users
+                $this->getContainer()->get('event_dispatcher')->dispatch(
+                    ArticleNewEvent::NAME,
+                    new ArticleNewEvent($article->getAuthor(), $article)
+                );
+            }
+        }
+
+        $indexNumber->setLastNotifyTime($datetimeObj->getTimestamp() - 30);
+        $this->em->persist($indexNumber);
+        $this->em->flush();
+
+        $this->io->success('Notifications sent');
+
+        return null;
     }
 }

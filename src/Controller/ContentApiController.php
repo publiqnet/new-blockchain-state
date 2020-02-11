@@ -671,7 +671,7 @@ class ContentApiController extends Controller
     }
 
     /**
-     * @Route("s/{count}/{boostedCount}/{fromUri}", methods={"GET"})
+     * @Route("s/{count}/{boostedCount}/{fromUri}", methods={"GET"}, name="get_contents_feed")
      * @SWG\Get(
      *     summary="Get (user) contents",
      *     consumes={"application/json"},

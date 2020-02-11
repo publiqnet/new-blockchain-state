@@ -145,15 +145,28 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function getPublicationSubscribers(Publication $publication)
+    public function getPublicationSubscribers(Publication $publication, int $count = 10, int $from = 0)
     {
-        return $this->createQueryBuilder('a')
-            ->select('a')
-            ->join('a.subscriptions', 's')
-            ->where('s.publication = :publication')
-            ->setParameters(['publication' => $publication])
-            ->getQuery()
-            ->getResult();
+        if ($from) {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.publication = :publication')
+                ->setParameters(['publication' => $publication])
+                ->setMaxResults($count)
+                ->setFirstResult($from)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.publication = :publication')
+                ->setParameters(['publication' => $publication])
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
     }
     public function getPublicationSubscribersCount(Publication $publication)
     {
@@ -166,15 +179,28 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getResult();
     }
 
-    public function getAuthorSubscribers(Account $author)
+    public function getAuthorSubscribers(Account $author, int $count = 10, int $from = 0)
     {
-        return $this->createQueryBuilder('a')
-            ->select('a')
-            ->join('a.subscriptions', 's')
-            ->where('s.author = :author')
-            ->setParameters(['author' => $author])
-            ->getQuery()
-            ->getResult();
+        if ($from) {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.author = :author')
+                ->setParameters(['author' => $author])
+                ->setMaxResults($count)
+                ->setFirstResult($from)
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('a')
+                ->select('a')
+                ->join('a.subscriptions', 's')
+                ->where('s.author = :author')
+                ->setParameters(['author' => $author])
+                ->setMaxResults($count)
+                ->getQuery()
+                ->getResult();
+        }
     }
     public function getAuthorSubscribersCount(Account $author)
     {
