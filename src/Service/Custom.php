@@ -507,23 +507,29 @@ class Custom
         $imageName = $cover->getUri() . '-thumbnail.jpg';
 
         try {
-            $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
-            copy($this->channelStorageEndpoint . '/storage?file=' . $cover->getUri(), $tempImage);
+            /**
+             * @var Account $channel
+             */
+            $channel = $this->em->getRepository(Account::class)->getCoverFirstChannel($cover);
+            if ($channel && $channel->getUrl()) {
+                $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
+                copy($channel->getUrl() . '/storage?file=' . $cover->getUri(), $tempImage);
 
-            //  create instance of ImageWorkshop from cover
-            $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
-            $coverWorkshop->resizeInPixel(600, null, true);
-            $coverWorkshop->save($imagePath, $imageName, false, null, 80);
+                //  create instance of ImageWorkshop from cover
+                $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+                $coverWorkshop->resizeInPixel(600, null, true);
+                $coverWorkshop->save($imagePath, $imageName, false, null, 80);
 
-            if (isset($tempImage)) {
-                unlink($tempImage);
+                if (isset($tempImage)) {
+                    unlink($tempImage);
+                }
+
+                $cover->setThumbnail($this->thumbnailPath . '/' . $imageName);
+                $cover->setThumbnailWidth($coverWorkshop->getWidth());
+                $cover->setThumbnailHeight($coverWorkshop->getHeight());
+                $this->em->persist($cover);
+                $this->em->flush();
             }
-
-            $cover->setThumbnail($this->thumbnailPath . '/' . $imageName);
-            $cover->setThumbnailWidth($coverWorkshop->getWidth());
-            $cover->setThumbnailHeight($coverWorkshop->getHeight());
-            $this->em->persist($cover);
-            $this->em->flush();
         } catch (\Exception $e) {
             return false;
         }
