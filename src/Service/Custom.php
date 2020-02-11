@@ -504,7 +504,7 @@ class Custom
     function createThumbnail(File $cover, $relativePath = '')
     {
         $imagePath = $relativePath . $this->thumbnailPath;
-        $imageName = $cover->getUri() . '-thumbnail.jpg';
+        $imageName = $cover->getUri() . '-thumbnail-' . rand(1111, 9999) . '.jpg';
 
         try {
             /**
