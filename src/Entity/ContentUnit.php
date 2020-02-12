@@ -56,6 +56,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="text_with_data", type="text", nullable=true)
+     * @Groups({"contentUnitSeo"})
      */
     private $textWithData;
 
