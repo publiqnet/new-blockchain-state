@@ -357,9 +357,16 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
      */
     public function getAuthorsCount()
     {
-        return $this->createQueryBuilder('a')
-            ->select("count(a) as totalAuthors")
-            ->join('a.authorContentUnits', 'cu')
+        $preferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select IDENTITY(cu.author)
+                from App:ContentUnit cu 
+                group by cu.author
+            ");
+
+        $query = $this->createQueryBuilder('a');
+        return $query->select("count(a) as totalAuthors")
+            ->where($query->expr()->in('a', $preferenceQuery->getDQL()))
             ->getQuery()
             ->getResult();
     }
