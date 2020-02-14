@@ -199,6 +199,12 @@ class Publication
      */
     private $trendingPosition = 0;
 
+    /**
+     * @var int
+     * @Groups({"publicationStats"})
+     */
+    private $totalViews;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
@@ -596,5 +602,21 @@ class Publication
     public function setTrendingPosition($trendingPosition)
     {
         $this->trendingPosition = $trendingPosition;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalViews()
+    {
+        return $this->totalViews;
+    }
+
+    /**
+     * @param int $totalViews
+     */
+    public function setTotalViews(int $totalViews)
+    {
+        $this->totalViews = $totalViews;
     }
 }

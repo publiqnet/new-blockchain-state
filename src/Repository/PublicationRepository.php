@@ -209,4 +209,15 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return array|null
+     */
+    public function getPublicationsSummary()
+    {
+        return $this->createQueryBuilder('p')
+            ->select('count(p) as totalPublications')
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -351,4 +351,16 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    /**
+     * @return mixed
+     */
+    public function getAuthorsCount()
+    {
+        return $this->createQueryBuilder('a')
+            ->select("count(a) as totalAuthors")
+            ->join('a.authorContentUnits', 'cu')
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -1,0 +1,52 @@
+{% extends '@SonataAdmin/standard_layout.html.twig' %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-3">
+            <h3 style="border-bottom: 2px solid #999999;">Publications</h3>
+            <h4>{{ publicationsSummary.totalPublications }}</h4>
+        </div>
+        <div class="col-md-3">
+            <h3 style="border-bottom: 2px solid #999999;">Articles</h3>
+            <h4>{{ articlesSummary.totalArticles }}</h4>
+        </div>
+        <div class="col-md-3">
+            <h3 style="border-bottom: 2px solid #999999;">Authors</h3>
+            <h4>{{ authorSummary.totalAuthors }}</h4>
+        </div>
+        <div class="col-md-3">
+            <h3 style="border-bottom: 2px solid #999999;">Views</h3>
+            <h4>{{ articlesSummary.totalViews }}</h4>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3 style="border-bottom: 2px solid #999999;">Popular Authors</h3>
+
+            <div class="col-md-3" style="font-weight: 800; font-size: 16px; border-bottom: 1px solid #cccccc;">Name</div>
+            <div class="col-md-4" style="font-weight: 800; font-size: 16px; border-bottom: 1px solid #cccccc;">Address</div>
+            <div class="col-md-3" style="font-weight: 800; font-size: 16px; border-bottom: 1px solid #cccccc;">Email</div>
+            <div class="col-md-2" style="font-weight: 800; font-size: 16px; border-bottom: 1px solid #cccccc;">Views</div>
+
+            {% for author in popularAuthors %}
+                <div class="col-md-3" style="border-bottom: 1px dotted #cccccc;">{{ author.firstName ~ ' ' ~ author.lastName }}&nbsp;</div>
+                <div class="col-md-4" style="border-bottom: 1px dotted #cccccc;">{{ author.publicKey }}</div>
+                <div class="col-md-3" style="border-bottom: 1px dotted #cccccc;">{{ author.email }}</div>
+                <div class="col-md-2" style="border-bottom: 1px dotted #cccccc;">{{ author.totalViews }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <h3 style="border-bottom: 2px solid #999999;">Popular Publications</h3>
+
+            <div class="col-md-10" style="font-weight: 800; font-size: 16px; border-bottom: 1px solid #cccccc;">Title</div>
+            <div class="col-md-2" style="font-weight: 800; font-size: 16px; border-bottom: 1px solid #cccccc;">Views</div>
+
+            {% for publication in popularPublications %}
+                <div class="col-md-10" style="border-bottom: 1px dotted #cccccc;">{{ publication.title }}</div>
+                <div class="col-md-2" style="border-bottom: 1px dotted #cccccc;">{{ publication.totalViews }}</div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}
