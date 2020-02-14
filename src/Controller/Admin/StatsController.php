@@ -28,19 +28,22 @@ class StatsController extends CRUDController
         $em = $this->getDoctrine()->getManager();
 
         $publicationsSummary = $em->getRepository(Publication::class)->getPublicationsSummary();
-        $popularPublications = $em->getRepository(Publication::class)->getPopularPublications();
+        $popularPublications = $em->getRepository(Publication::class)->getPopularPublications(10);
         $articlesSummary = $em->getRepository(ContentUnit::class)->getArticlesSummary();
-        $popularAuthors = $em->getRepository(Account::class)->getPopularAuthors(10);
+        $popularAuthorsViews = $em->getRepository(Account::class)->getPopularAuthors(10);
+        $popularAuthorsArticles = $em->getRepository(Account::class)->getPopularAuthors(10, null, 'totalArticles');
         $authorsSummary = $em->getRepository(Account::class)->getAuthorsCount();
 
-        $popularAuthors = $this->get('serializer')->normalize($popularAuthors, null, ['groups' => ['accountBase', 'accountEmail', 'accountStats']]);
+        $popularAuthorsViews = $this->get('serializer')->normalize($popularAuthorsViews, null, ['groups' => ['accountBase', 'accountEmail', 'accountStats']]);
+        $popularAuthorsArticles = $this->get('serializer')->normalize($popularAuthorsArticles, null, ['groups' => ['accountBase', 'accountEmail', 'accountStats']]);
         $popularPublications = $this->get('serializer')->normalize($popularPublications, null, ['groups' => ['publication', 'publicationStats']]);
 
         return $this->render('admin/stats.html.twig', [
             'publicationsSummary' => $publicationsSummary[0],
             'articlesSummary' => $articlesSummary[0],
             'authorSummary' => $authorsSummary[0],
-            'popularAuthors' => $popularAuthors,
+            'popularAuthorsViews' => $popularAuthorsViews,
+            'popularAuthorsArticles' => $popularAuthorsArticles,
             'popularPublications' => $popularPublications,
         ]);
     }

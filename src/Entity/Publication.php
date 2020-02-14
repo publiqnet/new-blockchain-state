@@ -205,6 +205,12 @@ class Publication
      */
     private $totalViews;
 
+    /**
+     * @var int
+     * @Groups({"publicationStats"})
+     */
+    private $totalArticles;
+
     public function __construct()
     {
         $this->members = new ArrayCollection();
@@ -618,5 +624,21 @@ class Publication
     public function setTotalViews(int $totalViews)
     {
         $this->totalViews = $totalViews;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalArticles()
+    {
+        return $this->totalArticles;
+    }
+
+    /**
+     * @param int $totalArticles
+     */
+    public function setTotalArticles(int $totalArticles)
+    {
+        $this->totalArticles = $totalArticles;
     }
 }

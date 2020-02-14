@@ -133,7 +133,7 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
     public function getPopularPublications($count = 5)
     {
         return $this->createQueryBuilder('p')
-            ->select("p, SUM(cu.views) as totalViews")
+            ->select("p, SUM(cu.views) as totalViews, COUNT(cu) as totalArticles")
             ->leftJoin('p.contentUnits', 'cu')
             ->setMaxResults($count)
             ->groupBy('p')

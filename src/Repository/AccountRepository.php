@@ -238,7 +238,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
         }
     }
 
-    public function getPopularAuthors($count = 5, Account $exception = null)
+    public function getPopularAuthors($count = 5, Account $exception = null, $order = 'totalViews')
     {
         if ($exception) {
             return $this->createQueryBuilder('a')
@@ -249,7 +249,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->setParameter('exception', $exception)
                 ->setMaxResults($count)
                 ->groupBy('a.id')
-                ->orderBy('totalViews', 'DESC')
+                ->orderBy($order, 'DESC')
                 ->getQuery()
                 ->getResult('AGGREGATES_HYDRATOR');
         } else {
@@ -259,7 +259,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->having('totalArticles > 0')
                 ->setMaxResults($count)
                 ->groupBy('a.id')
-                ->orderBy('totalViews', 'DESC')
+                ->orderBy($order, 'DESC')
                 ->getQuery()
                 ->getResult('AGGREGATES_HYDRATOR');
         }

@@ -273,6 +273,12 @@ class Account implements UserInterface
     private $totalViews;
 
     /**
+     * @var int
+     * @Groups({"accountStats"})
+     */
+    private $totalArticles;
+
+    /**
      * @ORM\Column(name="trending_position", type="integer", options={"default":0})
      */
     private $trendingPosition = 0;
@@ -842,6 +848,22 @@ class Account implements UserInterface
     public function setTotalViews(int $totalViews)
     {
         $this->totalViews = $totalViews;
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalArticles()
+    {
+        return $this->totalArticles;
+    }
+
+    /**
+     * @param int $totalArticles
+     */
+    public function setTotalArticles(int $totalArticles)
+    {
+        $this->totalArticles = $totalArticles;
     }
 
     /**
