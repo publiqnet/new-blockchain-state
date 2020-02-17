@@ -26,6 +26,7 @@ use App\Entity\NetworkShowcaseProject;
 use App\Entity\NetworkSupportContent;
 use App\Form\NetworkFeedbackType;
 use App\Service\Custom;
+use Doctrine\ORM\EntityManager;
 use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -57,6 +58,9 @@ class NetworkApiController extends Controller
      */
     public function getTopRewards()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $rewards = [];
@@ -72,6 +76,10 @@ class NetworkApiController extends Controller
 
         //  last month
         $date->modify('-1 month');
+
+        /**
+         * @var Account[] $rewardsRes
+         */
         $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
         if ($rewardsRes) {
             foreach ($rewardsRes as $rewardsResSingle) {
@@ -149,8 +157,85 @@ class NetworkApiController extends Controller
         $miners['lastDay'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
 
         //  PBQ TOTAL SUPPLY
+        $scheduled = [
+            ['whole' => 1000, 'fraction' => 0],
+            ['whole' => 800, 'fraction' => 0],
+            ['whole' => 640, 'fraction' => 0],
+            ['whole' => 512, 'fraction' => 0],
+            ['whole' => 410, 'fraction' => 0],
+            ['whole' => 327, 'fraction' => 0],
+            ['whole' => 262, 'fraction' => 0],
+            ['whole' => 210, 'fraction' => 0],
+            ['whole' => 168, 'fraction' => 0],
+            ['whole' => 134, 'fraction' => 0],
+            ['whole' => 107, 'fraction' => 0],
+            ['whole' => 86, 'fraction' => 0],
+            ['whole' => 68, 'fraction' => 0],
+            ['whole' => 55, 'fraction' => 0],
+            ['whole' => 44, 'fraction' => 0],
+            ['whole' => 35, 'fraction' => 0],
+            ['whole' => 28, 'fraction' => 0],
+            ['whole' => 22, 'fraction' => 0],
+            ['whole' => 18, 'fraction' => 0],
+            ['whole' => 15, 'fraction' => 0],
+            ['whole' => 12, 'fraction' => 0],
+            ['whole' => 9, 'fraction' => 0],
+            ['whole' => 7, 'fraction' => 0],
+            ['whole' => 6, 'fraction' => 0],
+            ['whole' => 5, 'fraction' => 0],
+            ['whole' => 4, 'fraction' => 0],
+            ['whole' => 3, 'fraction' => 0],
+            ['whole' => 2, 'fraction' => 50000000],
+            ['whole' => 2, 'fraction' => 0],
+            ['whole' => 1, 'fraction' => 50000000],
+            ['whole' => 1, 'fraction' => 20000000],
+            ['whole' => 1, 'fraction' => 0],
+            ['whole' => 0, 'fraction' => 80000000],
+            ['whole' => 0, 'fraction' => 70000000],
+            ['whole' => 0, 'fraction' => 60000000],
+            ['whole' => 0, 'fraction' => 50000000],
+            ['whole' => 0, 'fraction' => 40000000],
+            ['whole' => 0, 'fraction' => 30000000],
+            ['whole' => 0, 'fraction' => 20000000],
+            ['whole' => 0, 'fraction' => 17000000],
+            ['whole' => 0, 'fraction' => 14000000],
+            ['whole' => 0, 'fraction' => 12000000],
+            ['whole' => 0, 'fraction' => 10000000],
+            ['whole' => 0, 'fraction' => 8000000],
+            ['whole' => 0, 'fraction' => 7000000],
+            ['whole' => 0, 'fraction' => 6000000],
+            ['whole' => 0, 'fraction' => 6000000],
+            ['whole' => 0, 'fraction' => 5000000],
+            ['whole' => 0, 'fraction' => 5000000],
+            ['whole' => 0, 'fraction' => 5000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+        ];
         //  get last block
         $lastBlock = $em->getRepository(Block::class)->findOneBy([], ['id' => 'DESC']);
+        $lastBlockNumber = $lastBlock->getNumber();
+
+        $issued = ['whole' => 250000000, 'fraction' => 0];
+        $scheduledIndex = 0;
+        while ($lastBlockNumber > 50000) {
+            $issued['whole'] += 50000 * $scheduled[$scheduledIndex]['whole'];
+            $issued['fraction'] += 50000 * $scheduled[$scheduledIndex]['fraction'];
+
+            $lastBlockNumber -= 50000;
+            $scheduledIndex++;
+        }
+        if (isset($scheduled[$scheduledIndex])) {
+            $issued['whole'] += $lastBlockNumber * $scheduled[$scheduledIndex]['whole'];
+            $issued['fraction'] += $lastBlockNumber * $scheduled[$scheduledIndex]['fraction'];
+        }
 
         //  CHANNELS    ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');
@@ -264,6 +349,9 @@ class NetworkApiController extends Controller
      */
     public function getHomeContent()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $homeContent = $em->getRepository(NetworkHomeContent::class)->findAll();
@@ -316,6 +404,9 @@ class NetworkApiController extends Controller
      */
     public function getPagePbq()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $networkFilePath = $this->getParameter('network_file_path');
 
@@ -355,6 +446,9 @@ class NetworkApiController extends Controller
      */
     public function getPagePubliq()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $networkFilePath = $this->getParameter('network_file_path');
 
@@ -403,6 +497,9 @@ class NetworkApiController extends Controller
      */
     public function getPageShowcase()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $pageShowcase = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'showcase']);
@@ -428,6 +525,9 @@ class NetworkApiController extends Controller
      */
     public function getPageBrand()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $networkFilePath = $this->getParameter('network_file_path');
 
@@ -534,6 +634,9 @@ class NetworkApiController extends Controller
      */
     public function getPageDocs()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $pageDocs = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'docs']);
@@ -562,6 +665,9 @@ class NetworkApiController extends Controller
      */
     public function getPageContacts()
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $pageContacts = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'contacts']);
@@ -589,9 +695,13 @@ class NetworkApiController extends Controller
      * @param Request $request
      * @param Custom $customService
      * @return Response
+     * @throws \Doctrine\ORM\ORMException
      */
     public function submitFeedback(Request $request, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $contentType = $request->getContentType();
