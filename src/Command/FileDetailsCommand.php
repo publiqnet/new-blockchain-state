@@ -9,7 +9,6 @@
 namespace App\Command;
 
 use App\Entity\Account;
-use App\Entity\Content;
 use App\Entity\ContentUnit;
 use App\Entity\File;
 use App\Service\BlockChain;
@@ -181,16 +180,11 @@ class FileDetailsCommand extends ContainerAwareCommand
                         if ($file->getMimeType() == 'text/html') {
                             $fileText = $file->getContent();
                             $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
-                        } elseif ($contentUnit->getContent()) {
-                            /**
-                             * @var Content $fileContent
-                             */
-                            $fileContent = $contentUnit->getContent();
-
+                        } elseif ($contentUnit->getChannel()) {
                             /**
                              * @var Account $channel
                              */
-                            $channel = $fileContent->getChannel();
+                            $channel = $contentUnit->getChannel();
 
                             $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
                             $contentUnitText = str_replace('src="' . $file->getUri() . '"', 'src="' . $fileUrl . '"', $contentUnitText);

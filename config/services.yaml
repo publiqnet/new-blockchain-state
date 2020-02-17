@@ -85,11 +85,17 @@ services:
         class: App\Admin\AccountAdmin
         arguments: [~, App\Entity\Account, ~]
         tags:
-            - { name: sonata.admin, manager_type: orm, label: Users, group: List }
+            - { name: sonata.admin, manager_type: orm, label: Users, group: Stats }
         public: true
     admin.publication:
         class: App\Admin\PublicationAdmin
         arguments: [~, App\Entity\Publication, ~]
         tags:
-            - { name: sonata.admin, manager_type: orm, label: Publications, group: List }
+            - { name: sonata.admin, manager_type: orm, label: Publications, group: Stats }
+        public: true
+    admin.stats:
+        class: App\Admin\StatsAdmin
+        arguments: [~, ~, App\Controller\Admin\StatsController]
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Statistics, group: Stats }
         public: true

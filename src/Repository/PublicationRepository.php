@@ -133,7 +133,7 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
     public function getPopularPublications($count = 5)
     {
         return $this->createQueryBuilder('p')
-            ->select("p, SUM(cu.views) as totalViews")
+            ->select("p, SUM(cu.views) as totalViews, COUNT(cu) as totalArticles")
             ->leftJoin('p.contentUnits', 'cu')
             ->setMaxResults($count)
             ->groupBy('p')
@@ -206,6 +206,17 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->setParameter('user', $user)
             ->setMaxResults($count)
             ->orderBy('p.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * @return array|null
+     */
+    public function getPublicationsSummary()
+    {
+        return $this->createQueryBuilder('p')
+            ->select('count(p) as totalPublications')
             ->getQuery()
             ->getResult();
     }

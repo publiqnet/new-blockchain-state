@@ -734,4 +734,15 @@ class ContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return array|null
+     */
+    public function getArticlesSummary()
+    {
+        return $this->createQueryBuilder('cu')
+            ->select('count(cu) as totalArticles, sum(cu.views) as totalViews')
+            ->getQuery()
+            ->getResult();
+    }
 }
