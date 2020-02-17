@@ -237,6 +237,13 @@ class NetworkApiController extends Controller
             $issued['fraction'] += $lastBlockNumber * $scheduled[$scheduledIndex]['fraction'];
         }
 
+        if ($issued['fraction'] > 99999999) {
+            while ($issued['fraction'] > 99999999) {
+                $issued['whole']++;
+                $issued['fraction'] -= 100000000;
+            }
+        }
+
         //  CHANNELS    ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
