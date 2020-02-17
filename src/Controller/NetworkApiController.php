@@ -336,7 +336,7 @@ class NetworkApiController extends Controller
             'storages' => $storages,
             'activeNodes' => $nodes,
             'supply' => [
-                'issued' => ['whole' => 250000000 + $lastBlock->getNumber() * 1000, 'fraction' => 0],
+                'issued' => ['whole' => $issued['whole'], 'fraction' => $issued['fraction']],
                 'scheduled' => ['whole' => 500000000, 'fraction' => 0],
             ]
         ]);
