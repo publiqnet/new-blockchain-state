@@ -114,6 +114,11 @@ class Account
     private $channelContentUnits;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\ChannelSummary", mappedBy="channel", fetch="EXTRA_LAZY")
+     */
+    private $channelSummary;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\Content", mappedBy="channel", fetch="EXTRA_LAZY")
      */
     private $contents;
@@ -212,6 +217,7 @@ class Account
         $this->files = new ArrayCollection();
         $this->authorContentUnits = new ArrayCollection();
         $this->channelContentUnits = new ArrayCollection();
+        $this->channelSummary = new ArrayCollection();
         $this->contents = new ArrayCollection();
         $this->fromTransfers = new ArrayCollection();
         $this->toTransfers = new ArrayCollection();
@@ -356,6 +362,14 @@ class Account
     public function getChannelContentUnits()
     {
         return $this->channelContentUnits;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getChannelSummary()
+    {
+        return $this->channelSummary;
     }
 
     /**

@@ -46,7 +46,7 @@ class AccountRepository extends EntityRepository
 
     /**
      * @param int $timestamp
-     * @return Account[]|null
+     * @return Account[]
      */
     public function getChannelsSummary(int $timestamp = 0)
     {

@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Entity\Block;
+use App\Entity\ChannelSummary;
 use App\Entity\NetworkBrandAssetsContent;
 use App\Entity\NetworkBrandColourContent;
 use App\Entity\NetworkBrandCommunicationContent;
@@ -251,32 +252,53 @@ class NetworkApiController extends Controller
 
         //  last month
         $date->modify('-1 month');
-        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary($date->getTimestamp());
+        $channelsArr = [];
+        $channelsRes = $em->getRepository(ChannelSummary::class)->findBy([], ['publishedMonth' => 'DESC']);
         foreach ($channelsRes as $channelsResSingle) {
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
-            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+            /**
+             * @var Account $channelSingle
+             */
+            $channelSingle = $channelsResSingle->getChannel();
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp());
+            $channelSingle->setContributorsCount($contributors['contributorsCount']);
+            $channelSingle->setPublishedContentsCount($channelsResSingle->getPublishedMonth());
+            $channelSingle->setDistributedContentsCount($channelsResSingle->getDistributedMonth());
+
+            $channelsArr[] = $channelSingle;
         }
-        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
+        $channels['lastMonth'] = $this->get('serializer')->normalize($channelsArr, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  last week
         $date->modify('+1 month');
         $date->modify('-1 week');
-        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary($date->getTimestamp());
+        $channelsArr = [];
+        $channelsRes = $em->getRepository(ChannelSummary::class)->findBy([], ['publishedWeek' => 'DESC']);
         foreach ($channelsRes as $channelsResSingle) {
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
-            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+            $channelSingle = $channelsResSingle->getChannel();
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp());
+            $channelSingle->setContributorsCount($contributors['contributorsCount']);
+            $channelSingle->setPublishedContentsCount($channelsResSingle->getPublishedWeek());
+            $channelSingle->setDistributedContentsCount($channelsResSingle->getDistributedWeek());
+
+            $channelsArr[] = $channelSingle;
         }
-        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
+        $channels['lastWeek'] = $this->get('serializer')->normalize($channelsArr, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  last day
         $date->modify('+1 week');
         $date->modify('-1 day');
-        $channelsRes = $em->getRepository(Account::class)->getChannelsSummary($date->getTimestamp());
+        $channelsArr = [];
+        $channelsRes = $em->getRepository(ChannelSummary::class)->findBy([], ['publishedDay' => 'DESC']);
         foreach ($channelsRes as $channelsResSingle) {
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelsResSingle, $date->getTimestamp());
-            $channelsResSingle->setContributorsCount($contributors['contributorsCount']);
+            $channelSingle = $channelsResSingle->getChannel();
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp());
+            $channelSingle->setContributorsCount($contributors['contributorsCount']);
+            $channelSingle->setPublishedContentsCount($channelsResSingle->getPublishedDay());
+            $channelSingle->setDistributedContentsCount($channelsResSingle->getDistributedDay());
+
+            $channelsArr[] = $channelSingle;
         }
-        $channels['lastDay'] = $this->get('serializer')->normalize($channelsRes, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
+        $channels['lastDay'] = $this->get('serializer')->normalize($channelsArr, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  STORAGE ///////////////////////////////////////////////////////////////////////////////////////
         $timezone = new \DateTimeZone('UTC');
