@@ -257,23 +257,27 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitTitle = 'Unknown';
                             $contentUnitText = null;
                             if ($channelAccount->getUrl()) {
-                                $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
-                                if (!mb_check_encoding($storageData, 'UTF-8')) {
-                                    $storageData = utf8_encode($storageData);
-                                }
-
-                                if ($storageData) {
-                                    if (strpos($storageData, '</h1>')) {
-                                        if (strpos($storageData, '<h1>') > 0) {
-                                            $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
-                                            $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                            $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                                        }
-                                        $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                                        $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                                    } else {
-                                        $contentUnitText = $storageData;
+                                try {
+                                    $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                                    if (!mb_check_encoding($storageData, 'UTF-8')) {
+                                        $storageData = utf8_encode($storageData);
                                     }
+
+                                    if ($storageData) {
+                                        if (strpos($storageData, '</h1>')) {
+                                            if (strpos($storageData, '<h1>') > 0) {
+                                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                            }
+                                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                                        } else {
+                                            $contentUnitText = $storageData;
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    //  do nothing to continue sync
                                 }
                             }
 
@@ -816,23 +820,27 @@ class StateSyncCommand extends ContainerAwareCommand
                     $contentUnitTitle = 'Unknown';
                     $contentUnitText = null;
                     if ($channelAccount->getUrl()) {
-                        $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
-                        if (!mb_check_encoding($storageData, 'UTF-8')) {
-                            $storageData = utf8_encode($storageData);
-                        }
-
-                        if ($storageData) {
-                            if (strpos($storageData, '</h1>')) {
-                                if (strpos($storageData, '<h1>') > 0) {
-                                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
-                                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
-                                }
-                                $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                            } else {
-                                $contentUnitText = $storageData;
+                        try {
+                            $storageData = file_get_contents($channelAccount->getUrl() . '/storage?file=' . $uri);
+                            if (!mb_check_encoding($storageData, 'UTF-8')) {
+                                $storageData = utf8_encode($storageData);
                             }
+
+                            if ($storageData) {
+                                if (strpos($storageData, '</h1>')) {
+                                    if (strpos($storageData, '<h1>') > 0) {
+                                        $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                                        $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                        $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                    }
+                                    $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                    $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                                } else {
+                                    $contentUnitText = $storageData;
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            //  do nothing to continue sync
                         }
                     }
 

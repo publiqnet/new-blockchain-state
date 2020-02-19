@@ -91,38 +91,42 @@ class FileDetailsCommand extends ContainerAwareCommand
                  */
                 $channel = $contentUnit->getChannel();
                 if ($channel->getUrl()) {
-                    $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
-                    if (!mb_check_encoding($storageData, 'UTF-8')) {
-                        $storageData = utf8_encode($storageData);
-                    }
+                    try {
+                        $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
+                        if (!mb_check_encoding($storageData, 'UTF-8')) {
+                            $storageData = utf8_encode($storageData);
+                        }
 
-                    if ($storageData) {
-                        $contentUnitTitle = 'Unknown';
-                        $coverUri = null;
+                        if ($storageData) {
+                            $contentUnitTitle = 'Unknown';
+                            $coverUri = null;
 
-                        if (strpos($storageData, '</h1>')) {
-                            if (strpos($storageData, '<h1>') > 0) {
-                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                            if (strpos($storageData, '</h1>')) {
+                                if (strpos($storageData, '<h1>') > 0) {
+                                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
 
-                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                }
+                                $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                            } else {
+                                $contentUnitText = $storageData;
                             }
-                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                        } else {
-                            $contentUnitText = $storageData;
-                        }
 
-                        $contentUnit->setTitle($contentUnitTitle);
-                        $contentUnit->setText($contentUnitText);
-                        $contentUnit->setTextWithData($contentUnitText);
-                        if ($coverUri) {
-                            $coverFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
-                            $contentUnit->setCover($coverFileEntity);
-                        }
+                            $contentUnit->setTitle($contentUnitTitle);
+                            $contentUnit->setText($contentUnitText);
+                            $contentUnit->setTextWithData($contentUnitText);
+                            if ($coverUri) {
+                                $coverFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                                $contentUnit->setCover($coverFileEntity);
+                            }
 
-                        $this->em->persist($contentUnit);
-                        $this->em->flush();
+                            $this->em->persist($contentUnit);
+                            $this->em->flush();
+                        }
+                    } catch (\Exception $e) {
+                        //  do nothing to continue sync
                     }
                 }
             }
