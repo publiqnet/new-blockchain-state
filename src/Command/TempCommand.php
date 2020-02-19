@@ -11,6 +11,7 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Entity\ContentUnit;
 use App\Entity\ContentUnitTag;
+use App\Entity\Dictionary;
 use App\Entity\Tag;
 use App\Service\BlockChain;
 use App\Service\Custom;
@@ -23,8 +24,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class TempCommand extends ContainerAwareCommand
 {
-    const ACTION_COUNT = 5000;
-
     use LockableTrait;
 
     protected static $defaultName = 'state:temp';
@@ -55,7 +54,7 @@ class TempCommand extends ContainerAwareCommand
 
     protected function configure()
     {
-        $this->setDescription('Temporary command to set highlight articles');
+        $this->setDescription('Temporary command');
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
@@ -82,44 +81,34 @@ class TempCommand extends ContainerAwareCommand
             return 0;
         }
 
-        /**
-         * @var Account $channel
-         */
-        $channel = $this->em->getRepository(Account::class)->find(1621);
+        $es = file_get_contents('https://publiq.fimagenes.com:444/jsons/es.json');
+        $es = json_decode($es, true);
+        foreach ($es as $sectionKey => $section) {
+            foreach ($section as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $subKey => $subValue) {
+                        $mainKey = $sectionKey . '.' . $key . '.' . $subKey;
 
-        /**
-         * @var ContentUnit[] $articles
-         */
-        $articles = $this->em->getRepository(ContentUnit::class)->findOneBy(['channel' => $channel]);
-        if ($articles) {
-            foreach ($articles as $article) {
-                $contentUnitText = $article->getText();
+                        echo $mainKey . ': ' . $subValue . PHP_EOL;
 
-                //  GET TAGS
-                while (strpos($contentUnitText, '</h3>')){
-                    $contentUnitTag = trim(strip_tags(substr($contentUnitText, 0, strpos($contentUnitText, '</h3>') + 5)));
-                    $contentUnitText = substr($contentUnitText, strpos($contentUnitText, '</h3>') + 5);
-
-                    $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTag]);
-                    if (!$tagEntity) {
-                        $tagEntity = new Tag();
-                        $tagEntity->setName($contentUnitTag);
-                        $this->em->persist($tagEntity);
+                        $translation = $this->em->getRepository(Dictionary::class)->findOneBy(['wordKey' => $mainKey]);
+                        $translation->setLocale('es');
+                        $translation->setValue($subValue);
+                        $this->em->persist($translation);
                         $this->em->flush();
                     }
+                } else {
+                    $mainKey = $sectionKey . '.' . $key;
 
-                    $contentUnitTagEntity = new ContentUnitTag();
-                    $contentUnitTagEntity->setContentUnit($article);
-                    $contentUnitTagEntity->setContentUnitUri($article->getUri());
-                    $contentUnitTagEntity->setTag($tagEntity);
-                    $this->em->persist($contentUnitTagEntity);
+                    echo $mainKey . ': ' . $value . PHP_EOL;
+
+                    $translation = $this->em->getRepository(Dictionary::class)->findOneBy(['wordKey' => $mainKey]);
+                    $translation->setLocale('es');
+                    $translation->setValue($value);
+                    $this->em->persist($translation);
                     $this->em->flush();
-
-                    echo $article->getUri() . ' - ' . $contentUnitTag . PHP_EOL;
                 }
             }
-
-            $this->em->flush();
         }
 
         $this->io->success('Done');
