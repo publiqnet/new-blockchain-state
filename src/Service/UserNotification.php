@@ -115,6 +115,32 @@ class UserNotification
          * @var Notification[] $notifications
          */
         $notifications = $this->em->getRepository(Notification::class)->getUserNotifications($user, 11);
+//        $notifications = $this->serializer->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase', 'contentUnitNotification']]);
+//
+//        $notificationsRewrited = [];
+//        for ($i=0; $i<count($notifications); $i++) {
+//            $notificationSingle = $notifications[$i][0];
+//
+//            unset($notifications[$i][0]);
+//            foreach ($notifications[$i] as $key => $notificationExtra) {
+//                $notificationSingle[$key] = $notificationExtra;
+//            }
+//
+//            $notificationsRewrited[] = $notificationSingle;
+//        }
+//
+//        $more = false;
+//        if (count($notificationsRewrited) > 10) {
+//            unset($notificationsRewrited[10]);
+//            $more = true;
+//        }
+
+        $more = false;
+        if (count($notifications) > 10) {
+            $more = true;
+        }
+
+        $notifications = $this->em->getRepository(Notification::class)->getUserNotifications($user, 1);
         $notifications = $this->serializer->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase', 'contentUnitNotification']]);
 
         $notificationsRewrited = [];
@@ -129,14 +155,9 @@ class UserNotification
             $notificationsRewrited[] = $notificationSingle;
         }
 
-        $more = false;
-        if (count($notificationsRewrited) > 10) {
-            unset($notificationsRewrited[10]);
-            $more = true;
-        }
 
         $data = [];
-        $data[] = ['type' => 'notification', 'data' => ['notifications' => $notificationsRewrited, 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]];
+        $data[] = ['type' => 'notification', 'data' => ['notifications' => $notificationsRewrited[0], 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]];
 
         //  check for special types
         $notificationType = $notification->getType();
