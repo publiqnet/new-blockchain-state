@@ -259,7 +259,7 @@ class ContentApiController extends Controller
             if ($tags) {
                 $tags = explode(',', $tags);
                 foreach ($tags as $tag) {
-                    $tag = substr(trim($tag), 0, 64);
+                    $tag = substr(trim($tag), 0, 24);
                     $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
                     if (!$tagEntity) {
                         $tagEntity = new Tag();
