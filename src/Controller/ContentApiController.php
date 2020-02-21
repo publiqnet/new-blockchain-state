@@ -920,13 +920,11 @@ class ContentApiController extends Controller
                      */
                     $channel = $contentUnit->getChannel();
 
-                    $storageUrl = $channel->getUrl();
-                    $storageAddress = $channel->getPublicKey();
-                    $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+                    $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
 
                     $file->setUrl($fileUrl);
 
-                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $storageAddress];
+                    $fileStorageUrls[$file->getUri()] = ['url' => $fileUrl, 'address' => $channel->getPublicKey()];
                 }
 
                 //  replace file uri with url
@@ -983,8 +981,7 @@ class ContentApiController extends Controller
                          */
                         $channel = $contentUnit->getChannel();
 
-                        $storageUrl = $channel->getUrl();
-                        $fileUrl = $storageUrl . '/storage?file=' . $file->getUri();
+                        $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
 
                         $file->setUrl($fileUrl);
 
@@ -1151,9 +1148,8 @@ class ContentApiController extends Controller
              * @var Account $channel
              */
             $channel = $contentUnit->getChannel();
-            $storageUrl = $channel->getUrl();
 
-            $file->setUrl($storageUrl . '/storage?file=' . $file->getUri());
+            $file->setUrl($channel->getUrl() . '/storage?file=' . $file->getUri());
         }
 
         //  generate short description

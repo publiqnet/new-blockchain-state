@@ -81,14 +81,13 @@ class ContentUnit
              * @var File $coverFile
              */
             $coverFile = $contentUnit->getCover();
-            if ($coverFile && $contentUnit->getContent()) {
+            if ($coverFile) {
                 /**
                  * @var Account $channel
                  */
-                $channel = $contentUnit->getContent()->getChannel();
-                $storageUrl = $channel->getUrl();
+                $channel = $contentUnit->getChannel();
 
-                $coverFile->setUrl($storageUrl . '/storage?file=' . $coverFile->getUri());
+                $coverFile->setUrl($channel->getUrl() . '/storage?file=' . $coverFile->getUri());
             }
 
             if ($boosted === null) {
