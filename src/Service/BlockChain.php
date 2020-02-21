@@ -106,7 +106,7 @@ class BlockChain
         $keywordsArr = [];
         if ($keywords) {
             for ($i=0; $i<count($keywords) && $i<3; $i++) {
-                $keywordsArr[] = $keywords[$i][0];
+                $keywordsArr[] = substr($keywords[$i][0], 0, 64);
             }
         }
 
