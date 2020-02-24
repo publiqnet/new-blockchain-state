@@ -157,7 +157,7 @@ class UserNotification
 
 
         $data = [];
-        $data[] = ['type' => 'notification', 'data' => ['notifications' => $notificationsRewrited[0], 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]];
+        $data[] = ['type' => 'notification', 'data' => ['notification' => $notificationsRewrited[0], 'more' => $more, 'unreadCount' => count($unreadNotifications), 'unseenCount' => count($unseenNotifications)]];
 
         //  check for special types
         $notificationType = $notification->getType();
