@@ -92,19 +92,19 @@ class File
     /**
      * @ORM\Column(name="thumbnail", type="string", nullable=true)
      * @Assert\File()
-     * @Groups({"file", "images"})
+     * @Groups({"focccusFile"})
      */
     private $thumbnail;
 
     /**
      * @ORM\Column(name="thumbnail_width", type="integer", nullable=true)
-     * @Groups({"file"})
+     * @Groups({"focccusFile"})
      */
     private $thumbnailWidth;
 
     /**
      * @ORM\Column(name="thumbnail_height", type="integer", nullable=true)
-     * @Groups({"file"})
+     * @Groups({"focccusFile"})
      */
     private $thumbnailHeight;
 

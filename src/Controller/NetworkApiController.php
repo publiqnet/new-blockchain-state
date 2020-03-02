@@ -11,6 +11,7 @@ namespace App\Controller;
 use App\Entity\Account;
 use App\Entity\Block;
 use App\Entity\ChannelSummary;
+use App\Entity\File;
 use App\Entity\NetworkBrandAssetsContent;
 use App\Entity\NetworkBrandColourContent;
 use App\Entity\NetworkBrandCommunicationContent;
@@ -774,5 +775,30 @@ class NetworkApiController extends Controller
         $em->flush();
 
         return new Response(null, Response::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * @Route("/focccus/thumbnails", methods={"GET"}, name="network_focccus_thumbnails")
+     * @SWG\Get(
+     *     summary="Get Showcase page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getFocusThumbnails()
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        $focccusThumbnails = $em->getRepository(File::class)->getFocccusCoverThumbnails();
+        $focccusThumbnails = $this->get('serializer')->normalize($focccusThumbnails, null, ['groups' => ['focccusFile']]);
+
+        return new JsonResponse($focccusThumbnails);
     }
 }

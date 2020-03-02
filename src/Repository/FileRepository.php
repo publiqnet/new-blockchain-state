@@ -46,4 +46,20 @@ class FileRepository extends EntityRepository
                 ->getResult();
         }
     }
+
+    /**
+     * @param int $count
+     * @return array|null
+     */
+    public function getFocccusCoverThumbnails($count = 50)
+    {
+        return $this->createQueryBuilder('f')
+            ->select('f')
+            ->where('f.thumbnail is not null')
+            ->groupBy('f.id')
+            ->setMaxResults($count)
+            ->orderBy('RAND()')
+            ->getQuery()
+            ->getResult();
+    }
 }
