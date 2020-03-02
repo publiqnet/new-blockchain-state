@@ -780,7 +780,7 @@ class NetworkApiController extends Controller
     /**
      * @Route("/focccus/thumbnails", methods={"GET"}, name="network_focccus_thumbnails")
      * @SWG\Get(
-     *     summary="Get Showcase page data",
+     *     summary="Get FOCCCUS thumbnails",
      *     consumes={"application/json"},
      *     produces={"application/json"},
      * )
