@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\File;
 use Doctrine\ORM\EntityRepository;
 
 /**
@@ -131,5 +132,23 @@ class AccountRepository extends EntityRepository
             ->where('a.url is not null')
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @param File $file
+     * @return mixed
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function getCoverFirstChannel(File $file)
+    {
+        return $this->createQueryBuilder('a')
+            ->select("a")
+            ->join('a.channelContentUnits', 'cu')
+            ->join('cu.transaction', 't')
+            ->where('cu.cover = :file')
+            ->setParameters(['file' => $file])
+            ->orderBy('t.timeSigned', 'ASC')
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

@@ -15,6 +15,7 @@ use App\Entity\ContentUnit;
 use App\Entity\UserViewLogHistory;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPImageWorkshop\ImageWorkshop;
 use Symfony\Component\HttpFoundation\Request;
 
 class Custom
@@ -25,11 +26,13 @@ class Custom
     private $em;
 
     private $captchaSecretKey;
+    private $thumbnailPath;
 
-    function __construct(EntityManagerInterface $em, $captchaSecretKey)
+    function __construct(EntityManagerInterface $em, $captchaSecretKey, $thumbnailPath)
     {
         $this->em = $em;
         $this->captchaSecretKey = $captchaSecretKey;
+        $this->thumbnailPath = $thumbnailPath;
     }
 
     /**
@@ -156,5 +159,46 @@ class Custom
         $result = json_decode($result, true);
 
         return $result['success'];
+    }
+
+    /**
+     * @param File $cover
+     * @param string $relativePath
+     * @return bool|string
+     */
+    function createThumbnail(File $cover, $relativePath = '')
+    {
+        $imagePath = $relativePath . $this->thumbnailPath;
+        $imageName = $cover->getUri() . '-thumbnail-' . rand(1111, 9999) . '.jpg';
+
+        try {
+            /**
+             * @var Account $channel
+             */
+            $channel = $this->em->getRepository(Account::class)->getCoverFirstChannel($cover);
+            if ($channel && $channel->getUrl()) {
+                $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
+                copy($channel->getUrl() . '/storage?file=' . $cover->getUri(), $tempImage);
+
+                //  create instance of ImageWorkshop from cover
+                $coverWorkshop = ImageWorkshop::initFromPath($tempImage);
+                $coverWorkshop->resizeInPixel(600, null, true);
+                $coverWorkshop->save($imagePath, $imageName, false, null, 80);
+
+                if (isset($tempImage)) {
+                    unlink($tempImage);
+                }
+
+                $cover->setThumbnail($this->thumbnailPath . '/' . $imageName);
+                $cover->setThumbnailWidth($coverWorkshop->getWidth());
+                $cover->setThumbnailHeight($coverWorkshop->getHeight());
+                $this->em->persist($cover);
+                $this->em->flush();
+            }
+        } catch (\Exception $e) {
+            return false;
+        }
+
+        return true;
     }
 }

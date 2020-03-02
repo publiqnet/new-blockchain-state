@@ -7,9 +7,11 @@ parameters:
     channel_address: '%env(CHANNEL_ADDRESS)%'
     recaptcha_secret_key: '%env(RECAPTCHA_SECRET_KEY)%'
     recaptcha_site_key: '%env(RECAPTCHA_SITE_KEY)%'
+    focccus_channel_address: '%env(FOCCCUS_CHANNEL_ADDRESS)%'
     locale: 'en'
     json_path: '../public/jsons/'
     network_file_path: 'uploads/network'
+    thumbnail_path: 'uploads/thumbnails'
 
 services:
     # default configuration for services in *this* file
@@ -45,7 +47,7 @@ services:
         arguments: ['%env(STATE_ENDPOINT)%', '%env(CHANNEL_ENDPOINT)%', '%env(CHANNEL_STORAGE_ORDER_ENDPOINT)%', '%env(CHANNEL_PRIVATE_KEY)%']
 
     App\Service\Custom:
-        arguments: ['@doctrine.orm.entity_manager', '%env(RECAPTCHA_SECRET_KEY)%']
+        arguments: ['@doctrine.orm.entity_manager', '%env(RECAPTCHA_SECRET_KEY)%', '%thumbnail_path%']
 
     json:
         class: App\Service\Json

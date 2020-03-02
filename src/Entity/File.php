@@ -17,7 +17,7 @@ use Symfony\Component\Serializer\Annotation\Groups;
  * @package App\Entity
  *
  * @ORM\Table(name="file")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\FileRepository")
  */
 class File
 {
@@ -87,6 +87,25 @@ class File
      * @ORM\OneToMany(targetEntity="App\Entity\StorageUpdate", mappedBy="file", fetch="EXTRA_LAZY")
      */
     private $storageUpdates;
+
+    /**
+     * @ORM\Column(name="thumbnail", type="string", nullable=true)
+     * @Assert\File()
+     * @Groups({"file", "images"})
+     */
+    private $thumbnail;
+
+    /**
+     * @ORM\Column(name="thumbnail_width", type="integer", nullable=true)
+     * @Groups({"file"})
+     */
+    private $thumbnailWidth;
+
+    /**
+     * @ORM\Column(name="thumbnail_height", type="integer", nullable=true)
+     * @Groups({"file"})
+     */
+    private $thumbnailHeight;
 
 
     public function __construct()
@@ -239,5 +258,53 @@ class File
     public function getStorageUpdates()
     {
         return $this->storageUpdates;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnail()
+    {
+        return $this->thumbnail;
+    }
+
+    /**
+     * @param mixed $thumbnail
+     */
+    public function setThumbnail($thumbnail)
+    {
+        $this->thumbnail = $thumbnail;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnailWidth()
+    {
+        return $this->thumbnailWidth;
+    }
+
+    /**
+     * @param mixed $thumbnailWidth
+     */
+    public function setThumbnailWidth($thumbnailWidth)
+    {
+        $this->thumbnailWidth = $thumbnailWidth;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getThumbnailHeight()
+    {
+        return $this->thumbnailHeight;
+    }
+
+    /**
+     * @param mixed $thumbnailHeight
+     */
+    public function setThumbnailHeight($thumbnailHeight)
+    {
+        $this->thumbnailHeight = $thumbnailHeight;
     }
 }
