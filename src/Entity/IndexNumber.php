@@ -25,7 +25,7 @@ class IndexNumber
     protected $id;
 
     /**
-     * @ORM\Column(name="last_notify_time", type="integer")
+     * @ORM\Column(name="last_notify_time", type="integer", nullable=true)
      */
     private $lastNotifyTime;
 
