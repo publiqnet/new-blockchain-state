@@ -270,9 +270,24 @@ class Custom
              * @var Account $channel
              */
             $channel = $contentUnit->getChannel();
+            $channelUrl = $channel->getUrl();
+
+            /**
+             * @var ContentUnit[] $fileContentUnits
+             */
+            $fileContentUnits = $cover->getContentUnits();
+            if ($fileContentUnits && count($fileContentUnits) > 0) {
+                /**
+                 * @var Account $firstChannel
+                 */
+                $firstChannel = $fileContentUnits[0]->getChannel();
+                if ($firstChannel->getUrl()) {
+                    $channelUrl = $firstChannel->getUrl();
+                }
+            }
 
             $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
-            copy($channel->getUrl() . '/storage?file=' . $cover->getUri(), $tempImage);
+            copy($channelUrl . '/storage?file=' . $cover->getUri(), $tempImage);
 
             //  COVER MANIPULATION
             //  create instance of ImageWorkshop from cover
