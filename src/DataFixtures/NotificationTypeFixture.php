@@ -38,6 +38,7 @@ class NotificationTypeFixture extends Fixture implements FixtureGroupInterface
             }
 
             $notificationTypeObj->setBodyEn($notificationType['en']);
+            $notificationTypeObj->setBodyEs($notificationType['es']);
             $notificationTypeObj->setBodyJp($notificationType['jp']);
 
             $manager->persist($notificationTypeObj);

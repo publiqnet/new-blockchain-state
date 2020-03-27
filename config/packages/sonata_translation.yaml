@@ -8,7 +8,7 @@ sonata_block:
         sonata_translation.block.locale_switcher: null
 
 sonata_translation:
-    locales: ['en', 'jp']
+    locales: ['en', 'jp', 'es']
     default_locale: 'en'
     gedmo:
         enabled: true

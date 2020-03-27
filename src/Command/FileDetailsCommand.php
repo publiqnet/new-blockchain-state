@@ -79,6 +79,10 @@ class FileDetailsCommand extends ContainerAwareCommand
             return 0;
         }
 
+        //  enable channel exclude filter
+        $this->em->getFilters()->enable('channel_exclude_filter');
+        $this->em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getContainer()->getParameter('exclude_channels_addresses'));
+
         //  GET CONTENT UNITS WITHOUT DETAILS
         /**
          * @var ContentUnit[] $contentUnits
@@ -91,38 +95,42 @@ class FileDetailsCommand extends ContainerAwareCommand
                  */
                 $channel = $contentUnit->getChannel();
                 if ($channel->getUrl()) {
-                    $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
-                    if (!mb_check_encoding($storageData, 'UTF-8')) {
-                        $storageData = utf8_encode($storageData);
-                    }
+                    try {
+                        $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $contentUnit->getUri());
+                        if (!mb_check_encoding($storageData, 'UTF-8')) {
+                            $storageData = utf8_encode($storageData);
+                        }
 
-                    if ($storageData) {
-                        $contentUnitTitle = 'Unknown';
-                        $coverUri = null;
+                        if ($storageData) {
+                            $contentUnitTitle = 'Unknown';
+                            $coverUri = null;
 
-                        if (strpos($storageData, '</h1>')) {
-                            if (strpos($storageData, '<h1>') > 0) {
-                                $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
+                            if (strpos($storageData, '</h1>')) {
+                                if (strpos($storageData, '<h1>') > 0) {
+                                    $coverPart = substr($storageData, 0, strpos($storageData, '<h1>'));
 
-                                $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
-                                $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                    $coverPart = substr($coverPart, strpos($coverPart,'src="') + 5);
+                                    $coverUri = substr($coverPart, 0, strpos($coverPart, '"'));
+                                }
+                                $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
+                                $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
+                            } else {
+                                $contentUnitText = $storageData;
                             }
-                            $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                            $contentUnitText = substr($storageData, strpos($storageData, '</h1>') + 5);
-                        } else {
-                            $contentUnitText = $storageData;
-                        }
 
-                        $contentUnit->setTitle($contentUnitTitle);
-                        $contentUnit->setText($contentUnitText);
-                        $contentUnit->setTextWithData($contentUnitText);
-                        if ($coverUri) {
-                            $coverFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
-                            $contentUnit->setCover($coverFileEntity);
-                        }
+                            $contentUnit->setTitle($contentUnitTitle);
+                            $contentUnit->setText($contentUnitText);
+                            $contentUnit->setTextWithData($contentUnitText);
+                            if ($coverUri) {
+                                $coverFileEntity = $this->em->getRepository(File::class)->findOneBy(['uri' => $coverUri]);
+                                $contentUnit->setCover($coverFileEntity);
+                            }
 
-                        $this->em->persist($contentUnit);
-                        $this->em->flush();
+                            $this->em->persist($contentUnit);
+                            $this->em->flush();
+                        }
+                    } catch (\Exception $e) {
+                        //  do nothing to continue sync
                     }
                 }
             }
@@ -151,14 +159,30 @@ class FileDetailsCommand extends ContainerAwareCommand
                 if ($files) {
                     $allFilesKnown = true;
                     foreach ($files as $file) {
+                        $channelUrl = $channel->getUrl();
+
                         //  get file details
                         if (!$file->getMimeType()) {
-                            $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $channel->getUrl());
+                            /**
+                             * @var ContentUnit[] $fileContentUnits
+                             */
+                            $fileContentUnits = $file->getContentUnits();
+                            if ($fileContentUnits && count($fileContentUnits) > 0) {
+                                /**
+                                 * @var Account $firstChannel
+                                 */
+                                $firstChannel = $fileContentUnits[0]->getChannel();
+                                if ($firstChannel->getUrl()) {
+                                    $channelUrl = $firstChannel->getUrl();
+                                }
+                            }
+
+                            $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $channelUrl);
                             if ($fileDetails instanceof StorageFileDetailsResponse) {
                                 $file->setMimeType($fileDetails->getMimeType());
                                 $file->setSize($fileDetails->getSize());
                                 if ($file->getMimeType() == 'text/html') {
-                                    $fileText = file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri());
+                                    $fileText = file_get_contents($channelUrl . '/storage?file=' . $file->getUri());
                                     if (!mb_check_encoding($fileText, 'UTF-8')) {
                                         $fileText = utf8_encode($fileText);
                                     }
