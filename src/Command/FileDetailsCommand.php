@@ -159,14 +159,30 @@ class FileDetailsCommand extends ContainerAwareCommand
                 if ($files) {
                     $allFilesKnown = true;
                     foreach ($files as $file) {
+                        $channelUrl = $channel->getUrl();
+
                         //  get file details
                         if (!$file->getMimeType()) {
-                            $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $channel->getUrl());
+                            /**
+                             * @var ContentUnit[] $fileContentUnits
+                             */
+                            $fileContentUnits = $file->getContentUnits();
+                            if ($fileContentUnits && count($fileContentUnits) > 0) {
+                                /**
+                                 * @var Account $firstChannel
+                                 */
+                                $firstChannel = $fileContentUnits[0]->getChannel();
+                                if ($firstChannel->getUrl()) {
+                                    $channelUrl = $firstChannel->getUrl();
+                                }
+                            }
+
+                            $fileDetails = $this->blockChainService->getFileDetails($file->getUri(), $channelUrl);
                             if ($fileDetails instanceof StorageFileDetailsResponse) {
                                 $file->setMimeType($fileDetails->getMimeType());
                                 $file->setSize($fileDetails->getSize());
                                 if ($file->getMimeType() == 'text/html') {
-                                    $fileText = file_get_contents($channel->getUrl() . '/storage?file=' . $file->getUri());
+                                    $fileText = file_get_contents($channelUrl . '/storage?file=' . $file->getUri());
                                     if (!mb_check_encoding($fileText, 'UTF-8')) {
                                         $fileText = utf8_encode($fileText);
                                     }
