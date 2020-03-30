@@ -476,8 +476,7 @@ class ContentUnitRepository extends EntityRepository
             ->join('cu.transaction', 't')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
-            ->andWhere('cu.contentId = :contentId')
-            ->andWhere('cu.channel = :channel');
+            ->andWhere('cu.contentId = :contentId');
 
         if ($previous) {
             $query
@@ -490,7 +489,7 @@ class ContentUnitRepository extends EntityRepository
         }
 
         return $query
-            ->setParameters(['id' => $article->getId(), 'contentId' => $article->getContentId(), 'channel' => $article->getChannel()])
+            ->setParameters(['id' => $article->getId(), 'contentId' => $article->getContentId()])
             ->getQuery()
             ->getResult();
     }
