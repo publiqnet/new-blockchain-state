@@ -300,14 +300,6 @@ class ContentApiController extends Controller
                     $contentUnitEntity->setCover($coverFileEntity);
                 }
 
-                //  relate with files
-                if (is_array($fileUris)) {
-                    foreach ($fileUris as $fileUri) {
-                        $fileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $fileUri]);
-                        $contentUnitEntity->addFile($fileEntity);
-                    }
-                }
-
                 //  add temporary transaction with size = 0
                 $transactionEntity = new Transaction();
                 $transactionEntity->setTransactionHash($currentTransactionHash);
