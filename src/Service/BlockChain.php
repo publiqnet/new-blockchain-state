@@ -9,6 +9,9 @@
 namespace App\Service;
 
 use App\Command\StateSyncCommand;
+use App\Entity\Account;
+use App\Entity\Draft;
+use Doctrine\ORM\EntityManagerInterface;
 use PubliqAPI\Base\PublicAddressType;
 use PubliqAPI\Base\Rtt;
 use PubliqAPI\Model\Authority;
@@ -25,9 +28,12 @@ use PubliqAPI\Model\SponsorContentUnit;
 use PubliqAPI\Model\StorageFileDetails;
 use PubliqAPI\Model\Transaction;
 use PubliqAPI\Model\TransactionBroadcastRequest;
+use PubliqAPI\Model\TransactionDone;
+use PubliqAPI\Model\UriError;
 
 class BlockChain
 {
+    private $em;
     private $stateEndpoint;
     private $broadcastEndpoint;
     private $channelEndpoint;
@@ -36,9 +42,12 @@ class BlockChain
     private $detectKeywordsEndpoint;
     private $channelStorageOrderEndpoint;
     private $channelPrivateKey;
+    private $channelAddress;
+    private $customService;
 
-    function __construct($stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $detectKeywordsEndpoint, $channelStorageOrderEndpoint, $channelPrivateKey)
+    function __construct(EntityManagerInterface $em, $stateEndpoint, $broadcastEndpoint, $channelEndpoint, $channelStorageEndpoint, $detectLanguageEndpoint, $detectKeywordsEndpoint, $channelStorageOrderEndpoint, $channelPrivateKey, $channelAddress, Custom $customService)
     {
+        $this->em = $em;
         $this->stateEndpoint = $stateEndpoint;
         $this->broadcastEndpoint = $broadcastEndpoint;
         $this->channelEndpoint = $channelEndpoint;
@@ -47,6 +56,8 @@ class BlockChain
         $this->detectKeywordsEndpoint = $detectKeywordsEndpoint;
         $this->channelStorageOrderEndpoint = $channelStorageOrderEndpoint;
         $this->channelPrivateKey = $channelPrivateKey;
+        $this->channelAddress = $channelAddress;
+        $this->customService = $customService;
     }
 
     /**
@@ -567,5 +578,69 @@ class BlockChain
         $validateRes = Rtt::validate($body['data']);
 
         return $validateRes;
+    }
+
+    /**
+     * @param \App\Entity\ContentUnit $contentUnitEntity
+     * @param Draft|null $draft
+     * @return array
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     */
+    public function publishContentUnit(\App\Entity\ContentUnit $contentUnitEntity, Draft $draft = null)
+    {
+        list($feeWhole, $feeFraction) = $this->customService->getFee();
+        $timezone = new \DateTimeZone('UTC');
+        $datetime = new \DateTime();
+        $datetime->setTimezone($timezone);
+
+        $content = new Content();
+        $content->setContentId($contentUnitEntity->getContentId());
+        $content->setChannelAddress($this->channelAddress);
+        $content->addContentUnitUris($contentUnitEntity->getUri());
+
+        $broadcastResult = $this->signContent($content, $this->channelPrivateKey, $feeWhole, $feeFraction);
+        if ($broadcastResult instanceof TransactionDone) {
+            //  add temp data
+            $channelAccount = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $this->channelAddress]);
+
+            $contentEntity = new \App\Entity\Content();
+            $contentEntity->setContentId($contentUnitEntity->getContentId());
+            $contentEntity->setChannel($channelAccount);
+            $this->em->persist($contentEntity);
+
+            $contentUnitEntity->setContent($contentEntity);
+            $this->em->persist($contentUnitEntity);
+
+            //  add temp transaction
+            $transactionHash = $broadcastResult->getTransactionHash();
+            $transactionEntity = new \App\Entity\Transaction();
+            $transactionEntity->setTransactionHash($transactionHash);
+            $transactionEntity->setContent($contentEntity);
+            $transactionEntity->setTimeSigned($datetime->getTimestamp());
+            $transactionEntity->setFeeWhole(0);
+            $transactionEntity->setFeeFraction(0);
+            $transactionEntity->setTransactionSize(0);
+            $this->em->persist($transactionEntity);
+
+            //  set draft as published
+            if (!$draft) {
+                $draft = $this->em->getRepository(Draft::class)->findOneBy(['uri' => $contentUnitEntity->getUri()]);
+            }
+            if ($draft) {
+                $draft->setPublishDate($datetime->getTimestamp());
+                $this->em->persist($draft);
+            }
+
+            $this->em->flush();
+
+            return ['status' => true];
+        } else {
+            if ($broadcastResult instanceof UriError) {
+                return ['status' => false, 'message' => 'Error type: ' . get_class($broadcastResult) . '; ' . $broadcastResult->getUriProblemType() . ' - ' . $broadcastResult->getUri()];
+            } else {
+                return ['status' => false, 'message' => 'Error type: ' . get_class($broadcastResult)];
+            }
+        }
     }
 }

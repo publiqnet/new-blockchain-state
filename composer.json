@@ -30,6 +30,7 @@
         "symfony/console": "*",
         "symfony/flex": "^1.1",
         "symfony/framework-bundle": "*",
+        "symfony/http-foundation": "4.4.7",
         "symfony/lock": "*",
         "symfony/mercure-bundle": "^0.2.3",
         "symfony/monolog-bundle": "^3.3",

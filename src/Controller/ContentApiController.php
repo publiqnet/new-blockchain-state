@@ -147,7 +147,7 @@ class ContentApiController extends Controller
      *             @SWG\Property(property="expiryTime", type="integer"),
      *             @SWG\Property(property="fileUris", type="array", items={"type": "string"}),
      *             @SWG\Property(property="publicationSlug", type="string"),
-     *             @SWG\Property(property="tags", type="string"),
+     *             @SWG\Property(property="tags", type="array", items={"type": "string"}),
      *             @SWG\Property(property="feeWhole", type="integer"),
      *             @SWG\Property(property="feeFraction", type="integer")
      *         )
@@ -169,7 +169,6 @@ class ContentApiController extends Controller
          */
         $em = $this->getDoctrine()->getManager();
         $publicationSlug = '';
-        $tags = '';
 
         /**
          * @var Account $account
@@ -191,12 +190,11 @@ class ContentApiController extends Controller
             if (isset($content['publicationSlug'])) {
                 $publicationSlug = $content['publicationSlug'];
             }
-            if (isset($content['tags'])) {
-                $tags = $content['tags'];
-            }
+            $tags = $content['tags'];
             $feeWhole = intval($content['feeWhole']);
             $feeFraction = intval($content['feeFraction']);
             $currentTransactionHash = $content['currentTransactionHash'];
+            $draftId = $content['draftId'];
         } else {
             $uri = $request->request->get('uri');
             $contentId = $request->request->get('contentId');
@@ -209,12 +207,19 @@ class ContentApiController extends Controller
             $feeWhole = intval($request->request->get('feeWhole'));
             $feeFraction = intval($request->request->get('feeFraction'));
             $currentTransactionHash = $request->request->get('currentTransactionHash');
+            $draftId = $request->request->get('draftId');
+        }
+
+        if (!$currentTransactionHash) {
+            return new JsonResponse(['type' => 'story_no_transaction_hash'], Response::HTTP_CONFLICT);
         }
 
         //  get public key
         $publicKey = $account->getPublicKey();
 
         try {
+            $em->beginTransaction();
+
             $action = new ContentUnit();
             $action->addAuthorAddresses($account->getPublicKey());
             $action->setUri($uri);
@@ -240,88 +245,26 @@ class ContentApiController extends Controller
                 }
             }
 
-            //  relate with tags
+            //  if content unit exists update relation to tags & publication, else add new record
             $contentUnitEntity = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
-            if ($contentUnitEntity) {
-                $contentUnitEntity->setPublication(null);
-                $em->persist($contentUnitEntity);
-
-                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnit' => $contentUnitEntity]);
-                if ($contentUnitTags) {
-                    foreach ($contentUnitTags as $contentUnitTag) {
-                        $em->remove($contentUnitTag);
-                    }
+            if (!$contentUnitEntity) {
+                //  Broadcast
+                $broadcastResult = $blockChain->broadcast($signatureResult['transaction'], $publicKey, $signedContentUnit);
+                if ($broadcastResult instanceof UriError && $broadcastResult->getUriProblemType() == UriProblemType::duplicate) {
+                    return new JsonResponse(['type' => 'duplicate_uri'], Response::HTTP_CONFLICT);
+                } elseif ($broadcastResult instanceof UriError) {
+                    return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $uri . '; Error type: ' . $broadcastResult->getUriProblemType()], Response::HTTP_CONFLICT);
+                } elseif ($broadcastResult instanceof NotEnoughBalance) {
+                    return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
+                } elseif (!($broadcastResult instanceof Done)) {
+                    return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
                 }
 
-                $em->flush();
-            }
-
-            if ($tags) {
-                $tags = explode(',', $tags);
-                foreach ($tags as $tag) {
-                    $tag = substr(trim($tag), 0, 24);
-                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
-                    if (!$tagEntity) {
-                        $tagEntity = new Tag();
-                        $tagEntity->setName($tag);
-
-                        $em->persist($tagEntity);
-                    }
-
-                    $contentUnitTag = $em->getRepository(ContentUnitTag::class)->findOneBy(['tag' => $tagEntity, 'contentUnitUri' => $uri]);
-                    if (!$contentUnitTag) {
-                        $contentUnitTag = new ContentUnitTag();
-                        $contentUnitTag->setTag($tagEntity);
-                        $contentUnitTag->setContentUnitUri($uri);
-                        if ($contentUnitEntity) {
-                            $contentUnitTag->setContentUnit($contentUnitEntity);
-                        }
-                    } elseif ($contentUnitEntity) {
-                        $contentUnitTag->setContentUnit($contentUnitEntity);
-                    }
-
-                    $em->persist($contentUnitTag);
-                    $em->flush();
-                }
-            }
-
-            //  if publication selected, add temporary record
-            if ($publicationSlug) {
-                $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
-                if ($publication) {
-                    //  check if Author is a member of Publication
-                    $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
-                    if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
-                        if ($contentUnitEntity) {
-                            $contentUnitEntity->setPublication($publication);
-                            $em->persist($contentUnitEntity);
-                        } else {
-                            $publicationArticle = new PublicationArticle();
-                            $publicationArticle->setPublication($publication);
-                            $publicationArticle->setUri($uri);
-                            $em->persist($publicationArticle);
-                        }
-                        $em->flush();
-                    }
-                }
-            }
-
-            //  Broadcast
-            $broadcastResult = $blockChain->broadcast($signatureResult['transaction'], $publicKey, $signedContentUnit);
-            if ($broadcastResult instanceof UriError && $broadcastResult->getUriProblemType() == UriProblemType::duplicate) {
-                return new JsonResponse(['type' => 'duplicate_uri'], Response::HTTP_CONFLICT);
-            } elseif ($broadcastResult instanceof NotEnoughBalance) {
-                return new JsonResponse(['type' => 'story_not_enough_balance'], Response::HTTP_CONFLICT);
-            } elseif (!($broadcastResult instanceof Done)) {
-                return new JsonResponse(['type' => 'system_error', 'msg' => 'Broadcasting failed for URI: ' . $uri . '; Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
-            }
-
-            //  add data
-            if ($currentTransactionHash) {
+                //  get channel account
                 $channelPublicKey = $this->getParameter('channel_address');
                 $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
 
-                //  get content unit data from storage
+                //  get content unit data
                 $coverUri = null;
                 $storageData = $blockChain->getContentUnitData($uri);
                 if (strpos($storageData, '</h1>')) {
@@ -338,10 +281,11 @@ class ContentApiController extends Controller
                     $contentUnitText = $storageData;
                 }
 
+                //  create content unit
                 $contentUnitEntity = new \App\Entity\ContentUnit();
+                $contentUnitEntity->setAuthor($account);
                 $contentUnitEntity->setUri($uri);
                 $contentUnitEntity->setContentId($contentId);
-                $contentUnitEntity->setAuthor($account);
                 $contentUnitEntity->setChannel($channelAccount);
                 $contentUnitEntity->setTitle($contentUnitTitle);
                 $contentUnitEntity->setText($contentUnitText);
@@ -356,176 +300,114 @@ class ContentApiController extends Controller
                     $contentUnitEntity->setCover($coverFileEntity);
                 }
 
-                //  check for related Publication
-                $publicationArticle = $em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
-                if ($publicationArticle) {
-                    $contentUnitEntity->setPublication($publicationArticle->getPublication());
-                }
-
-                $em->persist($contentUnitEntity);
-                $em->flush();
-
-                //  check for related tags
-                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-                if ($contentUnitTags) {
-                    foreach ($contentUnitTags as $contentUnitTag) {
-                        $contentUnitTag->setContentUnit($contentUnitEntity);
-                        $em->persist($contentUnitTag);
+                //  relate with files
+                if (is_array($fileUris)) {
+                    foreach ($fileUris as $fileUri) {
+                        $fileEntity = $em->getRepository(File::class)->findOneBy(['uri' => $fileUri]);
+                        $contentUnitEntity->addFile($fileEntity);
                     }
-
-                    $em->flush();
                 }
 
-                //  add transaction
-                $timezone = new \DateTimeZone('UTC');
-                $datetime = new \DateTime();
-                $datetime->setTimezone($timezone);
-
+                //  add temporary transaction with size = 0
                 $transactionEntity = new Transaction();
                 $transactionEntity->setTransactionHash($currentTransactionHash);
                 $transactionEntity->setContentUnit($contentUnitEntity);
-                $transactionEntity->setTimeSigned($datetime->getTimestamp());
+                $transactionEntity->setTimeSigned($creationTime);
                 $transactionEntity->setFeeWhole($feeWhole);
                 $transactionEntity->setFeeFraction($feeFraction);
                 $transactionEntity->setTransactionSize(0);
                 $em->persist($transactionEntity);
-                $em->flush();
-            }
 
-            return new JsonResponse('', Response::HTTP_NO_CONTENT);
-        } catch (\Exception $e) {
-            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
-        }
-    }
-
-    /**
-     * @Route("/publish", methods={"POST"})
-     * @SWG\Post(
-     *     summary="Publish content",
-     *     consumes={"application/json"},
-     *     @SWG\Parameter(
-     *         name="body",
-     *         in="body",
-     *         description="JSON Payload",
-     *         required=true,
-     *         format="application/json",
-     *         @SWG\Schema(
-     *             type="object",
-     *             @SWG\Property(property="draftId", type="integer"),
-     *             @SWG\Property(property="uri", type="string"),
-     *             @SWG\Property(property="contentId", type="string")
-     *         )
-     *     ),
-     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
-     * )
-     * @SWG\Response(response=200, description="Success")
-     * @SWG\Response(response=404, description="User not found")
-     * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Content")
-     * @param Request $request
-     * @param Blockchain $blockChain
-     * @param Custom $customService
-     * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
-     */
-    public function publishContent(Request $request, BlockChain $blockChain, Custom $customService)
-    {
-        /**
-         * @var EntityManager $em
-         */
-        $em = $this->getDoctrine()->getManager();
-
-        /**
-         * @var Account $account
-         */
-        $account = $this->getUser();
-        if (!$account) {
-            return new JsonResponse('', Response::HTTP_UNAUTHORIZED);
-        }
-
-        //  get data from submitted data
-        $contentType = $request->getContentType();
-        if ($contentType == 'application/json' || $contentType == 'json') {
-            $content = $request->getContent();
-            $content = json_decode($content, true);
-
-            $uri = $content['uri'];
-            $contentId = $content['contentId'];
-            $draftId = $content['draftId'];
-        } else {
-            $uri = $request->request->get('uri');
-            $contentId = $request->request->get('contentId');
-            $draftId = $request->request->get('draftId');
-        }
-
-        list($feeWhole, $feeFraction) = $customService->getFee();
-
-        try {
-            $channelPublicKey = $this->getParameter('channel_address');
-
-            $content = new Content();
-            $content->setContentId($contentId);
-            $content->setChannelAddress($channelPublicKey);
-            $content->addContentUnitUris($uri);
-
-            $broadcastResult = $blockChain->signContent($content, $this->getParameter('channel_private_key'), $feeWhole, $feeFraction);
-            if ($broadcastResult instanceof TransactionDone) {
-                //  add temp data
-                $channelAccount = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelPublicKey]);
-
-                $contentEntity = new \App\Entity\Content();
-                $contentEntity->setContentId($contentId);
-                $contentEntity->setChannel($channelAccount);
-                $em->persist($contentEntity);
-                $em->flush();
-
-                $contentUnitEntity = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
-                $contentUnitEntity->setContent($contentEntity);
-                $em->persist($contentUnitEntity);
-                $em->flush();
-
-                //  check for related tags
-                $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnitUri' => $uri]);
-                if ($contentUnitTags) {
-                    foreach ($contentUnitTags as $contentUnitTag) {
-                        $contentUnitTag->setContentUnit($contentUnitEntity);
-                        $em->persist($contentUnitTag);
-                    }
-
-                    $em->flush();
-                }
-
-                //  add temp transaction
-                $timezone = new \DateTimeZone('UTC');
-                $datetime = new \DateTime();
-                $datetime->setTimezone($timezone);
-
-                $transactionHash = $broadcastResult->getTransactionHash();
-                $transactionEntity = new Transaction();
-                $transactionEntity->setTransactionHash($transactionHash);
-                $transactionEntity->setContent($contentEntity);
-                $transactionEntity->setTimeSigned($datetime->getTimestamp());
-                $transactionEntity->setFeeWhole(0);
-                $transactionEntity->setFeeFraction(0);
-                $transactionEntity->setTransactionSize(0);
-                $em->persist($transactionEntity);
-                $em->flush();
-
-                //  set draft as published
+                //  relate draft with article
                 $draft = $em->getRepository(Draft::class)->find($draftId);
                 if ($draft) {
+                    $draft->setUri($contentUnitEntity->getUri());
                     $draft->setPublished(true);
-                    $draft->setPublishDate($datetime->getTimestamp());
-                    $draft->setUri($uri);
                     $em->persist($draft);
-                    $em->flush();
                 }
 
-                return new JsonResponse('', Response::HTTP_NO_CONTENT);
-            } else {
-                return new JsonResponse(['Error type: ' . get_class($broadcastResult)], Response::HTTP_CONFLICT);
+                $publishContentUnitResult = $blockChain->publishContentUnit($contentUnitEntity, $draft);
+                if (!$publishContentUnitResult['status']) {
+                    return new JsonResponse([$publishContentUnitResult['message']], Response::HTTP_CONFLICT);
+                }
+            } elseif (!$contentUnitEntity->getTransaction()) {
+                //  add temporary transaction with size = 0
+                $transactionEntity = new Transaction();
+                $transactionEntity->setTransactionHash($currentTransactionHash);
+                $transactionEntity->setContentUnit($contentUnitEntity);
+                $transactionEntity->setTimeSigned($creationTime);
+                $transactionEntity->setFeeWhole($feeWhole);
+                $transactionEntity->setFeeFraction($feeFraction);
+                $transactionEntity->setTransactionSize(0);
+                $em->persist($transactionEntity);
+
+                //  relate draft with article
+                $draft = $em->getRepository(Draft::class)->find($draftId);
+                if ($draft) {
+                    $draft->setUri($contentUnitEntity->getUri());
+                    $draft->setPublished(true);
+                    $em->persist($draft);
+                }
+
+                $publishContentUnitResult = $blockChain->publishContentUnit($contentUnitEntity, $draft);
+                if (!$publishContentUnitResult['status']) {
+                    return new JsonResponse([$publishContentUnitResult['message']], Response::HTTP_CONFLICT);
+                }
             }
+
+            //  relate to publication
+            if ($publicationSlug) {
+                $publication = $em->getRepository(Publication::class)->findOneBy(['slug' => $publicationSlug]);
+                if ($publication) {
+                    //  check if Author is a member of Publication
+                    $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
+                    if ($publicationMember && in_array($publicationMember->getStatus(), [PublicationMember::TYPES['owner'], PublicationMember::TYPES['editor'], PublicationMember::TYPES['contributor']])) {
+                        $contentUnitEntity->setPublication($publication);
+                        $em->persist($contentUnitEntity);
+
+                        $publicationArticle = new PublicationArticle();
+                        $publicationArticle->setPublication($publication);
+                        $publicationArticle->setUri($uri);
+                        $em->persist($publicationArticle);
+                    }
+                }
+            } else {
+                $contentUnitEntity->setPublication(null);
+            }
+
+            //  remove existing tags
+            $contentUnitTags = $em->getRepository(ContentUnitTag::class)->findBy(['contentUnit' => $contentUnitEntity]);
+            if ($contentUnitTags) {
+                foreach ($contentUnitTags as $contentUnitTag) {
+                    $em->remove($contentUnitTag);
+                }
+            }
+
+            //  add tags
+            if (is_array($tags)) {
+                foreach ($tags as $tag) {
+                    $tag = substr(trim($tag), 0, 24);
+                    $tagEntity = $em->getRepository(Tag::class)->findOneBy(['name' => $tag]);
+                    if (!$tagEntity) {
+                        $tagEntity = new Tag();
+                        $tagEntity->setName($tag);
+                        $em->persist($tagEntity);
+                    }
+
+                    $contentUnitTag = new ContentUnitTag();
+                    $contentUnitTag->setTag($tagEntity);
+                    $contentUnitTag->setContentUnitUri($uri);
+                    $contentUnitTag->setContentUnit($contentUnitEntity);
+
+                    $em->persist($contentUnitTag);
+                }
+            }
+
+            $em->persist($contentUnitEntity);
+            $em->flush();
+            $em->commit();
+
+            return new JsonResponse('', Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
         }
