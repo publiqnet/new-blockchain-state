@@ -27,6 +27,8 @@ class CurrentChannelFilter extends SQLFilter
             return "";
         }
 
+        $channelAddress = "'" . $channelAddress . "'";
+
         return $targetTableAlias . '.channel_id in (select id from account where public_key = ' . $channelAddress . ') ';
     }
 }
