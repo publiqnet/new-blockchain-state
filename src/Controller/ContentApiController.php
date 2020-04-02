@@ -12,6 +12,7 @@ use App\Entity\Account;
 use App\Entity\BoostedContentUnit;
 use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
+use App\Entity\Content;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
 use App\Entity\Draft;
@@ -30,13 +31,11 @@ use Doctrine\ORM\EntityManager;
 use Exception;
 use Psr\Log\LoggerInterface;
 use PubliqAPI\Base\UriProblemType;
-use PubliqAPI\Model\Content;
 use PubliqAPI\Model\ContentUnit;
 use PubliqAPI\Model\Done;
 use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
-use PubliqAPI\Model\TransactionDone;
 use PubliqAPI\Model\UriError;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Swagger\Annotations as SWG;
@@ -107,10 +106,10 @@ class ContentApiController extends Controller
         $channel = $em->getRepository(Account::class)->findOneBy(['publicKey' => $channelAddress]);
 
         //  check if generated content ID is unique within channel
-        $contentUnit = $em->getRepository(\App\Entity\Content::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
+        $contentUnit = $em->getRepository(Content::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
         while ($contentUnit) {
             $contentId = rand(1, 999999999);
-            $contentUnit = $em->getRepository(\App\Entity\Content::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
+            $contentUnit = $em->getRepository(Content::class)->findOneBy(['contentId' => $contentId, 'channel' => $channel]);
         }
 
         $uploadResult = $blockChain->uploadFile($content, 'text/html');
@@ -674,6 +673,10 @@ class ContentApiController extends Controller
         }
 
         if ($account === $author) {
+            //  enable current channel filter
+            $em->getFilters()->enable('current_channel_filter');
+            $em->getFilters()->getFilter('current_channel_filter')->setParameter('channel_address', $this->getParameter('channel_address'));
+
             $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit, true);
             $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, null, $account);
         } else {
