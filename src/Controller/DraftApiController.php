@@ -567,6 +567,21 @@ class DraftApiController extends Controller
                  */
                 $updated = $draft->getUpdated();
                 $draft->setUpdated($updated->getTimestamp());
+
+                $options = $draft->getOptions();
+                if ($options && isset($options['selectedCoverImageUrl']) && $options['selectedCoverImageUrl']) {
+                    $options['selectedCoverImageWidth'] = 0;
+                    $options['selectedCoverImageHeight'] = 0;
+                    
+                    $selectedCoverImageUrl = $options['selectedCoverImageUrl'];
+                    $size = getimagesize($selectedCoverImageUrl);
+                    if (is_array($size)) {
+                        $options['selectedCoverImageWidth'] = $size[0];
+                        $options['selectedCoverImageHeight'] = $size[1];
+                    }
+                }
+
+                $draft->setOptions($options);
             }
         }
         $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList', 'tag', 'accountBase', 'publication']]);
