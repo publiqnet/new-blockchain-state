@@ -569,10 +569,10 @@ class DraftApiController extends Controller
                 $draft->setUpdated($updated->getTimestamp());
 
                 $options = $draft->getOptions();
+                $options['selectedCoverImageWidth'] = 0;
+                $options['selectedCoverImageHeight'] = 0;
+
                 if ($options && isset($options['selectedCoverImageUrl']) && $options['selectedCoverImageUrl']) {
-                    $options['selectedCoverImageWidth'] = 0;
-                    $options['selectedCoverImageHeight'] = 0;
-                    
                     $selectedCoverImageUrl = $options['selectedCoverImageUrl'];
                     $size = getimagesize($selectedCoverImageUrl);
                     if (is_array($size)) {
