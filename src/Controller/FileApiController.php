@@ -349,8 +349,18 @@ class FileApiController extends Controller
                     $action->addAuthorAddresses($publicKey);
 
                     $signatureResult = $blockChain->verifySignature($publicKey, $file['signedFile'], $action, $file['creationTime'], $file['expiryTime'], $feeWhole, $feeFraction);
-                    if (!($signatureResult['signatureResult'] instanceof Done)) {
-                        throw new Exception('Invalid signature for file: ' . $file['uri'] . '; Error type: ' . get_class($signatureResult['signatureResult']));
+                    if ($signatureResult['signatureResult'] instanceof InvalidSignature) {
+                        return new JsonResponse(['type' => 'file_invalid_signature'], Response::HTTP_CONFLICT);
+                    } elseif ($signatureResult['signatureResult'] instanceof UriError) {
+                        /**
+                         * @var UriError $uriError
+                         */
+                        $uriError = $signatureResult['signatureResult'];
+                        if ($uriError->getUriProblemType() !== UriProblemType::duplicate) {
+                            throw new Exception('Invalid file URI: ' . $uriError->getUri() . '(' . $uriError->getUriProblemType() . ')');
+                        }
+                    } elseif (!($signatureResult['signatureResult'] instanceof Done)) {
+                        throw new Exception('Error for file: ' . $file['uri'] . '; Error type: ' . get_class($signatureResult['signatureResult']));
                     }
 
                     //  Broadcast
