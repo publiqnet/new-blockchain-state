@@ -116,9 +116,9 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->select('a')
                 ->where('a.firstName like :searchWord')
                 ->orWhere('a.lastName like :searchWord')
-                ->orWhere('a.publicKey like :searchWord')
+                ->orWhere('a.publicKey = :searchWordBase')
                 ->andWhere('a != :account')
-                ->setParameters(['searchWord' => '%' . $searchWord . '%', 'account' => $exception])
+                ->setParameters(['searchWordBase' => $searchWord, 'searchWord' => '%' . $searchWord . '%', 'account' => $exception])
                 ->orderBy('a.firstName', 'ASC')
                 ->getQuery()
                 ->getResult();
@@ -127,8 +127,8 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
                 ->select('a')
                 ->where('a.firstName like :searchWord')
                 ->orWhere('a.lastName like :searchWord')
-                ->orWhere('a.publicKey like :searchWord')
-                ->setParameters(['searchWord' => '%' . $searchWord . '%'])
+                ->orWhere('a.publicKey = :searchWordBase')
+                ->setParameters(['searchWordBase' => $searchWord, 'searchWord' => '%' . $searchWord . '%'])
                 ->orderBy('a.firstName', 'ASC')
                 ->getQuery()
                 ->getResult();
