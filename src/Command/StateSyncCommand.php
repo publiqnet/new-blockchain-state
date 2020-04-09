@@ -759,12 +759,6 @@ class StateSyncCommand extends ContainerAwareCommand
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
 
-                $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                if ($transactionEntity) {
-                    $this->em->remove($transactionEntity);
-                    $this->em->flush();
-                }
-
                 if ($action->getAction() instanceof File) {
                     /**
                      * @var File $file
@@ -1181,8 +1175,13 @@ class StateSyncCommand extends ContainerAwareCommand
 
                 //  delete transaction with all data
                 if (!$appliedReverted) {
+                    /**
+                     * @var Transaction $transaction
+                     */
                     $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
                     if ($transaction) {
+                        echo $transactionHash . PHP_EOL;
+                        $transaction->setFile(null);
                         $this->em->remove($transaction);
                         $this->em->flush();
                     }
@@ -1286,18 +1285,13 @@ class StateSyncCommand extends ContainerAwareCommand
      */
     private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
-        $transaction = new Transaction();
-        $transaction->setTransactionHash($transactionHash);
-        $transaction->setFile(null);
-        $transaction->setContentUnit(null);
-        $transaction->setContent(null);
-        $transaction->setTransfer(null);
-        $transaction->setBoostedContentUnit(null);
-        $transaction->setCancelBoostedContentUnit(null);
-
-        if ($block) {
-            $transaction->setBlock($block);
+        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+        if (!$transaction) {
+            $transaction = new Transaction();
+            $transaction->setTransactionHash($transactionHash);
         }
+
+        $transaction->setBlock($block);
         $transaction->setTransactionSize($transactionSize);
         $transaction->setTimeSigned($timeSigned);
         $transaction->setFeeWhole($feeWhole);
