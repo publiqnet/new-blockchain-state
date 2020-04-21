@@ -46,6 +46,14 @@ class NetworkDocsContent
     private $content;
 
     /**
+     * @var string
+     * @Gedmo\Slug(fields={"title"}, updatable=false)
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkDocsContent"})
+     */
+    private $slug;
+
+    /**
      * @var \DateTime $created
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime", nullable=false)
@@ -103,6 +111,22 @@ class NetworkDocsContent
     public function setContent(string $content)
     {
         $this->content = $content;
+    }
+
+    /**
+     * @return string
+     */
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    /**
+     * @param string $slug
+     */
+    public function setSlug(string $slug)
+    {
+        $this->slug = $slug;
     }
 
     /**

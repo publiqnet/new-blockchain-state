@@ -682,6 +682,37 @@ class NetworkApiController extends Controller
     }
 
     /**
+     * @Route("/page/docs-single/{slug}", methods={"GET"}, name="network_page_docs_single")
+     * @SWG\Get(
+     *     summary="Get Docs single page data",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @param string $slug
+     * @return JsonResponse
+     */
+    public function getPageDocsSingle(string $slug)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        $pageDocs = $em->getRepository(NetworkPage::class)->findOneBy(['slug' => 'docs']);
+        $pageDocs = $this->get('serializer')->normalize($pageDocs, null, ['groups' => ['networkPage']]);
+
+        $contents = $em->getRepository(NetworkDocsContent::class)->findOneBy(['slug' => $slug]);
+        $contents = $this->get('serializer')->normalize($contents, null, ['groups' => ['networkDocsContent']]);
+
+        return new JsonResponse([
+            'main' => $pageDocs,
+            'contents' => $contents,
+        ]);
+    }
+
+    /**
      * @Route("/page/contacts", methods={"GET"}, name="network_page_contacts")
      * @SWG\Get(
      *     summary="Get Contacts page data",
