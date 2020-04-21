@@ -708,7 +708,7 @@ class NetworkApiController extends Controller
 
         return new JsonResponse([
             'main' => $pageDocs,
-            'contents' => $contents,
+            'content' => $contents,
         ]);
     }
 

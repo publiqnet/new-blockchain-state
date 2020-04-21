@@ -48,7 +48,7 @@ class NetworkDocsContent
     /**
      * @var string
      * @Gedmo\Slug(fields={"title"}, updatable=false)
-     * @ORM\Column(type="string", nullable=true)
+     * @ORM\Column(type="string", unique=true)
      * @Groups({"networkDocsContent"})
      */
     private $slug;
