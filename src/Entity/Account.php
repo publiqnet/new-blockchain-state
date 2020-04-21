@@ -194,6 +194,12 @@ class Account implements UserInterface
     private $apiKey;
 
     /**
+     * @var integer
+     * @ORM\Column(type="integer", nullable=true)
+     */
+    private $apiKeyDate;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\PublicationMember", mappedBy="member", fetch="EXTRA_LAZY")
      */
     private $publications;
@@ -630,6 +636,15 @@ class Account implements UserInterface
     public function setApiKey()
     {
         $this->apiKey = hash('sha256', random_bytes(128));
+        $this->apiKeyDate = time();
+    }
+
+    /**
+     * @return integer
+     */
+    public function getApiKeyDate()
+    {
+        return $this->apiKeyDate;
     }
 
     public function getSalt()
