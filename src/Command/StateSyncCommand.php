@@ -328,20 +328,23 @@ class StateSyncCommand extends ContainerAwareCommand
                                         $contentUnitTag = trim(strip_tags(substr($contentUnitText, 0, strpos($contentUnitText, '</h3>') + 5)));
                                         $contentUnitText = substr($contentUnitText, strpos($contentUnitText, '</h3>') + 5);
 
-                                        $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTag]);
-                                        if (!$tagEntity) {
-                                            $tagEntity = new Tag();
-                                            $tagEntity->setName($contentUnitTag);
-                                            $this->em->persist($tagEntity);
+                                        $contentUnitTag = explode(' ', $contentUnitTag);
+                                        foreach ($contentUnitTag as $contentUnitTagSingle) {
+                                            $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTagSingle]);
+                                            if (!$tagEntity) {
+                                                $tagEntity = new Tag();
+                                                $tagEntity->setName($contentUnitTagSingle);
+                                                $this->em->persist($tagEntity);
+                                                $this->em->flush();
+                                            }
+
+                                            $contentUnitTagEntity = new ContentUnitTag();
+                                            $contentUnitTagEntity->setContentUnit($contentUnitEntity);
+                                            $contentUnitTagEntity->setContentUnitUri($contentUnitEntity->getUri());
+                                            $contentUnitTagEntity->setTag($tagEntity);
+                                            $this->em->persist($contentUnitTagEntity);
                                             $this->em->flush();
                                         }
-
-                                        $contentUnitTagEntity = new ContentUnitTag();
-                                        $contentUnitTagEntity->setContentUnit($contentUnitEntity);
-                                        $contentUnitTagEntity->setContentUnitUri($contentUnitEntity->getUri());
-                                        $contentUnitTagEntity->setTag($tagEntity);
-                                        $this->em->persist($contentUnitTagEntity);
-                                        $this->em->flush();
                                     }
                                 }
 
