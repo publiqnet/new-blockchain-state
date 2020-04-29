@@ -1183,7 +1183,6 @@ class StateSyncCommand extends ContainerAwareCommand
                      */
                     $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
                     if ($transaction) {
-                        echo $transactionHash . PHP_EOL;
                         $transaction->setFile(null);
                         $this->em->remove($transaction);
                         $this->em->flush();
