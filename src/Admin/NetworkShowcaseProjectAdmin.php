@@ -21,6 +21,7 @@ class NetworkShowcaseProjectAdmin extends AbstractAdmin
             ->add('title', TextType::class)
             ->add('description')
             ->add('link')
+            ->add('internalLink')
             ->add('pOAuth', null, ['label' => 'pOAuth']);
     }
 
@@ -29,6 +30,7 @@ class NetworkShowcaseProjectAdmin extends AbstractAdmin
         $listMapper
             ->addIdentifier('title')
             ->add('link')
+            ->add('internalLink')
             ->add('pOAuth', null, ['label' => 'pOAuth'])
             ->add('created', null, ['header_style' => 'width: 180px'])
             ->add('updated', null, ['label' => 'Last Updated', 'header_style' => 'width: 180px']);

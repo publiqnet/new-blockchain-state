@@ -50,6 +50,13 @@ class NetworkShowcaseProject
      * @ORM\Column(type="string", nullable=true)
      * @Groups({"networkShowcaseProject"})
      */
+    private $internalLink;
+
+    /**
+     * @var string
+     * @ORM\Column(type="string", nullable=true)
+     * @Groups({"networkShowcaseProject"})
+     */
     private $description;
 
     /**
@@ -156,6 +163,22 @@ class NetworkShowcaseProject
     public function setLink(?string $link)
     {
         $this->link = $link;
+    }
+
+    /**
+     * @return string
+     */
+    public function getInternalLink(): ?string
+    {
+        return $this->internalLink;
+    }
+
+    /**
+     * @param string $internalLink
+     */
+    public function setInternalLink(?string $internalLink)
+    {
+        $this->internalLink = $internalLink;
     }
 
     /**
