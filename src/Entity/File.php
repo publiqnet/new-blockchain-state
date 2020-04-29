@@ -65,7 +65,7 @@ class File
     private $author;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file")
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file", cascade={"persist"})
      */
     private $transaction;
 

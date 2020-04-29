@@ -328,20 +328,23 @@ class StateSyncCommand extends ContainerAwareCommand
                                         $contentUnitTag = trim(strip_tags(substr($contentUnitText, 0, strpos($contentUnitText, '</h3>') + 5)));
                                         $contentUnitText = substr($contentUnitText, strpos($contentUnitText, '</h3>') + 5);
 
-                                        $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTag]);
-                                        if (!$tagEntity) {
-                                            $tagEntity = new Tag();
-                                            $tagEntity->setName($contentUnitTag);
-                                            $this->em->persist($tagEntity);
+                                        $contentUnitTag = explode(' ', $contentUnitTag);
+                                        foreach ($contentUnitTag as $contentUnitTagSingle) {
+                                            $tagEntity = $this->em->getRepository(Tag::class)->findOneBy(['name' => $contentUnitTagSingle]);
+                                            if (!$tagEntity) {
+                                                $tagEntity = new Tag();
+                                                $tagEntity->setName($contentUnitTagSingle);
+                                                $this->em->persist($tagEntity);
+                                                $this->em->flush();
+                                            }
+
+                                            $contentUnitTagEntity = new ContentUnitTag();
+                                            $contentUnitTagEntity->setContentUnit($contentUnitEntity);
+                                            $contentUnitTagEntity->setContentUnitUri($contentUnitEntity->getUri());
+                                            $contentUnitTagEntity->setTag($tagEntity);
+                                            $this->em->persist($contentUnitTagEntity);
                                             $this->em->flush();
                                         }
-
-                                        $contentUnitTagEntity = new ContentUnitTag();
-                                        $contentUnitTagEntity->setContentUnit($contentUnitEntity);
-                                        $contentUnitTagEntity->setContentUnitUri($contentUnitEntity->getUri());
-                                        $contentUnitTagEntity->setTag($tagEntity);
-                                        $this->em->persist($contentUnitTagEntity);
-                                        $this->em->flush();
                                     }
                                 }
 
@@ -759,12 +762,6 @@ class StateSyncCommand extends ContainerAwareCommand
                 $feeWhole = $action->getFee()->getWhole();
                 $feeFraction = $action->getFee()->getFraction();
 
-                $transactionEntity = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                if ($transactionEntity) {
-                    $this->em->remove($transactionEntity);
-                    $this->em->flush();
-                }
-
                 if ($action->getAction() instanceof File) {
                     /**
                      * @var File $file
@@ -1181,8 +1178,12 @@ class StateSyncCommand extends ContainerAwareCommand
 
                 //  delete transaction with all data
                 if (!$appliedReverted) {
+                    /**
+                     * @var Transaction $transaction
+                     */
                     $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
                     if ($transaction) {
+                        $transaction->setFile(null);
                         $this->em->remove($transaction);
                         $this->em->flush();
                     }
@@ -1286,18 +1287,13 @@ class StateSyncCommand extends ContainerAwareCommand
      */
     private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
-        $transaction = new Transaction();
-        $transaction->setTransactionHash($transactionHash);
-        $transaction->setFile(null);
-        $transaction->setContentUnit(null);
-        $transaction->setContent(null);
-        $transaction->setTransfer(null);
-        $transaction->setBoostedContentUnit(null);
-        $transaction->setCancelBoostedContentUnit(null);
-
-        if ($block) {
-            $transaction->setBlock($block);
+        $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
+        if (!$transaction) {
+            $transaction = new Transaction();
+            $transaction->setTransactionHash($transactionHash);
         }
+
+        $transaction->setBlock($block);
         $transaction->setTransactionSize($transactionSize);
         $transaction->setTimeSigned($timeSigned);
         $transaction->setFeeWhole($feeWhole);

@@ -29,7 +29,7 @@ class Tag
     private $id;
 
     /**
-     * @ORM\Column(type="string", length=64, unique=true)
+     * @ORM\Column(type="string", length=128, unique=true)
      * @Groups({"tag"})
      */
     private $name;
