@@ -37,7 +37,7 @@ use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
 use PubliqAPI\Model\UriError;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -49,7 +49,7 @@ use Symfony\Component\Routing\Annotation\Route;
  * @package App\Controller
  * @Route("/api/content")
  */
-class ContentApiController extends Controller
+class ContentApiController extends AbstractController
 {
     /**
      * @Route("/unit/upload", methods={"POST"})
@@ -1239,10 +1239,6 @@ class ContentApiController extends Controller
             $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
             if (!$contentUnit) {
                 return new JsonResponse(null, Response::HTTP_NOT_FOUND);
-            }
-
-            if ($contentUnit->getAuthor() != $account) {
-                return new JsonResponse(null, Response::HTTP_FORBIDDEN);
             }
 
             //  font is required
