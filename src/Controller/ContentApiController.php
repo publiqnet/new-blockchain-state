@@ -43,6 +43,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Class ContentApiController
@@ -745,11 +746,10 @@ class ContentApiController extends AbstractController
      * @param Custom $customService
      * @param LoggerInterface $logger
      * @param CUService $contentUnitService
+     * @param EventDispatcherInterface $eventDispatcher
      * @return JsonResponse
-     * @throws Exception
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
+    public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService, EventDispatcherInterface $eventDispatcher)
     {
         /**
          * @var EntityManager $em
@@ -775,7 +775,7 @@ class ContentApiController extends AbstractController
 
         // update user preference if viewer is not article author
         if ($account && $contentUnit->getAuthor() != $account) {
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 UserPreferenceEvent::NAME,
                 new UserPreferenceEvent($account, $contentUnit)
             );
