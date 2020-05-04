@@ -1486,6 +1486,7 @@ class ContentApiController extends AbstractController
 
                     $boost->setSummary($spendingSummary[0]);
                 }
+                $contentUnit->setBoosts($boosts);
 
                 $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
                 if ($isBoostActive) {

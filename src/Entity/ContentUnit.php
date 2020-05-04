@@ -504,6 +504,14 @@ class ContentUnit
     }
 
     /**
+     * @param mixed $boosts
+     */
+    public function setBoosts($boosts)
+    {
+        $this->boosts = $boosts;
+    }
+
+    /**
      * @return mixed
      */
     public function getViewsPerChannel()
