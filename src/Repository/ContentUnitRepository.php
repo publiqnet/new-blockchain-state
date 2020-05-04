@@ -645,20 +645,13 @@ class ContentUnitRepository extends EntityRepository
      * @param Account $account
      * @return array|null
      */
-    public function getAuthorBoostedArticles(Account $account)
+    public function getAuthorRelatedBoosts(Account $account)
     {
-        $subQuery = $this->createQueryBuilder('cu2');
-        $subQuery
-            ->select('max(cu2.id)')
-            ->join('cu2.transaction', 't2')
-            ->where('t2.block is not null')
-            ->andWhere('cu2.content is not null')
-            ->groupBy('cu2.contentId');
-
         $query = $this->createQueryBuilder('cu');
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.sponsor = :sponsor')
+            ->orWhere('cu.author = :sponsor')
             ->setParameters(['sponsor' => $account])
             ->groupBy('cu')
             ->getQuery()

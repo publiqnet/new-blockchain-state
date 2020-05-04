@@ -1423,7 +1423,7 @@ class ContentApiController extends AbstractController
         /**
          * @var \App\Entity\ContentUnit[] $contentUnits
          */
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorRelatedBoosts($account);
         if ($contentUnits) {
             foreach ($contentUnits as $contentUnit) {
                 $views = 0;
