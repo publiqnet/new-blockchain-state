@@ -30,7 +30,7 @@ use App\Form\NetworkFeedbackType;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use Nelmio\ApiDocBundle\Annotation\Model;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,7 +43,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/api/network")
  */
-class NetworkApiController extends Controller
+class NetworkApiController extends AbstractController
 {
     /**
      * @Route("/status", methods={"GET"}, name="network_status")

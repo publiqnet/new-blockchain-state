@@ -17,9 +17,10 @@ use App\Entity\File;
 use App\Entity\Transaction;
 use App\Service\BlockChain;
 use App\Service\Custom;
+use Doctrine\ORM\EntityManager;
 use Exception;
 use Psr\Log\LoggerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +33,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/api/tracker")
  */
-class TrackerApiController extends Controller
+class TrackerApiController extends AbstractController
 {
     /**
      * @Route("/search/{word}/{count}/{fromUri}", methods={"GET"})
@@ -54,6 +55,9 @@ class TrackerApiController extends Controller
      */
     public function search(string $word, int $count, $fromUri, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         //  SEARCH IN ARTICLES
@@ -218,6 +222,9 @@ class TrackerApiController extends Controller
      */
     public function contents(int $count, string $fromUri, Custom $customService)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $fromContentUnit = null;
@@ -317,6 +324,9 @@ class TrackerApiController extends Controller
      */
     public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $contentUnit = $em->getRepository(ContentUnit::class)->findOneBy(['uri' => $uri]);

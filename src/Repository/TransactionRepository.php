@@ -182,14 +182,58 @@ class TransactionRepository extends EntityRepository
      * @param Block $block
      * @param int $from
      * @param int $count
+     * @param null $rtt
      * @return array|null
      */
-    public function getBlockTransactions(Block $block, int $from, int $count)
+    public function getBlockTransactions(Block $block, int $from, int $count, $rtt = null)
     {
-        return $this->createQueryBuilder('t')
+        $query = $this->createQueryBuilder('t')
             ->select('t')
+            ->leftJoin('t.transfer', 'tr')
+            ->leftJoin('t.file', 'f')
+            ->leftJoin('t.contentUnit', 'cu')
+            ->leftJoin('t.content', 'c')
+            ->leftJoin('t.boostedContentUnit', 'bcu')
+            ->leftJoin('t.cancelBoostedContentUnit', 'cbcu')
+            ->leftJoin('t.role', 'r')
+            ->leftJoin('t.serviceStatistic', 'ss')
+            ->leftJoin('t.storageUpdate', 'su')
             ->where('t.block = :block')
-            ->setParameter('block', $block)
+        ;
+
+        if ($rtt !== null) {
+            switch ($rtt) {
+                case array_search('File', Rtt::types):
+                    $query->andWhere('f is not null');
+                    break;
+                case array_search('ContentUnit', Rtt::types):
+                    $query->andWhere('cu is not null');
+                    break;
+                case array_search('Content', Rtt::types):
+                    $query->andWhere('c is not null');
+                    break;
+                case array_search('Transfer', Rtt::types):
+                    $query->andWhere('tr is not null');
+                    break;
+                case array_search('SponsorContentUnit', Rtt::types):
+                    $query->andWhere('bcu is not null');
+                    break;
+                case array_search('CancelSponsorContentUnit', Rtt::types):
+                    $query->andWhere('cbcu is not null');
+                    break;
+                case array_search('Role', Rtt::types):
+                    $query->andWhere('r is not null');
+                    break;
+                case array_search('ServiceStatistics', Rtt::types):
+                    $query->andWhere('ss is not null');
+                    break;
+                case array_search('StorageUpdate', Rtt::types):
+                    $query->andWhere('su is not null');
+                    break;
+            }
+        }
+
+        return $query->setParameter('block', $block)
             ->orderBy('t.id', 'desc')
             ->setFirstResult($from)
             ->setMaxResults($count)

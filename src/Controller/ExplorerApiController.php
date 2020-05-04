@@ -13,9 +13,10 @@ use App\Entity\Block;
 use App\Entity\Reward;
 use App\Entity\Transaction;
 use App\Entity\Transfer;
+use Doctrine\ORM\EntityManager;
 use PubliqAPI\Base\RewardType;
 use PubliqAPI\Base\Rtt;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,7 +28,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/api/explorer")
  */
-class ExplorerApiController extends Controller
+class ExplorerApiController extends AbstractController
 {
     /**
      * @Route("/search/{search}", methods={"GET"})
@@ -44,6 +45,9 @@ class ExplorerApiController extends Controller
      */
     public function search($search)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $serializer = $this->get('serializer');
 
@@ -166,6 +170,9 @@ class ExplorerApiController extends Controller
      */
     public function getBlocks(int $count, string $fromHash = null)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $block = null;
@@ -228,6 +235,9 @@ class ExplorerApiController extends Controller
      */
     public function getBlocksByDate(int $year, int $month, int $day, int $count, string $fromHash)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $block = null;
@@ -286,6 +296,9 @@ class ExplorerApiController extends Controller
      */
     public function getBlock(string $blockHash)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         try {
@@ -333,6 +346,7 @@ class ExplorerApiController extends Controller
 
     /**
      * @Route("/block/{blockHash}/transactions/{from}/{count}", methods={"GET"})
+     * @Route("/block/{blockHash}/transactions/{rtt}/{from}/{count}", methods={"GET"})
      * @SWG\Get(
      *     summary="Get given block transactions (with pagination)",
      *     consumes={"application/json"},
@@ -341,13 +355,16 @@ class ExplorerApiController extends Controller
      * @SWG\Response(response=200, description="Success")
      * @SWG\Tag(name="Explorer")
      * @param string $blockHash
+     * @param int $rtt
      * @param int $from
      * @param int $count
      * @return JsonResponse
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function getBlockTransactions(string $blockHash, int $from, int $count)
+    public function getBlockTransactions(string $blockHash, int $rtt, int $from, int $count)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         try {
@@ -356,7 +373,11 @@ class ExplorerApiController extends Controller
                 return new JsonResponse(null, Response::HTTP_NOT_FOUND);
             }
 
-            $transactions = $em->getRepository(Transaction::class)->getBlockTransactions($block, $from, $count);
+            if (!isset(Rtt::types[$rtt])) {
+                $rtt = null;
+            }
+
+            $transactions = $em->getRepository(Transaction::class)->getBlockTransactions($block, $from, $count, $rtt);
             $transactions = $this->get('serializer')->normalize($transactions, null, ['groups' => ['explorerTransaction', 'explorerBlockLight', 'explorerAccountLight', 'explorerFile', 'explorerContentUnit', 'explorerContent', 'explorerTransfer', 'explorerRole', 'explorerStorageUpdate', 'explorerServiceStatistics', 'explorerBoostedContentUnit', 'explorerCancelBoostedContentUnit']]);
 
             //  check if more transactions exist
@@ -384,6 +405,9 @@ class ExplorerApiController extends Controller
      */
     public function getTransactions(int $count, string $fromHash)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         $transaction = null;
@@ -440,6 +464,9 @@ class ExplorerApiController extends Controller
      */
     public function getTransaction(Transaction $transaction)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
         $serializer = $this->get('serializer');
 
@@ -475,6 +502,9 @@ class ExplorerApiController extends Controller
      */
     public function getAccount(string $publicKey)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
@@ -546,6 +576,9 @@ class ExplorerApiController extends Controller
      */
     public function getAccountTransactions(string $publicKey, $rtt, int $count, string $fromHash = null)
     {
+        /**
+         * @var EntityManager $em
+         */
         $em = $this->getDoctrine()->getManager();
 
         /**
