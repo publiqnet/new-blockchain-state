@@ -360,7 +360,7 @@ class ExplorerApiController extends AbstractController
      * @param int $count
      * @return JsonResponse
      */
-    public function getBlockTransactions(string $blockHash, int $rtt, int $from, int $count)
+    public function getBlockTransactions(string $blockHash, int $rtt = null, int $from, int $count)
     {
         /**
          * @var EntityManager $em
@@ -377,11 +377,15 @@ class ExplorerApiController extends AbstractController
                 $rtt = null;
             }
 
-            $transactions = $em->getRepository(Transaction::class)->getBlockTransactions($block, $from, $count, $rtt);
+            $transactions = $em->getRepository(Transaction::class)->getBlockTransactions($block, $from, $count + 1, $rtt);
             $transactions = $this->get('serializer')->normalize($transactions, null, ['groups' => ['explorerTransaction', 'explorerBlockLight', 'explorerAccountLight', 'explorerFile', 'explorerContentUnit', 'explorerContent', 'explorerTransfer', 'explorerRole', 'explorerStorageUpdate', 'explorerServiceStatistics', 'explorerBoostedContentUnit', 'explorerCancelBoostedContentUnit']]);
 
             //  check if more transactions exist
-            $moreTransactions = $em->getRepository(Transaction::class)->getBlockTransactions($block, $from + $count, $count);
+            $moreTransactions = false;
+            if (count($transactions) > $count) {
+                unset($transactions[$count]);
+                $moreTransactions = true;
+            }
 
             return new JsonResponse(['transactions' => $transactions, 'more' => ($moreTransactions ? 1: 0)]);
         } catch (\Exception $e) {
