@@ -27,7 +27,7 @@ use App\Event\PublicationMembershipRequestRejectEvent;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,7 +41,7 @@ use App\Service\ContentUnit as CUService;
  * @package App\Controller
  * @Route("/api/publication")
  */
-class PublicationApiController extends Controller
+class PublicationApiController extends AbstractController
 {
     /**
      * @Route("/create", methods={"POST"})

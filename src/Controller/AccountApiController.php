@@ -20,7 +20,7 @@ use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
 use Doctrine\ORM\EntityManager;
 use Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -36,7 +36,7 @@ use Lcobucci\JWT\Signer\Hmac\Sha256;
  *
  * @Route("/api/user")
  */
-class AccountApiController extends Controller
+class AccountApiController extends AbstractController
 {
     /**
      * @Route("/authenticate", methods={"GET"})

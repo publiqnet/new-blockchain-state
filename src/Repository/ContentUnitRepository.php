@@ -656,7 +656,6 @@ class ContentUnitRepository extends EntityRepository
             ->groupBy('cu2.contentId');
 
         $query = $this->createQueryBuilder('cu');
-
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
             ->where('bcu.sponsor = :sponsor')

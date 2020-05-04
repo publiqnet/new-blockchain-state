@@ -12,7 +12,7 @@ use App\Entity\Account;
 use App\Entity\Notification;
 use App\Entity\UserNotification;
 use Doctrine\ORM\EntityManager;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -22,7 +22,7 @@ use Swagger\Annotations as SWG;
  * @package App\Controller
  * @Route("/api/notification")
  */
-class NotificationApiController extends Controller
+class NotificationApiController extends AbstractController
 {
     /**
      * @Route("/read-all", methods={"POST"})

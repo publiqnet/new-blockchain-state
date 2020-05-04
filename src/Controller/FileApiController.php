@@ -23,7 +23,7 @@ use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
 use PubliqAPI\Model\UriError;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -36,7 +36,7 @@ use Symfony\Component\Routing\Annotation\Route;
  * @package App\Controller
  * @Route("/api/file")
  */
-class FileApiController extends Controller
+class FileApiController extends AbstractController
 {
     /**
      * @Route("s/{count}/{fromUri}", methods={"GET"})
