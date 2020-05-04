@@ -93,4 +93,33 @@ class BoostedContentUnitRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @param ContentUnit $article
+     * @param Account $user
+     * @return array
+     */
+    public function getArticleBoostsForUser(ContentUnit $article, Account $user)
+    {
+        if ($article->getAuthor() === $user) {
+            return $this->createQueryBuilder('bcu')
+                ->select('bcu')
+                ->join('bcu.contentUnit', 'cu')
+                ->join('bcu.sponsor', 'a')
+                ->where('cu = :article')
+                ->setParameters(['article' => $article])
+                ->getQuery()
+                ->getResult();
+        } else {
+            return $this->createQueryBuilder('bcu')
+                ->select('bcu')
+                ->join('bcu.contentUnit', 'cu')
+                ->join('bcu.sponsor', 'a')
+                ->where('cu = :article')
+                ->andWhere('a = :user')
+                ->setParameters(['article' => $article, 'user' => $user])
+                ->getQuery()
+                ->getResult();
+        }
+    }
 }

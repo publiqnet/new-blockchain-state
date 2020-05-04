@@ -1464,7 +1464,7 @@ class ContentApiController extends AbstractController
                 /**
                  * @var BoostedContentUnit[] $boosts
                  */
-                $boosts = $contentUnit->getBoosts();
+                $boosts = $em->getRepository(BoostedContentUnit::class)->getArticleBoostsForUser($contentUnit, $account);
                 foreach ($boosts as $boost) {
                     $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostSummary($boost);
                     if (!isset($spendingSummary[0])) {
