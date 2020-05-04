@@ -66,6 +66,11 @@ class TransactionRepository extends EntityRepository
             ->leftJoin('t.file', 'f')
             ->leftJoin('t.contentUnit', 'cu')
             ->leftJoin('t.content', 'c')
+            ->leftJoin('t.boostedContentUnit', 'bcu')
+            ->leftJoin('t.cancelBoostedContentUnit', 'cbcu')
+            ->leftJoin('t.role', 'r')
+            ->leftJoin('t.serviceStatistic', 'ss')
+            ->leftJoin('t.storageUpdate', 'su')
             ->where('tr.from = :account')
             ->orWhere('tr.to = :account')
             ->orWhere('f.author = :account')
@@ -86,6 +91,21 @@ class TransactionRepository extends EntityRepository
                     break;
                 case array_search('Transfer', Rtt::types):
                     $query->andWhere('tr is not null');
+                    break;
+                case array_search('SponsorContentUnit', Rtt::types):
+                    $query->andWhere('bcu is not null');
+                    break;
+                case array_search('CancelSponsorContentUnit', Rtt::types):
+                    $query->andWhere('cbcu is not null');
+                    break;
+                case array_search('Role', Rtt::types):
+                    $query->andWhere('r is not null');
+                    break;
+                case array_search('ServiceStatistics', Rtt::types):
+                    $query->andWhere('ss is not null');
+                    break;
+                case array_search('StorageUpdate', Rtt::types):
+                    $query->andWhere('su is not null');
                     break;
             }
         }
