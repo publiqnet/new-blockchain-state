@@ -53,6 +53,7 @@ class Transfer
 
     /**
      * @ORM\Column(name="message", type="text")
+     * @Groups({"explorerTransfer"})
      */
     private $message;
 
