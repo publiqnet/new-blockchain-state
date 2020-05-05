@@ -13,6 +13,7 @@ use App\Entity\ContentUnitTag;
 use App\Entity\NotificationType;
 use App\Entity\Subscription;
 use App\Entity\UserPreference;
+use App\Event\ArticleBoostedByOtherEvent;
 use App\Event\ArticleNewEvent;
 use App\Event\ArticleShareEvent;
 use App\Event\PublicationInvitationAcceptEvent;
@@ -31,12 +32,18 @@ use App\Event\UserPreferenceEvent;
 use App\Service\UserNotification;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 class GeneralEventSubscriber implements EventSubscriberInterface
 {
+    /**
+     * @var Container $container
+     */
+    private $container;
+
     /**
      * @var EntityManager
      */
@@ -47,10 +54,23 @@ class GeneralEventSubscriber implements EventSubscriberInterface
      */
     private $userNotificationService;
 
-    public function __construct(EntityManagerInterface $em, UserNotification $userNotificationService)
+    /**
+     * @var \Swift_Mailer $swiftMailer
+     */
+    private $swiftMailer;
+
+    /**
+     * @var \Twig_Environment $twig
+     */
+    private $twig;
+
+    public function __construct(Container $container, EntityManagerInterface $em, UserNotification $userNotificationService, \Swift_Mailer $swiftMailer, \Twig_Environment $twig)
     {
+        $this->container = $container;
         $this->em = $em;
         $this->userNotificationService = $userNotificationService;
+        $this->swiftMailer = $swiftMailer;
+        $this->twig = $twig;
     }
 
     /**
@@ -90,6 +110,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             ArticleShareEvent::NAME => 'onArticleShareEvent',
             SubscribeUserEvent::NAME => 'onSubscribeUserEvent',
             UnsubscribeUserEvent::NAME => 'onUnsubscribeUserEvent',
+            ArticleBoostedByOtherEvent::NAME => 'onArticleBoostedByOtherEvent',
         ];
     }
 
@@ -411,6 +432,37 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             }
 
             $this->em->flush();
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param ArticleBoostedByOtherEvent $event
+     */
+    public function onArticleBoostedByOtherEvent(ArticleBoostedByOtherEvent $event)
+    {
+        try {
+            $performer = $event->getPerformer();
+            $article = $event->getArticle();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['article_boosted_by_other']['key'], $performer, $article->getUri());
+            $this->userNotificationService->notify($article->getAuthor(), $notification, true);
+
+            //  send email
+            $backendEndpoint = $this->container->getParameter('backend_endpoint');
+            $performerName = trim($performer->getFirstName() . ' ' . $performer->getLastName()) ?? $performer->getPublicKey();
+
+            $emailBody = $this->twig->render(
+                'emails/boosted_article.html.twig',
+                ['name' => $performerName, 'title' => $article->getTitle(), 'backendEndpoint' => $backendEndpoint]
+            );
+
+            $messageObj = (new \Swift_Message('Your story goes viral'))
+                ->setFrom('no-reply@publiq.network', 'Slog')
+                ->setTo($article->getAuthor()->getEmail())
+                ->setBody($emailBody, 'text/html');
+            $this->swiftMailer->send($messageObj);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }

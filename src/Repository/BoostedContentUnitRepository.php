@@ -122,4 +122,21 @@ class BoostedContentUnitRepository extends EntityRepository
                 ->getResult();
         }
     }
+
+    /**
+     * @param int $datetime
+     * @return array|null
+     */
+    public function getBoostsConfirmedAfterDate(int $datetime)
+    {
+        $query = $this->createQueryBuilder('bcu');
+        return $query->select('bcu, a')
+            ->join('bcu.sponsor', 'a')
+            ->join('bcu.transaction', 't')
+            ->join('t.block', 'b')
+            ->where('b.signTime > :datetime')
+            ->setParameters(['datetime' => $datetime])
+            ->getQuery()
+            ->getResult();
+    }
 }
