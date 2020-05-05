@@ -20,6 +20,7 @@ use App\Entity\PublicationArticle;
 use App\Entity\Reward;
 use App\Entity\Tag;
 use App\Entity\Transaction;
+use App\Event\ArticleBoostedByOtherEvent;
 use App\Event\ArticleNewEvent;
 use App\Event\ArticleShareEvent;
 use App\Service\BlockChain;
@@ -1418,6 +1419,30 @@ class StateSyncCommand extends ContainerAwareCommand
                     ArticleNewEvent::NAME,
                     new ArticleNewEvent($article->getAuthor(), $article)
                 );
+            }
+        }
+
+        /**
+         * @var BoostedContentUnit[] $boostedArticles
+         */
+        $boostedArticles = $this->em->getRepository(BoostedContentUnit::class)->getBoostsConfirmedAfterDate($datetime);
+        if ($boostedArticles) {
+            foreach ($boostedArticles as $boostedArticle) {
+                $sponsor = $boostedArticle->getSponsor();
+
+                /**
+                 * @var \App\Entity\ContentUnit $article
+                 */
+                $article = $boostedArticle->getContentUnit();
+                $author = $article->getAuthor();
+
+                if ($sponsor !== $author) {
+                    // notify author about boost by other
+                    $this->getContainer()->get('event_dispatcher')->dispatch(
+                        ArticleBoostedByOtherEvent::NAME,
+                        new ArticleBoostedByOtherEvent($sponsor, $article)
+                    );
+                }
             }
         }
 
