@@ -102,21 +102,25 @@ class SitemapSubscriber implements EventSubscriberInterface
         /**
          * @var ContentUnit[] $contentUnits
          */
-        $contentUnits = $this->doctrine->getRepository(ContentUnit::class)->getArticles(1000000);
-        foreach ($contentUnits as $contentUnit) {
-            if (!$contentUnit->getContent()) {
-                continue;
-            }
-            $timestamp = $contentUnit->getTransaction()->getTimeSigned();
-            $time->setTimestamp($timestamp);
+        $contentUnits = $this->doctrine->getRepository(ContentUnit::class)->getArticles(500);
+        while ($contentUnits) {
+            foreach ($contentUnits as $contentUnit) {
+                if (!$contentUnit->getContent()) {
+                    continue;
+                }
+                $timestamp = $contentUnit->getTransaction()->getTimeSigned();
+                $time->setTimestamp($timestamp);
 
-            $urls->addUrl(
-                new UrlConcrete(
-                    $domain . '/s/' . $contentUnit->getUri(),
-                    $time
-                ),
-                'article'
-            );
+                $urls->addUrl(
+                    new UrlConcrete(
+                        $domain . '/s/' . $contentUnit->getUri(),
+                        $time
+                    ),
+                    'article'
+                );
+            }
+
+            $contentUnits = $this->doctrine->getRepository(ContentUnit::class)->getArticles(500, $contentUnit);
         }
     }
 
