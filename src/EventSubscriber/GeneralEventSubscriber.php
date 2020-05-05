@@ -32,7 +32,7 @@ use App\Event\UserPreferenceEvent;
 use App\Service\UserNotification;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -40,7 +40,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class GeneralEventSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var Container $container
+     * @var ContainerInterface $container
      */
     private $container;
 
@@ -64,7 +64,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
      */
     private $twig;
 
-    public function __construct(Container $container, EntityManagerInterface $em, UserNotification $userNotificationService, \Swift_Mailer $swiftMailer, \Twig_Environment $twig)
+    public function __construct(ContainerInterface $container, EntityManagerInterface $em, UserNotification $userNotificationService, \Swift_Mailer $swiftMailer, \Twig_Environment $twig)
     {
         $this->container = $container;
         $this->em = $em;
