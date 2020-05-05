@@ -27,7 +27,8 @@ use App\Event\PublicationMembershipRequestRejectEvent;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,7 +42,7 @@ use App\Service\ContentUnit as CUService;
  * @package App\Controller
  * @Route("/api/publication")
  */
-class PublicationApiController extends Controller
+class PublicationApiController extends AbstractController
 {
     /**
      * @Route("/create", methods={"POST"})
@@ -935,11 +936,11 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
      * @param Request $request
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function inviteMember(Request $request, string $slug)
+    public function inviteMember(Request $request, EventDispatcherInterface $eventDispatcher, string $slug)
     {
         /**
          * @var EntityManager $em
@@ -1023,7 +1024,7 @@ class PublicationApiController extends Controller
                     $em->flush();
 
                     // notify invited user
-                    $this->container->get('event_dispatcher')->dispatch(
+                    $eventDispatcher->dispatch(
                         PublicationInvitationRequestEvent::NAME,
                         new PublicationInvitationRequestEvent($publication, $account, $member)
                     );
@@ -1052,12 +1053,12 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication/User/Invitation not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @param string $identifier
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function cancelInvitation(string $slug, string $identifier)
+    public function cancelInvitation(EventDispatcherInterface $eventDispatcher, string $slug, string $identifier)
     {
         /**
          * @var EntityManager $em
@@ -1109,7 +1110,7 @@ class PublicationApiController extends Controller
         $em->flush();
 
         // notify invited user
-        $this->container->get('event_dispatcher')->dispatch(
+        $eventDispatcher->dispatch(
             PublicationInvitationCancelEvent::NAME,
             new PublicationInvitationCancelEvent($publication, $account, $member)
         );
@@ -1129,11 +1130,11 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication/User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function acceptInvitationBecomeMember(string $slug)
+    public function acceptInvitationBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug)
     {
         /**
          * @var EntityManager $em
@@ -1169,7 +1170,7 @@ class PublicationApiController extends Controller
         $em->flush();
 
         // notify inviter
-        $this->container->get('event_dispatcher')->dispatch(
+        $eventDispatcher->dispatch(
             PublicationInvitationAcceptEvent::NAME,
             new PublicationInvitationAcceptEvent($publication, $account, $invitation->getInviter())
         );
@@ -1189,11 +1190,11 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication/User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function rejectInvitationBecomeMember(string $slug)
+    public function rejectInvitationBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug)
     {
         /**
          * @var EntityManager $em
@@ -1223,7 +1224,7 @@ class PublicationApiController extends Controller
         $em->flush();
 
         // notify inviter
-        $this->container->get('event_dispatcher')->dispatch(
+        $eventDispatcher->dispatch(
             PublicationInvitationRejectEvent::NAME,
             new PublicationInvitationRejectEvent($publication, $account, $invitation->getInviter())
         );
@@ -1242,11 +1243,11 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function becomeMember(string $slug)
+    public function becomeMember(EventDispatcherInterface $eventDispatcher, string $slug)
     {
         /**
          * @var EntityManager $em
@@ -1278,7 +1279,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             // notify owner & editors
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 PublicationMembershipRequestEvent::NAME,
                 new PublicationMembershipRequestEvent($publication, $account)
             );
@@ -1298,11 +1299,11 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function membershipCancel(string $slug)
+    public function membershipCancel(EventDispatcherInterface $eventDispatcher, string $slug)
     {
         /**
          * @var EntityManager $em
@@ -1330,7 +1331,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             // notify owner & editors
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 PublicationMembershipRequestCancelEvent::NAME,
                 new PublicationMembershipRequestCancelEvent($publication, $account)
             );
@@ -1351,12 +1352,12 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication/User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function acceptRequestBecomeMember(string $slug, string $publicKey)
+    public function acceptRequestBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug, string $publicKey)
     {
         /**
          * @var EntityManager $em
@@ -1399,7 +1400,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             // notify member
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 PublicationMembershipRequestAcceptEvent::NAME,
                 new PublicationMembershipRequestAcceptEvent($publication, $account, $member)
             );
@@ -1422,12 +1423,12 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=404, description="Publication/User not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function rejectRequestBecomeMember(string $slug, string $publicKey)
+    public function rejectRequestBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug, string $publicKey)
     {
         /**
          * @var EntityManager $em
@@ -1468,7 +1469,7 @@ class PublicationApiController extends Controller
             $em->flush();
 
             // notify member
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 PublicationMembershipRequestRejectEvent::NAME,
                 new PublicationMembershipRequestRejectEvent($publication, $account, $member)
             );
@@ -1586,12 +1587,12 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=403, description="Permission denied")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function deleteMember(string $slug, string $publicKey)
+    public function deleteMember(EventDispatcherInterface $eventDispatcher, string $slug, string $publicKey)
     {
         /**
          * @var EntityManager $em
@@ -1634,7 +1635,7 @@ class PublicationApiController extends Controller
         $em->flush();
 
         // notify member
-        $this->container->get('event_dispatcher')->dispatch(
+        $eventDispatcher->dispatch(
             PublicationMembershipCancelEvent::NAME,
             new PublicationMembershipCancelEvent($publication, $account, $member)
         );
@@ -1655,11 +1656,11 @@ class PublicationApiController extends Controller
      * @SWG\Response(response=403, description="Permission denied")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function leave(string $slug)
+    public function leave(EventDispatcherInterface $eventDispatcher, string $slug)
     {
         /**
          * @var EntityManager $em
@@ -1689,7 +1690,7 @@ class PublicationApiController extends Controller
         $em->flush();
 
         // notify member
-        $this->container->get('event_dispatcher')->dispatch(
+        $eventDispatcher->dispatch(
             PublicationMembershipLeaveEvent::NAME,
             new PublicationMembershipLeaveEvent($publication, $account)
         );

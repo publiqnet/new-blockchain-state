@@ -43,7 +43,7 @@ class ContentUnit
     private $contentId;
 
     /**
-     * @ORM\Column(name="title", type="string", length=256, nullable=false)
+     * @ORM\Column(name="title", type="string", length=320, nullable=false)
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo", "contentUnitNotification"})
      */
     private $title;
@@ -501,6 +501,14 @@ class ContentUnit
     public function getBoosts()
     {
         return $this->boosts;
+    }
+
+    /**
+     * @param mixed $boosts
+     */
+    public function setBoosts($boosts)
+    {
+        $this->boosts = $boosts;
     }
 
     /**

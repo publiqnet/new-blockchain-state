@@ -20,8 +20,9 @@ use App\Service\Custom;
 use App\Service\ContentUnit as CUService;
 use Doctrine\ORM\EntityManager;
 use Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,7 +37,7 @@ use Lcobucci\JWT\Signer\Hmac\Sha256;
  *
  * @Route("/api/user")
  */
-class AccountApiController extends Controller
+class AccountApiController extends AbstractController
 {
     /**
      * @Route("/authenticate", methods={"GET"})
@@ -502,10 +503,11 @@ class AccountApiController extends Controller
      * @SWG\Response(response=404, description="Author not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="User")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $publicKey
      * @return JsonResponse
      */
-    public function subscribe(string $publicKey)
+    public function subscribe(EventDispatcherInterface $eventDispatcher, string $publicKey)
     {
         $em = $this->getDoctrine()->getManager();
 
@@ -533,7 +535,7 @@ class AccountApiController extends Controller
             $em->flush();
 
             // notify author
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 SubscribeUserEvent::NAME,
                 new SubscribeUserEvent($account, $author)
             );
@@ -626,11 +628,11 @@ class AccountApiController extends Controller
      * @SWG\Response(response=404, description="Publication not found")
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="User")
+     * @param EventDispatcherInterface $eventDispatcher
      * @param string $publicKey
      * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
      */
-    public function unsubscribe(string $publicKey)
+    public function unsubscribe(EventDispatcherInterface $eventDispatcher, string $publicKey)
     {
         /**
          * @var EntityManager $em
@@ -657,7 +659,7 @@ class AccountApiController extends Controller
             $em->flush();
 
             // notify author
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 UnsubscribeUserEvent::NAME,
                 new UnsubscribeUserEvent($account, $author)
             );

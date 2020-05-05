@@ -12,7 +12,7 @@ use App\Entity\Account;
 use App\Entity\Draft;
 use App\Entity\DraftFile;
 use Doctrine\ORM\EntityManager;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/api/draft")
  */
-class DraftApiController extends Controller
+class DraftApiController extends AbstractController
 {
     /**
      * @Route("/create", methods={"PUT"})

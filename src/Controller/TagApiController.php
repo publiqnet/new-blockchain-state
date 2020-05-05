@@ -13,7 +13,7 @@ use App\Entity\Tag;
 use App\Service\ContentUnit as CUService;
 use Doctrine\ORM\EntityManager;
 use Exception;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +25,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/api/tag")
  */
-class TagApiController extends Controller
+class TagApiController extends AbstractController
 {
     /**
      * @Route("s", methods={"GET"})

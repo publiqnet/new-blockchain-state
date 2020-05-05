@@ -37,19 +37,20 @@ use PubliqAPI\Model\InvalidSignature;
 use PubliqAPI\Model\NotEnoughBalance;
 use PubliqAPI\Model\StorageFileAddress;
 use PubliqAPI\Model\UriError;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Class ContentApiController
  * @package App\Controller
  * @Route("/api/content")
  */
-class ContentApiController extends Controller
+class ContentApiController extends AbstractController
 {
     /**
      * @Route("/unit/upload", methods={"POST"})
@@ -745,11 +746,10 @@ class ContentApiController extends Controller
      * @param Custom $customService
      * @param LoggerInterface $logger
      * @param CUService $contentUnitService
+     * @param EventDispatcherInterface $eventDispatcher
      * @return JsonResponse
-     * @throws Exception
-     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService)
+    public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService, EventDispatcherInterface $eventDispatcher)
     {
         /**
          * @var EntityManager $em
@@ -775,7 +775,7 @@ class ContentApiController extends Controller
 
         // update user preference if viewer is not article author
         if ($account && $contentUnit->getAuthor() != $account) {
-            $this->container->get('event_dispatcher')->dispatch(
+            $eventDispatcher->dispatch(
                 UserPreferenceEvent::NAME,
                 new UserPreferenceEvent($account, $contentUnit)
             );
@@ -1241,10 +1241,6 @@ class ContentApiController extends Controller
                 return new JsonResponse(null, Response::HTTP_NOT_FOUND);
             }
 
-            if ($contentUnit->getAuthor() != $account) {
-                return new JsonResponse(null, Response::HTTP_FORBIDDEN);
-            }
-
             //  font is required
             if (!$font) {
                 return new JsonResponse(['type' => 'highlight_font_required'], Response::HTTP_CONFLICT);
@@ -1427,7 +1423,7 @@ class ContentApiController extends Controller
         /**
          * @var \App\Entity\ContentUnit[] $contentUnits
          */
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorBoostedArticles($account);
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorRelatedBoosts($account);
         if ($contentUnits) {
             foreach ($contentUnits as $contentUnit) {
                 $views = 0;
@@ -1468,7 +1464,7 @@ class ContentApiController extends Controller
                 /**
                  * @var BoostedContentUnit[] $boosts
                  */
-                $boosts = $contentUnit->getBoosts();
+                $boosts = $em->getRepository(BoostedContentUnit::class)->getArticleBoostsForUser($contentUnit, $account);
                 foreach ($boosts as $boost) {
                     $spendingSummary = $em->getRepository(BoostedContentUnitSpending::class)->getBoostSummary($boost);
                     if (!isset($spendingSummary[0])) {
@@ -1490,6 +1486,7 @@ class ContentApiController extends Controller
 
                     $boost->setSummary($spendingSummary[0]);
                 }
+                $contentUnit->setBoosts($boosts);
 
                 $isBoostActive = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
                 if ($isBoostActive) {

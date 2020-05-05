@@ -10,7 +10,7 @@ namespace App\Controller;
 
 use App\Entity\Account;
 use App\Service\Custom;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Swagger\Annotations as SWG;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Annotation\Route;
  *
  * @Route("/api/fee")
  */
-class FeeApiController extends Controller
+class FeeApiController extends AbstractController
 {
     /**
      * @Route("", methods={"GET"})
