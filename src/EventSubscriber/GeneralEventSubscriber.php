@@ -446,7 +446,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $performer = $event->getPerformer();
             $article = $event->getArticle();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['article_boosted_by_other']['key'], $performer, $article->getUri());
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['article_boosted_by_other']['key'], $performer, $article->getUri(), null, $article);
             $this->userNotificationService->notify($article->getAuthor(), $notification, true);
 
             //  send email
