@@ -453,7 +453,10 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $backendEndpoint = $this->container->getParameter('backend_endpoint');
             $frontendEndpoint = $this->container->getParameter('frontend_endpoint');
 
-            $performerName = trim($performer->getFirstName() . ' ' . $performer->getLastName()) ?? $performer->getPublicKey();
+            $performerName = trim($performer->getFirstName() . ' ' . $performer->getLastName());
+            if (!$performerName) {
+                $performerName = $performer->getPublicKey();
+            }
             $sponsorUrl = $frontendEndpoint . '/a/' . $performer->getPublicKey();
             $articleUrl = $frontendEndpoint . '/s/' . $article->getUri();
 
