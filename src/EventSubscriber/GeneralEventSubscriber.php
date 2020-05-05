@@ -451,11 +451,15 @@ class GeneralEventSubscriber implements EventSubscriberInterface
 
             //  send email
             $backendEndpoint = $this->container->getParameter('backend_endpoint');
+            $frontendEndpoint = $this->container->getParameter('frontend_endpoint');
+
             $performerName = trim($performer->getFirstName() . ' ' . $performer->getLastName()) ?? $performer->getPublicKey();
+            $sponsorUrl = $frontendEndpoint . '/a/' . $performer->getPublicKey();
+            $articleUrl = $frontendEndpoint . '/s/' . $article->getUri();
 
             $emailBody = $this->twig->render(
                 'emails/boosted_article.html.twig',
-                ['name' => $performerName, 'title' => $article->getTitle(), 'backendEndpoint' => $backendEndpoint]
+                ['name' => $performerName, 'title' => $article->getTitle(), 'sponsorUrl' => $sponsorUrl, 'articleUrl' => $articleUrl, 'backendEndpoint' => $backendEndpoint]
             );
 
             $messageObj = (new \Swift_Message('Your story goes viral'))
