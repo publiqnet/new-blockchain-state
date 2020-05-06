@@ -1417,6 +1417,14 @@ class ContentApiController extends AbstractController
             return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
         }
 
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
+
+        //  enable current channel filter
+        $em->getFilters()->enable('current_channel_filter');
+        $em->getFilters()->getFilter('current_channel_filter')->setParameter('channel_address', $this->getParameter('channel_address'));
+
         $active = [];
         $passive = [];
 
