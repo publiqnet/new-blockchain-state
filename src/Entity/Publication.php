@@ -140,6 +140,12 @@ class Publication
     private $inviter;
 
     /**
+     * @var mixed
+     * @Groups({"publicationMembers"})
+     */
+    private $owner;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="publication")
      */
     private $contentUnits;
@@ -457,6 +463,22 @@ class Publication
     public function setInviter($inviter)
     {
         $this->inviter = $inviter;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getOwner()
+    {
+        return $this->owner;
+    }
+
+    /**
+     * @param mixed $owner
+     */
+    public function setOwner($owner)
+    {
+        $this->owner = $owner;
     }
 
     /**
