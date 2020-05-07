@@ -756,10 +756,6 @@ class ContentApiController extends AbstractController
          */
         $em = $this->getDoctrine()->getManager();
 
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
-
         /**
          * @var Account $account
          */
@@ -767,6 +763,16 @@ class ContentApiController extends AbstractController
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  if article is not boosted & from blacklisted channel, return not found
+        $excludeChannelsAddresses = $this->getParameter('exclude_channels_addresses');
+        $excludeChannelsAddresses = explode(',', $excludeChannelsAddresses);
+
+        $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
+        $contentUnitChannel = $contentUnit->getChannel();
+        if (in_array($contentUnitChannel, $excludeChannelsAddresses) && !$isBoosted) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
@@ -1560,58 +1566,5 @@ class ContentApiController extends AbstractController
         $boostSummary = array_merge($boostSummary[0], $boostSummaryViews[0], $boostSummarySpending[0]);
 
         return new JsonResponse(['active' => $active, 'passive' => $passive, 'summary' => $boostSummary]);
-    }
-
-
-    /**
-     * @Route("-fixing/{uri}", methods={"GET"}, name="get_content_by_uri_for_fix")
-     * @SWG\Get(
-     *     summary="Get content to fix",
-     *     consumes={"application/json"},
-     *     produces={"application/json"}
-     * )
-     * @SWG\Response(response=200, description="Success")
-     * @SWG\Response(response=404, description="User not found")
-     * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="Content")
-     * @param string $uri
-     * @return JsonResponse
-     * @throws \Doctrine\ORM\ORMException
-     */
-    public function fixEncoding(string $uri)
-    {
-        /**
-         * @var EntityManager $em
-         */
-        $em = $this->getDoctrine()->getManager();
-
-        /**
-         * @var \App\Entity\ContentUnit $contentUnit
-         */
-        $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
-        if (!$contentUnit) {
-            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
-        }
-
-        $channel = $contentUnit->getChannel();
-        if ($channel->getUrl()) {
-            $storageData = file_get_contents($channel->getUrl() . '/storage?file=' . $uri);
-            if (!mb_check_encoding($storageData, 'UTF-8')) {
-                $storageData = utf8_encode($storageData);
-            }
-
-            if ($storageData) {
-                if (strpos($storageData, '</h1>')) {
-                    $contentUnitTitle = trim(strip_tags(substr($storageData, 0, strpos($storageData, '</h1>') + 5)));
-                    $contentUnit->setTitle($contentUnitTitle);
-                    $em->persist($contentUnit);
-                    $em->flush();
-
-                    return new JsonResponse(['ok']);
-                }
-            }
-        }
-
-        return new JsonResponse(['chOK']);
     }
 }
