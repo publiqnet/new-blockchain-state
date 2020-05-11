@@ -65,7 +65,7 @@ class File
     private $author;
 
     /**
-     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file", cascade={"persist"})
+     * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file")
      */
     private $transaction;
 
@@ -220,6 +220,14 @@ class File
     public function getTransaction()
     {
         return $this->transaction;
+    }
+
+    /**
+     * @param mixed $transaction
+     */
+    public function setTransaction($transaction)
+    {
+        $this->transaction = $transaction;
     }
 
     /**

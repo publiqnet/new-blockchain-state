@@ -545,6 +545,9 @@ class PublicationApiController extends AbstractController
              * @var Publication $publication
              */
             foreach ($owned as $publication) {
+                $publicationOwner = $em->getRepository(Account::class)->getPublicationOwner($publication);
+                $publication->setOwner($publicationOwner);
+
                 $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
                 $publication->setMembers($publicationMembers);
 
@@ -558,6 +561,9 @@ class PublicationApiController extends AbstractController
              * @var Publication $publication
              */
             foreach ($membership as $publication) {
+                $publicationOwner = $em->getRepository(Account::class)->getPublicationOwner($publication);
+                $publication->setOwner($publicationOwner);
+
                 $publicationMembers = $em->getRepository(Account::class)->getPublicationMembers($publication);
                 $publication->setMembers($publicationMembers);
 

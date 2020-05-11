@@ -39,10 +39,6 @@ class TrendingsCommand extends ContainerAwareCommand
     /** @var SymfonyStyle $io */
     private $io;
 
-    /** @var array $balances */
-    private $balances = [];
-
-
     public function __construct(BlockChain $blockChain, Custom $custom)
     {
         parent::__construct();

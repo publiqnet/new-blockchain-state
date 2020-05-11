@@ -221,6 +221,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $fileEntity->setUri($uri);
                                 }
                                 $fileEntity->setAuthor($authorAccount);
+                                $fileEntity->setTransaction(null);
 
                                 $this->em->persist($fileEntity);
                                 $this->em->flush();
@@ -1286,7 +1287,7 @@ class StateSyncCommand extends ContainerAwareCommand
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
+    private function addTransaction(Block $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
