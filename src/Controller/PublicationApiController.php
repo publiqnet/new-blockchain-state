@@ -518,6 +518,8 @@ class PublicationApiController extends AbstractController
      * @SWG\Response(response=409, description="Error - see description for more information")
      * @SWG\Tag(name="Publication")
      * @return Response
+     * @throws \Doctrine\ORM\NoResultException
+     * @throws \Doctrine\ORM\NonUniqueResultException
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     public function getRelatedPublications()
@@ -945,6 +947,8 @@ class PublicationApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function inviteMember(Request $request, EventDispatcherInterface $eventDispatcher, string $slug)
     {
@@ -1063,6 +1067,8 @@ class PublicationApiController extends AbstractController
      * @param string $slug
      * @param string $identifier
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function cancelInvitation(EventDispatcherInterface $eventDispatcher, string $slug, string $identifier)
     {
@@ -1139,6 +1145,8 @@ class PublicationApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function acceptInvitationBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug)
     {
@@ -1199,6 +1207,8 @@ class PublicationApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function rejectInvitationBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug)
     {
@@ -1252,6 +1262,8 @@ class PublicationApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function becomeMember(EventDispatcherInterface $eventDispatcher, string $slug)
     {
@@ -1308,6 +1320,8 @@ class PublicationApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function membershipCancel(EventDispatcherInterface $eventDispatcher, string $slug)
     {
@@ -1362,6 +1376,8 @@ class PublicationApiController extends AbstractController
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function acceptRequestBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug, string $publicKey)
     {
@@ -1433,6 +1449,8 @@ class PublicationApiController extends AbstractController
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function rejectRequestBecomeMember(EventDispatcherInterface $eventDispatcher, string $slug, string $publicKey)
     {
@@ -1597,6 +1615,8 @@ class PublicationApiController extends AbstractController
      * @param string $slug
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function deleteMember(EventDispatcherInterface $eventDispatcher, string $slug, string $publicKey)
     {
@@ -1665,6 +1685,8 @@ class PublicationApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $slug
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function leave(EventDispatcherInterface $eventDispatcher, string $slug)
     {
