@@ -748,6 +748,10 @@ class ContentApiController extends AbstractController
      * @param CUService $contentUnitService
      * @param EventDispatcherInterface $eventDispatcher
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws Exception
      */
     public function content(Request $request, string $uri, BlockChain $blockChain, Custom $customService, LoggerInterface $logger, CUService $contentUnitService, EventDispatcherInterface $eventDispatcher)
     {

@@ -1287,7 +1287,7 @@ class StateSyncCommand extends ContainerAwareCommand
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      */
-    private function addTransaction(Block $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
+    private function addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $file = null, $contentUnit = null, $content = null, $transfer = null, $boostedContentUnit = null, $cancelBoostedContentUnit = null)
     {
         $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
         if (!$transaction) {
@@ -1300,24 +1300,12 @@ class StateSyncCommand extends ContainerAwareCommand
         $transaction->setTimeSigned($timeSigned);
         $transaction->setFeeWhole($feeWhole);
         $transaction->setFeeFraction($feeFraction);
-        if ($file) {
-            $transaction->setFile($file);
-        }
-        if ($contentUnit) {
-            $transaction->setContentUnit($contentUnit);
-        }
-        if ($content) {
-            $transaction->setContent($content);
-        }
-        if ($transfer) {
-            $transaction->setTransfer($transfer);
-        }
-        if ($boostedContentUnit) {
-            $transaction->setBoostedContentUnit($boostedContentUnit);
-        }
-        if ($cancelBoostedContentUnit) {
-            $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnit);
-        }
+        $transaction->setFile($file);
+        $transaction->setContentUnit($contentUnit);
+        $transaction->setContent($content);
+        $transaction->setTransfer($transfer);
+        $transaction->setBoostedContentUnit($boostedContentUnit);
+        $transaction->setCancelBoostedContentUnit($cancelBoostedContentUnit);
 
         $this->em->persist($transaction);
         $this->em->flush();

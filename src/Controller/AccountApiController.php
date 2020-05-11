@@ -631,6 +631,8 @@ class AccountApiController extends AbstractController
      * @param EventDispatcherInterface $eventDispatcher
      * @param string $publicKey
      * @return JsonResponse
+     * @throws \Doctrine\ORM\ORMException
+     * @throws \Doctrine\ORM\OptimisticLockException
      */
     public function unsubscribe(EventDispatcherInterface $eventDispatcher, string $publicKey)
     {
