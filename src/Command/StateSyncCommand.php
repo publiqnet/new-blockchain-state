@@ -222,7 +222,6 @@ class StateSyncCommand extends ContainerAwareCommand
                                 }
                                 $fileEntity->setAuthor($authorAccount);
                                 $fileEntity->setTransaction(null);
-
                                 $this->em->persist($fileEntity);
                                 $this->em->flush();
 
@@ -785,6 +784,7 @@ class StateSyncCommand extends ContainerAwareCommand
                             $fileEntity->setUri($uri);
                         }
                         $fileEntity->setAuthor($authorAccount);
+                        $fileEntity->setTransaction(null);
                         $this->em->persist($fileEntity);
                         $this->em->flush();
 
@@ -1185,7 +1185,15 @@ class StateSyncCommand extends ContainerAwareCommand
                      */
                     $transaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
                     if ($transaction) {
-                        $transaction->setFile(null);
+                        if ($transaction->getFile()) {
+                            /**
+                             * @var \App\Entity\File $fileEntity
+                             */
+                            $fileEntity = $transaction->getFile();
+                            $fileEntity->setTransaction(null);
+                            $this->em->persist($fileEntity);
+                            $this->em->flush();
+                        }
                         $this->em->remove($transaction);
                         $this->em->flush();
                     }
