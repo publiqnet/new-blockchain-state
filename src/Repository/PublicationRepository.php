@@ -220,4 +220,14 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getPublicationsWithoutThumbnails()
+    {
+        return $this->createQueryBuilder('p')
+            ->select("p")
+            ->where('p.logoThumbnail is null')
+            ->andWhere('p.logo is not null')
+            ->getQuery()
+            ->getResult();
+    }
 }

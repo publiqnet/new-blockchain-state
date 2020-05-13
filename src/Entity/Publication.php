@@ -87,6 +87,13 @@ class Publication
     private $logo;
 
     /**
+     * @ORM\Column(name="logo_thumbnail", type="string", nullable=true)
+     * @Assert\File()
+     * @Groups({"publication", "trending", "publicationBase"})
+     */
+    private $logoThumbnail;
+
+    /**
      * @var string
      * @ORM\Column(type="string", nullable=true)
      * @Groups({"publication"})
@@ -335,6 +342,22 @@ class Publication
         $this->logo = $logo;
 
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLogoThumbnail()
+    {
+        return $this->logoThumbnail;
+    }
+
+    /**
+     * @param mixed $logoThumbnail
+     */
+    public function setLogoThumbnail($logoThumbnail)
+    {
+        $this->logoThumbnail = $logoThumbnail;
     }
 
     /**

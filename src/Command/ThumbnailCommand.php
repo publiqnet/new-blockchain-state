@@ -10,6 +10,7 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\File;
+use App\Entity\Publication;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
@@ -89,6 +90,17 @@ class ThumbnailCommand extends ContainerAwareCommand
             foreach ($authors as $author) {
                 $result = $this->customService->createThumbnailAuthor($author, 'public/');
                 $this->io->writeln($author->getPublicKey() . ': ' . intval($result));
+            }
+        }
+
+        /**
+         * @var Publication[] $publications
+         */
+        $publications = $this->em->getRepository(Publication::class)->getPublicationsWithoutThumbnails();
+        if ($publications) {
+            foreach ($publications as $publication) {
+                $result = $this->customService->createThumbnailPublication($publication, 'public/');
+                $this->io->writeln($publication->getSlug() . ': ' . intval($result));
             }
         }
 
