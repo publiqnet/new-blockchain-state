@@ -943,6 +943,10 @@ class ContentApiController extends AbstractController
         $contentUnit->setPreviousVersions($previousVersions);
         $contentUnit->setNextVersions($nextVersions);
 
+        //  enable channel exclude filter
+        $em->getFilters()->enable('channel_exclude_filter');
+        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
+
         //  get related articles
         $relatedArticles = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleRelatedArticles($contentUnit, 10);
         if ($relatedArticles) {
