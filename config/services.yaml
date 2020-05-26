@@ -22,7 +22,6 @@ parameters:
     mercure_token: '%env(MERCURE_JWT_TOKEN)%'
     mercure_secret_key: '%env(MERCURE_JWT_SECRET)%'
     environment: '%env(APP_ENV)%'
-    exclude_channels_addresses: '%env(EXCLUDE_CHANNELS_ADDRESSES)%'
     focccus_channels_addresses: '%env(FOCCCUS_CHANNELS_ADDRESSES)%'
 
 services:
@@ -68,7 +67,7 @@ services:
         arguments: ['@doctrine.orm.entity_manager', '%env(OLD_BACKEND_ENDPOINT)%', '%socialAssetsPath%', '%social_path%', '%thumbnail_path%', '%env(CHANNEL_STORAGE_ENDPOINT)%', '%env(FRONTEND_ENDPOINT)%', '%env(FB_CLIENT_ID)%', '%env(FB_CLIENT_SECRET)%']
 
     App\Service\UserNotification:
-        arguments: ['@doctrine.orm.entity_manager', '@serializer', '%env(MERCURE_PUBLISH_URL)%', '%env(MERCURE_JWT_SECRET)%', '%exclude_channels_addresses%']
+        arguments: ['@doctrine.orm.entity_manager', '@serializer', '%env(MERCURE_PUBLISH_URL)%', '%env(MERCURE_JWT_SECRET)%']
 
     json:
         class: App\Service\Json
@@ -81,6 +80,18 @@ services:
         arguments: [~, App\Entity\Dictionary, ~]
         tags:
             - { name: sonata.admin, manager_type: orm, label: Dictionary, group: Settings }
+        public: true
+    admin.channel:
+        class: App\Admin\ChannelAdmin
+        arguments: [~, App\Entity\Account, App\Controller\Admin\ChannelController, 'channel']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Channels, group: Stats }
+        public: true
+    admin.storage:
+        class: App\Admin\StorageAdmin
+        arguments: [~, App\Entity\Account, ~, 'storage']
+        tags:
+            - { name: sonata.admin, manager_type: orm, label: Storages, group: Stats }
         public: true
     admin.account:
         class: App\Admin\AccountAdmin

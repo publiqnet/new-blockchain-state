@@ -79,10 +79,6 @@ class FileDetailsCommand extends ContainerAwareCommand
             return 0;
         }
 
-        //  enable channel exclude filter
-        $this->em->getFilters()->enable('channel_exclude_filter');
-        $this->em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getContainer()->getParameter('exclude_channels_addresses'));
-
         //  GET CONTENT UNITS WITHOUT DETAILS
         /**
          * @var ContentUnit[] $contentUnits

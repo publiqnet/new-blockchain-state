@@ -20,16 +20,6 @@ class ChannelExcludeFilter extends SQLFilter
             return "";
         }
 
-        // get channels to exclude from parameters
-        $excludeChannelsAddresses = $this->getParameter('exclude_channels_addresses');
-        $excludeChannelsAddresses = substr($excludeChannelsAddresses, 1, -1);
-        if (!$excludeChannelsAddresses) {
-            return "";
-        }
-
-        $excludeChannelsAddresses = explode(',', $excludeChannelsAddresses);
-        $excludeChannelsAddresses = "'" . implode("', '", $excludeChannelsAddresses) . "'";
-
-        return $targetTableAlias . '.channel_id not in (select id from account where public_key in (' . $excludeChannelsAddresses . ')) ';
+        return $targetTableAlias . '.channel_id in (select id from account where excluded = 0 and channel = 1) ';
     }
 }

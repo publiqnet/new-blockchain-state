@@ -46,6 +46,3 @@ doctrine:
             channel_exclude_filter:
                 class: App\Filter\ChannelExcludeFilter
                 enabled: false
-            current_channel_filter:
-                class: App\Filter\CurrentChannelFilter
-                enabled: false

@@ -562,6 +562,7 @@ class ContentApiController extends AbstractController
      * @param CUService $contentUnitService
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws Exception
      */
     public function contents(int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
@@ -569,10 +570,6 @@ class ContentApiController extends AbstractController
          * @var EntityManager $em
          */
         $em = $this->getDoctrine()->getManager();
-
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -587,20 +584,15 @@ class ContentApiController extends AbstractController
 
         //  prepare data to return
         if ($contentUnits) {
-            try {
-                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
+            $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
         }
+
+        //  disable channel exclude filter
+        $em->getFilters()->disable('channel_exclude_filter');
 
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
-            try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
+            $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
         }
 
         $contentUnits = $this->get('serializer')->normalize($contentUnits, null, ['groups' => ['contentUnitList', 'tag', 'file', 'accountBase', 'publication', 'previousVersions']]);
@@ -643,6 +635,7 @@ class ContentApiController extends AbstractController
      * @param CUService $contentUnitService
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws Exception
      */
     public function authorContents(string $publicKey, int $count, int $boostedCount, string $fromUri, CUService $contentUnitService)
     {
@@ -650,10 +643,6 @@ class ContentApiController extends AbstractController
          * @var EntityManager $em
          */
         $em = $this->getDoctrine()->getManager();
-
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         /**
          * @var Account $account
@@ -673,33 +662,16 @@ class ContentApiController extends AbstractController
             $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
         }
 
-        if ($account === $author) {
-            //  enable current channel filter
-            $em->getFilters()->enable('current_channel_filter');
-            $em->getFilters()->getFilter('current_channel_filter')->setParameter('channel_address', $this->getParameter('channel_address'));
-
-            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($account, $count + 1, $fromContentUnit, true);
-            $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, null, $account);
-        } else {
-            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
-            $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
-        }
+        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
+        $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
 
         //  prepare data to return
         if ($contentUnits) {
-            try {
-                $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
+            $contentUnits = $contentUnitService->prepare($contentUnits, null, $account);
         }
 
         if ($boostedContentUnits) {
-            try {
-                $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
+            $boostedContentUnits = $contentUnitService->prepare($boostedContentUnits, true, $account);
         }
 
         if ($account === $author) {
@@ -760,6 +732,9 @@ class ContentApiController extends AbstractController
          */
         $em = $this->getDoctrine()->getManager();
 
+        //  disable channel exclude filter
+        $em->getFilters()->disable('channel_exclude_filter');
+
         /**
          * @var Account $account
          */
@@ -771,12 +746,13 @@ class ContentApiController extends AbstractController
         }
 
         //  if article is not boosted & from blacklisted channel, return not found
-        $excludeChannelsAddresses = $this->getParameter('exclude_channels_addresses');
-        $excludeChannelsAddresses = explode(',', $excludeChannelsAddresses);
-
         $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
+
+        /**
+         * @var Account $contentUnitChannel
+         */
         $contentUnitChannel = $contentUnit->getChannel();
-        if (in_array($contentUnitChannel, $excludeChannelsAddresses) && !$isBoosted) {
+        if ($contentUnitChannel->isExcluded() && !$isBoosted) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
@@ -786,8 +762,8 @@ class ContentApiController extends AbstractController
         // update user preference if viewer is not article author
         if ($account && $contentUnit->getAuthor() != $account) {
             $eventDispatcher->dispatch(
-                UserPreferenceEvent::NAME,
-                new UserPreferenceEvent($account, $contentUnit)
+                new UserPreferenceEvent($account, $contentUnit),
+                UserPreferenceEvent::NAME
             );
         }
 
@@ -943,10 +919,6 @@ class ContentApiController extends AbstractController
         $contentUnit->setPreviousVersions($previousVersions);
         $contentUnit->setNextVersions($nextVersions);
 
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
-
         //  get related articles
         $relatedArticles = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleRelatedArticles($contentUnit, 10);
         if ($relatedArticles) {
@@ -1020,12 +992,22 @@ class ContentApiController extends AbstractController
          */
         $em = $this->getDoctrine()->getManager();
 
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
+        //  disable channel exclude filter
+        $em->getFilters()->disable('channel_exclude_filter');
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+        }
+
+        //  if article is not boosted & from blacklisted channel, return not found
+        $isBoosted = $em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnit);
+
+        /**
+         * @var Account $contentUnitChannel
+         */
+        $contentUnitChannel = $contentUnit->getChannel();
+        if ($contentUnitChannel->isExcluded() && !$isBoosted) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
@@ -1430,14 +1412,6 @@ class ContentApiController extends AbstractController
         if (!$account) {
             return new JsonResponse('', Response::HTTP_PROXY_AUTHENTICATION_REQUIRED);
         }
-
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
-
-        //  enable current channel filter
-        $em->getFilters()->enable('current_channel_filter');
-        $em->getFilters()->getFilter('current_channel_filter')->setParameter('channel_address', $this->getParameter('channel_address'));
 
         $active = [];
         $passive = [];

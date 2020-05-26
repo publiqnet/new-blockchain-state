@@ -123,6 +123,9 @@ class GeneralEventSubscriber implements EventSubscriberInterface
     {
         $request = $event->getRequest();
 
+        //  enable channel exclude filter
+        $this->em->getFilters()->enable('channel_exclude_filter');
+
         return null;
     }
 

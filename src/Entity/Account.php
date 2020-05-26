@@ -289,6 +289,11 @@ class Account implements UserInterface
      */
     private $trendingPosition = 0;
 
+    /**
+     * @ORM\Column(name="excluded", type="boolean", options={"default": 0})
+     */
+    private $excluded = false;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -895,5 +900,21 @@ class Account implements UserInterface
     public function setTrendingPosition($trendingPosition)
     {
         $this->trendingPosition = $trendingPosition;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isExcluded()
+    {
+        return $this->excluded;
+    }
+
+    /**
+     * @param mixed $excluded
+     */
+    public function setExcluded($excluded)
+    {
+        $this->excluded = $excluded;
     }
 }

@@ -36,15 +36,13 @@ class UserNotification
     private $serializer;
     private $mercureHub;
     private $mercureSecretKey;
-    private $excludeChannelsAddresses;
 
-    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey, string $excludeChannelsAddresses)
+    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey)
     {
         $this->em = $em;
         $this->serializer = $serializer;
         $this->mercureHub = $mercureHub;
         $this->mercureSecretKey = $mercureSecretKey;
-        $this->excludeChannelsAddresses = $excludeChannelsAddresses;
     }
 
     /**
@@ -93,10 +91,6 @@ class UserNotification
         $this->em->persist($userNotification);
         $this->em->flush();
 
-        //  enable channel exclude filter
-        $this->em->getFilters()->enable('channel_exclude_filter');
-        $this->em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->excludeChannelsAddresses);
-
         //  MERCURE
         $token = (new Builder())
             ->set('mercure', ['publish' => ["http://publiq.site/user/" . $user->getPublicKey()]])
@@ -115,25 +109,6 @@ class UserNotification
          * @var Notification[] $notifications
          */
         $notifications = $this->em->getRepository(Notification::class)->getUserNotifications($user, 11);
-//        $notifications = $this->serializer->normalize($notifications, null, ['groups' => ['userNotification', 'notification', 'notificationType', 'publication', 'accountBase', 'contentUnitNotification']]);
-//
-//        $notificationsRewrited = [];
-//        for ($i=0; $i<count($notifications); $i++) {
-//            $notificationSingle = $notifications[$i][0];
-//
-//            unset($notifications[$i][0]);
-//            foreach ($notifications[$i] as $key => $notificationExtra) {
-//                $notificationSingle[$key] = $notificationExtra;
-//            }
-//
-//            $notificationsRewrited[] = $notificationSingle;
-//        }
-//
-//        $more = false;
-//        if (count($notificationsRewrited) > 10) {
-//            unset($notificationsRewrited[10]);
-//            $more = true;
-//        }
 
         $more = false;
         if (count($notifications) > 10) {
