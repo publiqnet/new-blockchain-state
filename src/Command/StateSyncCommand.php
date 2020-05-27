@@ -9,6 +9,8 @@
 namespace App\Command;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
+use App\Entity\AccountFile;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
 use App\Entity\BoostedContentUnitSpending;
@@ -26,6 +28,7 @@ use App\Event\ArticleShareEvent;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
 use PubliqAPI\Base\UpdateType;
@@ -46,13 +49,16 @@ use PubliqAPI\Model\SponsorContentUnitApplied;
 use PubliqAPI\Model\StorageUpdate;
 use PubliqAPI\Model\TransactionLog;
 use PubliqAPI\Model\Transfer;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-class StateSyncCommand extends ContainerAwareCommand
+class StateSyncCommand extends Command
 {
     const BATCH = 100;
     const ACTION_COUNT = 5000;
@@ -67,6 +73,12 @@ class StateSyncCommand extends ContainerAwareCommand
     /** @var \App\Service\Custom $customService */
     private $customService;
 
+    /** @var EventDispatcherInterface $eventDispatcher */
+    private $eventDispatcher;
+
+    /** @var Container] $container */
+    private $container;
+
     /** @var EntityManager $em */
     private $em;
 
@@ -77,12 +89,15 @@ class StateSyncCommand extends ContainerAwareCommand
     private $balances = [];
 
 
-    public function __construct(BlockChain $blockChain, Custom $custom)
+    public function __construct(EntityManagerInterface $em, BlockChain $blockChain, Custom $custom, EventDispatcherInterface $eventDispatcher, ContainerInterface $container)
     {
         parent::__construct();
 
+        $this->em = $em;
         $this->blockChainService = $blockChain;
         $this->customService = $custom;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->container = $container;
     }
 
     protected function configure()
@@ -94,7 +109,6 @@ class StateSyncCommand extends ContainerAwareCommand
     {
         parent::initialize($input, $output);
 
-        $this->em = $this->getContainer()->get('doctrine.orm.entity_manager');
         // DISABLE SQL LOGGING, CAUSE IT CAUSES MEMORY SHORTAGE on large inserts
         $this->em->getConnection()->getConfiguration()->setSQLLogger(null);
         $this->io = new SymfonyStyle($input, $output);
@@ -132,7 +146,7 @@ class StateSyncCommand extends ContainerAwareCommand
         }
 
         //  get FOCUS channel
-        $focusChannel = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $this->getContainer()->getParameter('focccus_channels_addresses')]);
+        $focusChannel = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $this->container->getParameter('focccus_channels_addresses')]);
 
         $index = 0;
         /**
@@ -207,11 +221,8 @@ class StateSyncCommand extends ContainerAwareCommand
                             $file = $transaction->getAction();
 
                             //  get file data
-                            $authorAddress = $file->getAuthorAddresses()[0];
+                            $authorAddresses = $file->getAuthorAddresses();
                             $uri = $file->getUri();
-
-                            //  create objects
-                            $authorAccount = $this->checkAccount($authorAddress);
 
                             if ($appliedReverted) {
                                 //  add file record
@@ -219,20 +230,41 @@ class StateSyncCommand extends ContainerAwareCommand
                                 if (!$fileEntity) {
                                     $fileEntity = new \App\Entity\File();
                                     $fileEntity->setUri($uri);
+                                } else {
+                                    $fileTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['file' => $fileEntity]);
+                                    if ($fileTransaction) {
+                                        $fileTransaction->setTransactionHash($transactionHash);
+                                        $this->em->persist($fileTransaction);
+                                        $this->em->flush();
+                                    }
                                 }
-                                $fileEntity->setAuthor($authorAccount);
                                 $fileEntity->setTransaction(null);
                                 $this->em->persist($fileEntity);
                                 $this->em->flush();
+
+                                foreach ($authorAddresses as $authorAddress) {
+                                    $authorAccount = $this->checkAccount($authorAddress);
+
+                                    $accountContentUnitEntity = $this->em->getRepository(AccountFile::class)->findOneBy(['account' => $authorAccount, 'file' => $fileEntity]);
+                                    if (!$accountContentUnitEntity) {
+                                        $accountContentUnitEntity = new AccountFile();
+                                        $accountContentUnitEntity->setAccount($authorAccount);
+                                        $accountContentUnitEntity->setFile($fileEntity);
+                                    }
+                                    $accountContentUnitEntity->setSigned(true);
+                                    $this->em->persist($accountContentUnitEntity);
+                                }
 
                                 //  add transaction record with relation to file
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $fileEntity);
 
                                 //  update account balances
+                                $authorAccount = $this->checkAccount($authorAddresses[0]);
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                             } else {
                                 //  update account balances
+                                $authorAccount = $this->checkAccount($authorAddresses[0]);
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
                             }
@@ -245,13 +277,12 @@ class StateSyncCommand extends ContainerAwareCommand
                             //  get content unit data
                             $uri = $contentUnit->getUri();
                             $contentId = $contentUnit->getContentId();
-                            $authorAddress = $contentUnit->getAuthorAddresses()[0];
+                            $authorAddresses = $contentUnit->getAuthorAddresses();
                             $channelAddress = $contentUnit->getChannelAddress();
                             $fileUris = $contentUnit->getFileUris();
                             $fileUris = array_unique($fileUris);
                             $coverUri = null;
 
-                            $authorAccount = $this->checkAccount($authorAddress);
                             $channelAccount = $this->checkAccount($channelAddress);
 
                             //  get content unit data from storage
@@ -290,7 +321,18 @@ class StateSyncCommand extends ContainerAwareCommand
                                     $contentUnitEntity->setUri($uri);
                                 }
                                 $contentUnitEntity->setContentId($contentId);
-                                $contentUnitEntity->setAuthor($authorAccount);
+                                foreach ($authorAddresses as $authorAddress) {
+                                    $authorAccount = $this->checkAccount($authorAddress);
+
+                                    $accountContentUnitEntity = $this->em->getRepository(AccountContentUnit::class)->findOneBy(['account' => $authorAccount, 'contentUnit' => $contentUnitEntity]);
+                                    if (!$accountContentUnitEntity) {
+                                        $accountContentUnitEntity = new AccountContentUnit();
+                                        $accountContentUnitEntity->setAccount($authorAccount);
+                                        $accountContentUnitEntity->setContentUnit($contentUnitEntity);
+                                    }
+                                    $accountContentUnitEntity->setSigned(true);
+                                    $this->em->persist($accountContentUnitEntity);
+                                }
                                 $contentUnitEntity->setChannel($channelAccount);
                                 $contentUnitEntity->setTitle($contentUnitTitle);
                                 $contentUnitEntity->setText($contentUnitText);
@@ -353,6 +395,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
 
                                 //  update account balances
+                                $authorAccount = $this->checkAccount($authorAddresses[0]);
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                             } else {
@@ -368,6 +411,7 @@ class StateSyncCommand extends ContainerAwareCommand
                                 }
 
                                 //  update account balances
+                                $authorAccount = $this->checkAccount($authorAddresses[0]);
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
                             }
@@ -770,11 +814,8 @@ class StateSyncCommand extends ContainerAwareCommand
                     $file = $action->getAction();
 
                     //  get file data
-                    $authorAddress = $file->getAuthorAddresses()[0];
+                    $authorAddresses = $file->getAuthorAddresses();
                     $uri = $file->getUri();
-
-                    //  create objects
-                    $authorAccount = $this->checkAccount($authorAddress);
 
                     if ($appliedReverted) {
                         //  add file record
@@ -783,7 +824,20 @@ class StateSyncCommand extends ContainerAwareCommand
                             $fileEntity = new \App\Entity\File();
                             $fileEntity->setUri($uri);
                         }
-                        $fileEntity->setAuthor($authorAccount);
+
+                        foreach ($authorAddresses as $authorAddress) {
+                            $authorAccount = $this->checkAccount($authorAddress);
+
+                            $accountContentUnitEntity = $this->em->getRepository(AccountFile::class)->findOneBy(['account' => $authorAccount, 'file' => $fileEntity]);
+                            if (!$accountContentUnitEntity) {
+                                $accountContentUnitEntity = new AccountFile();
+                                $accountContentUnitEntity->setAccount($authorAccount);
+                                $accountContentUnitEntity->setFile($fileEntity);
+                            }
+                            $accountContentUnitEntity->setSigned(true);
+                            $this->em->persist($accountContentUnitEntity);
+                        }
+
                         $fileEntity->setTransaction(null);
                         $this->em->persist($fileEntity);
                         $this->em->flush();
@@ -792,9 +846,11 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, $fileEntity);
 
                         //  update account balances
+                        $authorAccount = $this->checkAccount($authorAddresses[0]);
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                     } else {
                         //  update account balances
+                        $authorAccount = $this->checkAccount($authorAddresses[0]);
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
                     }
                 } elseif ($action->getAction() instanceof ContentUnit) {
@@ -806,13 +862,12 @@ class StateSyncCommand extends ContainerAwareCommand
                     //  get content unit data
                     $uri = $contentUnit->getUri();
                     $contentId = $contentUnit->getContentId();
-                    $authorAddress = $contentUnit->getAuthorAddresses()[0];
+                    $authorAddresses = $contentUnit->getAuthorAddresses();
                     $channelAddress = $contentUnit->getChannelAddress();
                     $fileUris = $contentUnit->getFileUris();
                     $fileUris = array_unique($fileUris);
                     $coverUri = null;
 
-                    $authorAccount = $this->checkAccount($authorAddress);
                     $channelAccount = $this->checkAccount($channelAddress);
 
                     //  get content unit data from storage
@@ -851,7 +906,18 @@ class StateSyncCommand extends ContainerAwareCommand
                             $contentUnitEntity->setUri($uri);
                         }
                         $contentUnitEntity->setContentId($contentId);
-                        $contentUnitEntity->setAuthor($authorAccount);
+                        foreach ($authorAddresses as $authorAddress) {
+                            $authorAccount = $this->checkAccount($authorAddress);
+
+                            $accountContentUnitEntity = $this->em->getRepository(AccountContentUnit::class)->findOneBy(['account' => $authorAccount, 'contentUnit' => $contentUnitEntity]);
+                            if (!$accountContentUnitEntity) {
+                                $accountContentUnitEntity = new AccountContentUnit();
+                                $accountContentUnitEntity->setAccount($authorAccount);
+                                $accountContentUnitEntity->setContentUnit($contentUnitEntity);
+                            }
+                            $accountContentUnitEntity->setSigned(true);
+                            $this->em->persist($accountContentUnitEntity);
+                        }
                         $contentUnitEntity->setChannel($channelAccount);
                         $contentUnitEntity->setTitle($contentUnitTitle);
                         $contentUnitEntity->setText($contentUnitText);
@@ -889,6 +955,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, $contentUnitEntity);
 
                         //  update account balances
+                        $authorAccount = $this->checkAccount($authorAddresses[0]);
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                     } else {
                         //  check for related tags
@@ -903,6 +970,7 @@ class StateSyncCommand extends ContainerAwareCommand
                         }
 
                         //  update account balances
+                        $authorAccount = $this->checkAccount($authorAddresses[0]);
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
                     }
                 } elseif ($action->getAction() instanceof Content) {
@@ -1405,15 +1473,15 @@ class StateSyncCommand extends ContainerAwareCommand
         if ($articles) {
             foreach ($articles as $article) {
                 // notify author to share
-                $this->getContainer()->get('event_dispatcher')->dispatch(
-                    ArticleShareEvent::NAME,
-                    new ArticleShareEvent($article)
+                $this->eventDispatcher->dispatch(
+                    new ArticleShareEvent($article),
+                    ArticleShareEvent::NAME
                 );
 
                 // notify subscribed users
-                $this->getContainer()->get('event_dispatcher')->dispatch(
-                    ArticleNewEvent::NAME,
-                    new ArticleNewEvent($article->getAuthor(), $article)
+                $this->eventDispatcher->dispatch(
+                    new ArticleNewEvent($article->getAuthor(), $article),
+                    ArticleNewEvent::NAME
                 );
             }
         }
@@ -1434,9 +1502,9 @@ class StateSyncCommand extends ContainerAwareCommand
 
                 if ($sponsor !== $author) {
                     // notify author about boost by other
-                    $this->getContainer()->get('event_dispatcher')->dispatch(
-                        ArticleBoostedByOtherEvent::NAME,
-                        new ArticleBoostedByOtherEvent($sponsor, $article)
+                    $this->eventDispatcher->dispatch(
+                        new ArticleBoostedByOtherEvent($sponsor, $article),
+                        ArticleBoostedByOtherEvent::NAME
                     );
                 }
             }

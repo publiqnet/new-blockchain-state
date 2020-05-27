@@ -157,7 +157,12 @@ class Account implements UserInterface
     private $files;
 
     /**
-     * @ORM\OneToMany(targetEntity="App\Entity\ContentUnit", mappedBy="author", fetch="EXTRA_LAZY")
+     * @ORM\OneToMany(targetEntity="App\Entity\AccountFile", mappedBy="account", fetch="EXTRA_LAZY")
+     */
+    private $authorFiles;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\AccountContentUnit", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $authorContentUnits;
 
@@ -299,6 +304,7 @@ class Account implements UserInterface
         $this->signedBlocks = new ArrayCollection();
         $this->rewards = new ArrayCollection();
         $this->files = new ArrayCollection();
+        $this->authorFiles = new ArrayCollection();
         $this->authorContentUnits = new ArrayCollection();
         $this->channelContentUnits = new ArrayCollection();
         $this->contents = new ArrayCollection();
@@ -513,6 +519,14 @@ class Account implements UserInterface
     public function getFiles()
     {
         return $this->files;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAuthorFiles()
+    {
+        return $this->authorFiles;
     }
 
     /**

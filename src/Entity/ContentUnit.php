@@ -85,6 +85,12 @@ class ContentUnit
     private $author;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\AccountContentUnit", mappedBy="contentUnit", cascade={"remove"})
+     * @Groups({"contentUnitFull", "contentUnitList"})
+     */
+    private $authors;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="channelContentUnits")
      */
     private $channel;
@@ -232,6 +238,7 @@ class ContentUnit
         $this->viewLogs = new ArrayCollection();
         $this->viewLogsHistory = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->authors = new ArrayCollection();
     }
 
     /**
@@ -400,6 +407,22 @@ class ContentUnit
     public function setAuthor($author)
     {
         $this->author = $author;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
+    }
+
+    /**
+     * @param AccountContentUnit $accountContentUnit
+     */
+    public function addAuthor(AccountContentUnit $accountContentUnit)
+    {
+        $this->authors->add($accountContentUnit);
     }
 
     /**
