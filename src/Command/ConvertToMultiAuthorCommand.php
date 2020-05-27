@@ -24,7 +24,7 @@ class ConvertToMultiAuthorCommand extends Command
 {
     use LockableTrait;
 
-    protected static $defaultName = 'scholarian-state:convert-to-multi-author';
+    protected static $defaultName = 'state:convert-to-multi-author';
 
     /** @var EntityManager $em */
     private $em;
