@@ -314,6 +314,7 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
         $query = $this->createQueryBuilder('a');
         return $query->select("a")
             ->join('a.authorContentUnits', 'acu')
+            ->join('acu.contentUnit', 'cu')
             ->where($query->expr()->in('acu.account', $authorPreferenceQuery->getDQL()))
             ->orWhere($query->expr()->in('cu', $tagPreferenceQuery->getDQL()))
             ->andWhere($query->expr()->notIn('a', $subscriptionQuery->getDQL()))
