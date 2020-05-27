@@ -80,7 +80,6 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
-     * @Groups({"contentUnitFull", "contentUnitList"})
      */
     private $author;
 

@@ -39,7 +39,8 @@ class ContentUnitViewsRepository extends EntityRepository
             ->select('cuv2.id')
             ->join('cuv2.contentUnit', 'cu')
             ->join('cu.boosts', 'bcu')
-            ->where('cu.author = :author')
+            ->join('cu.authors', 'acu')
+            ->where('acu.account = :author')
             ->andWhere('(cuv2.viewsTime >= bcu.startTimePoint and cuv2.viewsTime <= bcu.endTimePoint)')
             ->setParameters(['author' => $author]);
 

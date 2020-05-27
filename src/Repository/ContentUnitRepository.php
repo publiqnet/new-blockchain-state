@@ -29,9 +29,10 @@ class ContentUnitRepository extends EntityRepository
         return $this->createQueryBuilder('cu')
             ->select('COUNT(cu)')
             ->join('cu.transaction', 't')
+            ->join('cu.authors', 'acu')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
-            ->andWhere('cu.author = :author')
+            ->andWhere('acu.account = :author')
             ->setParameter('author', $account)
             ->groupBy('cu.contentId')
             ->getQuery()
@@ -46,7 +47,8 @@ class ContentUnitRepository extends EntityRepository
     {
         return $this->createQueryBuilder('cu')
             ->select('SUM(cu.views)')
-            ->where('cu.author = :author')
+            ->join('cu.authors', 'acu')
+            ->where('acu.account = :author')
             ->setParameter('author', $account)
             ->getQuery()
             ->getResult();
@@ -56,36 +58,26 @@ class ContentUnitRepository extends EntityRepository
      * @param Account $account
      * @param int $count
      * @param ContentUnit|null $fromContentUnit
-     * @param bool $self
      * @return array|null
      */
-    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null, $self = false)
+    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null)
     {
-        if ($self) {
-            $subQuery = $this->createQueryBuilder('cu2');
-            $subQuery
-                ->select('max(cu2.id)')
-                ->where('cu2.author = :author')
-                ->andWhere('cu2.content is not null')
-                ->setParameter('author', $account)
-                ->groupBy('cu2.contentId');
-        } else {
-            $subQuery = $this->createQueryBuilder('cu2');
-            $subQuery
-                ->select('max(cu2.id)')
-                ->join('cu2.transaction', 't2')
-                ->where('cu2.author = :author')
-                ->andWhere('t2.block is not null')
-                ->andWhere('cu2.content is not null')
-                ->setParameter('author', $account)
-                ->groupBy('cu2.contentId');
-        }
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->join('cu2.authors', 'acu2')
+            ->where('acu2.account = :author')
+            ->andWhere('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->setParameter('author', $account)
+            ->groupBy('cu2.contentId');
 
         $query = $this->createQueryBuilder('cu');
         if ($fromContentUnit) {
-            return $query->select('cu, a, t')
+            return $query->select('cu, acu, t')
                 ->join('cu.transaction', 't')
-                ->join('cu.author', 'a')
+                ->join('cu.authors', 'acu')
                 ->where('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['author' => $account, 'fromId' => $fromContentUnit->getId()])
@@ -94,9 +86,9 @@ class ContentUnitRepository extends EntityRepository
                 ->getQuery()
                 ->getResult();
         } else {
-            return $query->select('cu, a, t')
+            return $query->select('cu, acu, t')
                 ->join('cu.transaction', 't')
-                ->join('cu.author', 'a')
+                ->join('cu.authors', 'acu')
                 ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['author' => $account])
                 ->setMaxResults($count)
@@ -125,9 +117,9 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
+            return $query->select('cu, acu, t')
                 ->join('cu.transaction', 't')
-                ->join('cu.author', 'a')
+                ->join('cu.authors', 'acu')
                 ->where('t.block is not null')
                 ->andWhere('cu.content is not null')
                 ->andWhere('cu.publication = :publication')
@@ -141,9 +133,9 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
+            return $query->select('cu, acu, t')
                 ->join('cu.transaction', 't')
-                ->join('cu.author', 'a')
+                ->join('cu.authors', 'acu')
                 ->where('t.block is not null')
                 ->andWhere('cu.content is not null')
                 ->andWhere('cu.publication = :publication')
@@ -174,7 +166,6 @@ class ContentUnitRepository extends EntityRepository
 
         return $query->select('COUNT(cu.id)')
             ->join('cu.transaction', 't')
-            ->join('cu.author', 'a')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
             ->andWhere('cu.publication = :publication')
@@ -216,8 +207,8 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t, p')
-                ->join('cu.author', 'a')
+            return $query->select('cu, acu, t, p')
+                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
                 ->leftJoin('cu.publication', 'p')
                 ->where('cu.id < :fromId')
@@ -230,8 +221,8 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t, p')
-                ->join('cu.author', 'a')
+            return $query->select('cu, acu, t, p')
+                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
                 ->leftJoin('cu.publication', 'p')
                 ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
@@ -261,8 +252,8 @@ class ContentUnitRepository extends EntityRepository
         if ($fromContentUnit) {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
-                ->join('cu.author', 'a')
+            return $query->select('cu, acu, t')
+                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
                 ->join('cu.tags', 'tg')
                 ->where('t.block is not null')
@@ -278,8 +269,8 @@ class ContentUnitRepository extends EntityRepository
         } else {
             $query = $this->createQueryBuilder('cu');
 
-            return $query->select('cu, a, t')
-                ->join('cu.author', 'a')
+            return $query->select('cu, acu, t')
+                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
                 ->join('cu.tags', 'cut')
                 ->join('cut.tag', 'tg')
@@ -298,10 +289,9 @@ class ContentUnitRepository extends EntityRepository
     /**
      * @param int $count
      * @param $excludes
-     * @param Account|null $excludeAuthor
      * @return array|null
      */
-    public function getBoostedArticles(int $count, $excludes = null, Account $excludeAuthor = null)
+    public function getBoostedArticles(int $count, $excludes = null)
     {
         $timezone = new \DateTimeZone('UTC');
         $date = new \DateTime();
@@ -324,20 +314,6 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere('cu NOT IN (:excludes)')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
-                ->setMaxResults($count)
-                ->orderBy('RAND()')
-                ->groupBy('cu.id')
-                ->getQuery()
-                ->getResult();
-        } elseif ($excludeAuthor) {
-            return $query->select('cu')
-                ->join('cu.boosts', 'bcu')
-                ->where('bcu.startTimePoint <= :date')
-                ->andWhere('bcu.cancelled = 0')
-                ->andWhere('bcu.endTimePoint >= :date')
-                ->andWhere('cu.author <> :author')
-                ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-                ->setParameters(['date' => $date->getTimestamp(), 'author' => $excludeAuthor])
                 ->setMaxResults($count)
                 ->orderBy('RAND()')
                 ->groupBy('cu.id')
@@ -437,8 +413,8 @@ class ContentUnitRepository extends EntityRepository
         $query = $this->createQueryBuilder('cu');
 
         if ($fromContentUnit) {
-            return $query->select('cu, a')
-                ->join('cu.author', 'a')
+            return $query->select('cu, acu')
+                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
                 ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
                 ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
@@ -452,8 +428,8 @@ class ContentUnitRepository extends EntityRepository
                 ->getQuery()
                 ->getResult();
         } else {
-            return $query->select('cu, a')
-                ->join('cu.author', 'a')
+            return $query->select('cu, acu')
+                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
                 ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
                 ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
@@ -471,8 +447,8 @@ class ContentUnitRepository extends EntityRepository
     public function getArticleHistory(ContentUnit $article, $previous = false)
     {
         $query = $this->createQueryBuilder('cu')
-            ->select('cu, a')
-            ->join('cu.author', 'a')
+            ->select('cu, acu')
+            ->join('cu.authors', 'acu')
             ->join('cu.transaction', 't')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
@@ -518,13 +494,13 @@ class ContentUnitRepository extends EntityRepository
             ");
 
         $query = $this->createQueryBuilder('cu');
-        return $query->select('cu, a, t')
-            ->join('cu.author', 'a')
+        return $query->select('cu, acu, t')
+            ->join('cu.authors', 'acu')
             ->join('cu.transaction', 't')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-            ->andWhere($query->expr()->in('cu.author', $preferenceQuery->getDQL()))
+            ->andWhere($query->expr()->in('acu.account', $preferenceQuery->getDQL()))
             ->setParameter('user', $user)
             ->setMaxResults($count)
             ->orderBy('cu.id', 'desc')
@@ -557,8 +533,8 @@ class ContentUnitRepository extends EntityRepository
             ");
 
         $query = $this->createQueryBuilder('cu');
-        return $query->select('cu, a, t')
-            ->join('cu.author', 'a')
+        return $query->select('cu, acu, t')
+            ->join('cu.authors', 'acu')
             ->join('cu.transaction', 't')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
@@ -604,14 +580,15 @@ class ContentUnitRepository extends EntityRepository
                 select cu3
                 from App:ContentUnit cu3 
                 left join App:ContentUnitTag cut with cut.contentUnit = cu3
-                where cu3.author = :user " . $tagQueryString . "
+                left join App:AccountContentUnit acu2 with cut.contentUnit = cu3
+                where acu2.account = :user " . $tagQueryString . "
                 group by cu3
             ");
 
         $query = $this->createQueryBuilder('cu');
 
-        return $query->select('cu, a, t')
-            ->join('cu.author', 'a')
+        return $query->select('cu, acu, t')
+            ->join('cu.authors', 'acu')
             ->join('cu.transaction', 't')
             ->where('t.block is not null')
             ->andWhere('cu.content is not null')
@@ -632,7 +609,8 @@ class ContentUnitRepository extends EntityRepository
     {
         $this->createQueryBuilder('cu')
             ->update()
-            ->where('cu.author = :author')
+            ->join('cu.authors', 'acu')
+            ->where('acu.account= :author')
             ->setParameter('author', $account)
             ->set('cu.updateSocialImage', true)
             ->getQuery()
@@ -650,8 +628,9 @@ class ContentUnitRepository extends EntityRepository
         $query = $this->createQueryBuilder('cu');
         return $query->select('cu')
             ->join('cu.boosts', 'bcu')
+            ->join('cu.authors', 'acu')
             ->where('bcu.sponsor = :sponsor')
-            ->orWhere('cu.author = :sponsor')
+            ->orWhere('acu.account= :sponsor')
             ->setParameters(['sponsor' => $account])
             ->groupBy('cu')
             ->getQuery()
@@ -673,7 +652,8 @@ class ContentUnitRepository extends EntityRepository
         $subQuery
             ->select('max(cu2.id)')
             ->join('cu2.transaction', 't2')
-            ->where('cu2.author = :author')
+            ->join('cu2.authors', 'acu2')
+            ->where('acu2.account = :author')
             ->andWhere('t2.block is not null')
             ->andWhere('cu2.content is not null')
             ->setParameter('author', $account)
@@ -689,9 +669,9 @@ class ContentUnitRepository extends EntityRepository
             ->groupBy('cu3.id');
 
         $query = $this->createQueryBuilder('cu');
-        return $query->select('cu, a, t')
+        return $query->select('cu, acu, t')
             ->join('cu.transaction', 't')
-            ->join('cu.author', 'a')
+            ->join('cu.authors', 'acu')
             ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
             ->andWhere($query->expr()->notIn('cu.id', $subQuery2->getDQL()))
             ->setParameters(['author' => $account, 'date' => $date->getTimestamp()])
@@ -705,7 +685,7 @@ class ContentUnitRepository extends EntityRepository
      * @param int $datetime
      * @return array|null
      */
-    public function getArticleConfirmedAfterDate(int $datetime)
+    public function getArticlesConfirmedAfterDate(int $datetime)
     {
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery->select('max(cu2.id)')
@@ -715,8 +695,8 @@ class ContentUnitRepository extends EntityRepository
             ->groupBy('cu2.contentId');
 
         $query = $this->createQueryBuilder('cu');
-        return $query->select('cu, a')
-            ->join('cu.author', 'a')
+        return $query->select('cu, acu')
+            ->join('cu.authors', 'acu')
             ->join('cu.transaction', 't')
             ->join('t.block', 'b')
             ->where('b.signTime > :datetime')

@@ -1469,7 +1469,7 @@ class StateSyncCommand extends Command
         /**
          * @var \App\Entity\ContentUnit[] $articles
          */
-        $articles = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticleConfirmedAfterDate($datetime);
+        $articles = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticlesConfirmedAfterDate($datetime);
         if ($articles) {
             foreach ($articles as $article) {
                 // notify author to share

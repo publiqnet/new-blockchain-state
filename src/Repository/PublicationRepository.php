@@ -199,7 +199,8 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
         $query = $this->createQueryBuilder('p');
         return $query->select("p")
             ->join('p.contentUnits', 'cu')
-            ->where($query->expr()->in('cu.author', $authorPreferenceQuery->getDQL()))
+            ->join('cu.authors', 'acu')
+            ->where($query->expr()->in('acu.account', $authorPreferenceQuery->getDQL()))
             ->orWhere($query->expr()->in('cu', $tagPreferenceQuery->getDQL()))
             ->andWhere($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
             ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))

@@ -313,8 +313,8 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
 
         $query = $this->createQueryBuilder('a');
         return $query->select("a")
-            ->join('a.authorContentUnits', 'cu')
-            ->where($query->expr()->in('cu.author', $authorPreferenceQuery->getDQL()))
+            ->join('a.authorContentUnits', 'acu')
+            ->where($query->expr()->in('acu.account', $authorPreferenceQuery->getDQL()))
             ->orWhere($query->expr()->in('cu', $tagPreferenceQuery->getDQL()))
             ->andWhere($query->expr()->notIn('a', $subscriptionQuery->getDQL()))
             ->setParameter('user', $user)
@@ -357,16 +357,9 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
      */
     public function getAuthorsCount()
     {
-        $preferenceQuery = $this->getEntityManager()
-            ->createQuery("
-                select IDENTITY(cu.author)
-                from App:ContentUnit cu 
-                group by cu.author
-            ");
-
         $query = $this->createQueryBuilder('a');
         return $query->select("count(a) as totalAuthors")
-            ->where($query->expr()->in('a', $preferenceQuery->getDQL()))
+            ->join('a.authorContentUnits', 'acu')
             ->getQuery()
             ->getResult();
     }
