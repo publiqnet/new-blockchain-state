@@ -532,8 +532,8 @@ class AccountApiController extends AbstractController
 
             // notify author
             $eventDispatcher->dispatch(
-                SubscribeUserEvent::NAME,
-                new SubscribeUserEvent($account, $author)
+                new SubscribeUserEvent($account, $author),
+                SubscribeUserEvent::NAME
             );
         }
 
@@ -658,8 +658,8 @@ class AccountApiController extends AbstractController
 
             // notify author
             $eventDispatcher->dispatch(
-                UnsubscribeUserEvent::NAME,
-                new UnsubscribeUserEvent($account, $author)
+                new UnsubscribeUserEvent($account, $author),
+                UnsubscribeUserEvent::NAME
             );
         }
 
@@ -871,5 +871,69 @@ class AccountApiController extends AbstractController
             'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors],
             'highlights' => $highlights
         ]);
+    }
+
+    /**
+     * @Route("/subscriptions/check", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Check subscription",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="publicKeys", type="array", items={"type": "string"}),
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param Request $request
+     * @return Response
+     */
+    public function checkSubscription(Request $request)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $contentArr = json_decode($content, true);
+
+            $publicKeys = $contentArr['publicKeys'];
+        } else {
+            $publicKeys = $request->request->get('publicKeys');
+        }
+
+        try {
+            $subscriptionStatus = [];
+            foreach ($publicKeys as $publicKey) {
+                //  check if user subscribed to author
+                $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+
+                $subscriptionStatus[$publicKey] = $subscribed ? true: false;
+            }
+
+            return new JsonResponse($subscriptionStatus);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
     }
 }
