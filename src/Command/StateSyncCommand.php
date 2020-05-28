@@ -245,14 +245,14 @@ class StateSyncCommand extends Command
                                 foreach ($authorAddresses as $authorAddress) {
                                     $authorAccount = $this->checkAccount($authorAddress);
 
-                                    $accountContentUnitEntity = $this->em->getRepository(AccountFile::class)->findOneBy(['account' => $authorAccount, 'file' => $fileEntity]);
-                                    if (!$accountContentUnitEntity) {
-                                        $accountContentUnitEntity = new AccountFile();
-                                        $accountContentUnitEntity->setAccount($authorAccount);
-                                        $accountContentUnitEntity->setFile($fileEntity);
+                                    $accountFileEntity = $this->em->getRepository(AccountFile::class)->findOneBy(['account' => $authorAccount, 'file' => $fileEntity]);
+                                    if (!$accountFileEntity) {
+                                        $accountFileEntity = new AccountFile();
+                                        $accountFileEntity->setAccount($authorAccount);
+                                        $accountFileEntity->setFile($fileEntity);
                                     }
-                                    $accountContentUnitEntity->setSigned(true);
-                                    $this->em->persist($accountContentUnitEntity);
+                                    $accountFileEntity->setSigned(true);
+                                    $this->em->persist($accountFileEntity);
                                 }
 
                                 //  add transaction record with relation to file
@@ -321,18 +321,6 @@ class StateSyncCommand extends Command
                                     $contentUnitEntity->setUri($uri);
                                 }
                                 $contentUnitEntity->setContentId($contentId);
-                                foreach ($authorAddresses as $authorAddress) {
-                                    $authorAccount = $this->checkAccount($authorAddress);
-
-                                    $accountContentUnitEntity = $this->em->getRepository(AccountContentUnit::class)->findOneBy(['account' => $authorAccount, 'contentUnit' => $contentUnitEntity]);
-                                    if (!$accountContentUnitEntity) {
-                                        $accountContentUnitEntity = new AccountContentUnit();
-                                        $accountContentUnitEntity->setAccount($authorAccount);
-                                        $accountContentUnitEntity->setContentUnit($contentUnitEntity);
-                                    }
-                                    $accountContentUnitEntity->setSigned(true);
-                                    $this->em->persist($accountContentUnitEntity);
-                                }
                                 $contentUnitEntity->setChannel($channelAccount);
                                 $contentUnitEntity->setTitle($contentUnitTitle);
                                 $contentUnitEntity->setText($contentUnitText);
@@ -354,6 +342,20 @@ class StateSyncCommand extends Command
                                 }
 
                                 $this->em->persist($contentUnitEntity);
+
+                                foreach ($authorAddresses as $authorAddress) {
+                                    $authorAccount = $this->checkAccount($authorAddress);
+
+                                    $accountContentUnitEntity = $this->em->getRepository(AccountContentUnit::class)->findOneBy(['account' => $authorAccount, 'contentUnit' => $contentUnitEntity]);
+                                    if (!$accountContentUnitEntity) {
+                                        $accountContentUnitEntity = new AccountContentUnit();
+                                        $accountContentUnitEntity->setAccount($authorAccount);
+                                        $accountContentUnitEntity->setContentUnit($contentUnitEntity);
+                                    }
+                                    $accountContentUnitEntity->setSigned(true);
+                                    $this->em->persist($accountContentUnitEntity);
+                                }
+
                                 $this->em->flush();
 
                                 //  check for related tags
@@ -828,14 +830,14 @@ class StateSyncCommand extends Command
                         foreach ($authorAddresses as $authorAddress) {
                             $authorAccount = $this->checkAccount($authorAddress);
 
-                            $accountContentUnitEntity = $this->em->getRepository(AccountFile::class)->findOneBy(['account' => $authorAccount, 'file' => $fileEntity]);
-                            if (!$accountContentUnitEntity) {
-                                $accountContentUnitEntity = new AccountFile();
-                                $accountContentUnitEntity->setAccount($authorAccount);
-                                $accountContentUnitEntity->setFile($fileEntity);
+                            $accountFileEntity = $this->em->getRepository(AccountFile::class)->findOneBy(['account' => $authorAccount, 'file' => $fileEntity]);
+                            if (!$accountFileEntity) {
+                                $accountFileEntity = new AccountFile();
+                                $accountFileEntity->setAccount($authorAccount);
+                                $accountFileEntity->setFile($fileEntity);
                             }
-                            $accountContentUnitEntity->setSigned(true);
-                            $this->em->persist($accountContentUnitEntity);
+                            $accountFileEntity->setSigned(true);
+                            $this->em->persist($accountFileEntity);
                         }
 
                         $fileEntity->setTransaction(null);
@@ -906,18 +908,6 @@ class StateSyncCommand extends Command
                             $contentUnitEntity->setUri($uri);
                         }
                         $contentUnitEntity->setContentId($contentId);
-                        foreach ($authorAddresses as $authorAddress) {
-                            $authorAccount = $this->checkAccount($authorAddress);
-
-                            $accountContentUnitEntity = $this->em->getRepository(AccountContentUnit::class)->findOneBy(['account' => $authorAccount, 'contentUnit' => $contentUnitEntity]);
-                            if (!$accountContentUnitEntity) {
-                                $accountContentUnitEntity = new AccountContentUnit();
-                                $accountContentUnitEntity->setAccount($authorAccount);
-                                $accountContentUnitEntity->setContentUnit($contentUnitEntity);
-                            }
-                            $accountContentUnitEntity->setSigned(true);
-                            $this->em->persist($accountContentUnitEntity);
-                        }
                         $contentUnitEntity->setChannel($channelAccount);
                         $contentUnitEntity->setTitle($contentUnitTitle);
                         $contentUnitEntity->setText($contentUnitText);
@@ -938,6 +928,20 @@ class StateSyncCommand extends Command
                         }
 
                         $this->em->persist($contentUnitEntity);
+
+                        foreach ($authorAddresses as $authorAddress) {
+                            $authorAccount = $this->checkAccount($authorAddress);
+
+                            $accountContentUnitEntity = $this->em->getRepository(AccountContentUnit::class)->findOneBy(['account' => $authorAccount, 'contentUnit' => $contentUnitEntity]);
+                            if (!$accountContentUnitEntity) {
+                                $accountContentUnitEntity = new AccountContentUnit();
+                                $accountContentUnitEntity->setAccount($authorAccount);
+                                $accountContentUnitEntity->setContentUnit($contentUnitEntity);
+                            }
+                            $accountContentUnitEntity->setSigned(true);
+                            $this->em->persist($accountContentUnitEntity);
+                        }
+                        
                         $this->em->flush();
 
                         //  check for related tags
@@ -1480,7 +1484,7 @@ class StateSyncCommand extends Command
 
                 // notify subscribed users
                 $this->eventDispatcher->dispatch(
-                    new ArticleNewEvent($article->getAuthor(), $article),
+                    new ArticleNewEvent($article),
                     ArticleNewEvent::NAME
                 );
             }
