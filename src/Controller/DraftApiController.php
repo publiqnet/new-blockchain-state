@@ -178,6 +178,10 @@ class DraftApiController extends AbstractController
                 }
             }
 
+            //  temp code to avoid frontend issue
+            $authors = [$draft->getAccount()];
+            $draft->setAuthors($authors);
+
             $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
             return new JsonResponse($draft);
@@ -350,6 +354,10 @@ class DraftApiController extends AbstractController
                 }
             }
 
+            //  temp code to avoid frontend issue
+            $authors = [$draft->getAccount()];
+            $draft->setAuthors($authors);
+
             $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
             return new JsonResponse($draft);
@@ -515,6 +523,10 @@ class DraftApiController extends AbstractController
         $updated = $draft->getUpdated();
         $draft->setUpdated($updated->getTimestamp());
 
+        //  temp code to avoid frontend issue
+        $authors = [$draft->getAccount()];
+        $draft->setAuthors($authors);
+
         $draft = $this->get('serializer')->normalize($draft, null, ['groups' => ['draft']]);
 
         return new JsonResponse($draft);
@@ -582,6 +594,10 @@ class DraftApiController extends AbstractController
                 }
 
                 $draft->setOptions($options);
+
+                //  temp code to avoid frontend issue
+                $authors = [$draft->getAccount()];
+                $draft->setAuthors($authors);
             }
         }
         $drafts = $this->get('serializer')->normalize($drafts, null, ['groups' => ['draftList', 'tag', 'accountBase', 'publication']]);

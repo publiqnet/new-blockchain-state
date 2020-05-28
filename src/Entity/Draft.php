@@ -110,6 +110,13 @@ class Draft
 
     /**
      * @var array
+     * @ORM\Column(name="authors", type="array", nullable=true)
+     * @Groups({"draft", "draftList"})
+     */
+    private $authors = [];
+
+    /**
+     * @var array
      * @ORM\Column(name="options", type="array", nullable=true)
      * @Groups({"draft", "draftList"})
      */
@@ -347,6 +354,22 @@ class Draft
     public function setTags(array $tags)
     {
         $this->tags = $tags;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
+    }
+
+    /**
+     * @param array $authors
+     */
+    public function setAuthors(array $authors)
+    {
+        $this->authors = $authors;
     }
 
     /**
