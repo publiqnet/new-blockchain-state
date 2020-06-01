@@ -10,6 +10,7 @@ namespace App\Controller;
 
 use App\Custom\base58;
 use App\Entity\Account;
+use App\Entity\AccountFile;
 use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\DraftFile;
@@ -314,10 +315,45 @@ class FileApiController extends AbstractController
                     $fileEntity = $em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $file['uri']]);
                     if ($fileEntity) {
                         /**
-                         * @var Account $fileEntityAuthor
+                         * @var AccountFile[] $fileEntityAuthors
                          */
-                        $fileEntityAuthor = $fileEntity->getAuthor();
-                        $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getPublicKey(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
+                        $fileEntityAuthors = $fileEntity->getAuthors();
+                        foreach ($fileEntityAuthors as $fileEntityAuthor) {
+                            $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getAccount()->getPublicKey(), 'firstName' => $fileEntityAuthor->getAccount()->getFirstName(), 'lastName' => $fileEntityAuthor->getAccount()->getLastName()];
+                        }
+
+                        //  upload file to channel storage if file has no articles in current channel
+                        $fileContentUnits = $fileEntity->getContentUnits();
+                        if (count($fileContentUnits) == 0) {
+                            //  get file local path
+                            $draftFile = $em->getRepository(DraftFile::class)->findOneBy(['draft' => $draft, 'uri' => $file['uri']]);
+                            if ($draftFile) {
+                                $fileObj = new \Symfony\Component\HttpFoundation\File\File($draftFile->getPath());
+                                $fileData = file_get_contents($fileObj->getRealPath());
+
+                                //  upload file into channel storage
+                                $uploadResult = $blockChain->uploadFile($fileData, $fileObj->getMimeType());
+                                if ($uploadResult instanceof StorageFileAddress) {
+                                    if (!$fileEntity->getMimeType()) {
+                                        $fileEntity->setMimeType($fileObj->getMimeType());
+                                        $em->persist($fileEntity);
+                                        $em->flush();
+                                    }
+                                } elseif ($uploadResult instanceof UriError) {
+                                    if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
+                                        if (!$fileEntity->getMimeType()) {
+                                            $fileEntity->setMimeType($fileObj->getMimeType());
+                                            $em->persist($fileEntity);
+                                            $em->flush();
+                                        }
+                                    } else {
+                                        throw new Exception('File upload error: ' . $uploadResult->getUriProblemType());
+                                    }
+                                } else {
+                                    throw new Exception('Error type: ' . get_class($uploadResult));
+                                }
+                            }
+                        }
 
                         continue;
                     }
@@ -370,10 +406,12 @@ class FileApiController extends AbstractController
                             $fileEntity = $em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $file['uri']]);
                             if ($fileEntity) {
                                 /**
-                                 * @var Account $fileEntityAuthor
+                                 * @var AccountFile[] $fileEntityAuthors
                                  */
-                                $fileEntityAuthor = $fileEntity->getAuthor();
-                                $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getPublicKey(), 'firstName' => $fileEntityAuthor->getFirstName(), 'lastName' => $fileEntityAuthor->getLastName()];
+                                $fileEntityAuthors = $fileEntity->getAuthors();
+                                foreach ($fileEntityAuthors as $fileEntityAuthor) {
+                                    $duplicateFiles[$file['uri']] = ['publicKey' => $fileEntityAuthor->getAccount()->getPublicKey(), 'firstName' => $fileEntityAuthor->getAccount()->getFirstName(), 'lastName' => $fileEntityAuthor->getAccount()->getLastName()];
+                                }
                             } else {
                                 $duplicateFiles[$file['uri']] = '';
                             }
@@ -458,41 +496,5 @@ class FileApiController extends AbstractController
         } else {
             return new JsonResponse(['Error type: ' . get_class($uploadResult) . '; Error: ' . json_encode($uploadResult)], Response::HTTP_CONFLICT);
         }
-    }
-
-    /**
-     * @Route("/temp", methods={"GET"})
-     * @SWG\Get(
-     *     summary="Temporary action",
-     *     consumes={"application/json"},
-     *     produces={"application/json"},
-     * )
-     * @SWG\Response(response=200, description="Success")
-     * @SWG\Response(response=409, description="Error - see description for more information")
-     * @SWG\Tag(name="File")
-     * @param BlockChain $blockChain
-     * @return JsonResponse
-     * @throws Exception
-     */
-    public function tempAction(BlockChain $blockChain)
-    {
-        $fileObj = new \Symfony\Component\HttpFoundation\File\File('uploads/draft/BAkmjmVdJANqH7cGtfjeH5JoBhx1KSYdBXAr2REPiQDN.jpeg');
-        $fileData = file_get_contents($fileObj->getRealPath());
-
-        //  upload file into channel storage
-        $uploadResult = $blockChain->uploadFile($fileData, $fileObj->getMimeType());
-        if ($uploadResult instanceof StorageFileAddress) {
-
-        } elseif ($uploadResult instanceof UriError) {
-            if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-
-            } else {
-                throw new Exception('File upload error: ' . $uploadResult->getUriProblemType());
-            }
-        } else {
-            throw new Exception('Error type: ' . get_class($uploadResult));
-        }
-
-        return new JsonResponse(null);
     }
 }
