@@ -228,6 +228,11 @@ class ContentUnit
     private $notifications;
 
 
+    public function __toString()
+    {
+        return $this->uri;
+    }
+
     public function __construct()
     {
         $this->files = new ArrayCollection();

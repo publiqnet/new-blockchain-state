@@ -9,6 +9,7 @@
 namespace App\EventSubscriber;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\NotificationType;
 use App\Entity\Subscription;
@@ -326,19 +327,24 @@ class GeneralEventSubscriber implements EventSubscriberInterface
     public function onArticleNewEvent(ArticleNewEvent $event)
     {
         try {
-            $publisher = $event->getPublisher();
             $article = $event->getArticle();
 
-            //  get subscribers
             /**
-             * @var Subscription[] $subscribers
+             * @var AccountContentUnit[] $authors
              */
-            $subscribers = $publisher->getSubscribers();
-            if (count($subscribers)) {
-                $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['new_article']['key'], $publisher, $article->getUri());
+            $authors = $article->getAuthors();
+            foreach ($authors as $author) {
+                //  get subscribers
+                /**
+                 * @var Subscription[] $subscribers
+                 */
+                $subscribers = $author->getAccount()->getSubscribers();
+                if (count($subscribers)) {
+                    $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['new_article']['key'], $author->getAccount(), $article->getUri());
 
-                foreach ($subscribers as $subscriber) {
-                    $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
+                    foreach ($subscribers as $subscriber) {
+                        $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
+                    }
                 }
             }
         } catch (\Throwable $e) {
