@@ -36,13 +36,15 @@ class UserNotification
     private $serializer;
     private $mercureHub;
     private $mercureSecretKey;
+    private $mercureTopic;
 
-    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey)
+    public function __construct(EntityManagerInterface $em, Serializer $serializer, string $mercureHub, string $mercureSecretKey, string $mercureTopic)
     {
         $this->em = $em;
         $this->serializer = $serializer;
         $this->mercureHub = $mercureHub;
         $this->mercureSecretKey = $mercureSecretKey;
+        $this->mercureTopic = $mercureTopic;
     }
 
     /**
@@ -93,7 +95,7 @@ class UserNotification
 
         //  MERCURE
         $token = (new Builder())
-            ->set('mercure', ['publish' => ["http://publiq.site/user/" . $user->getPublicKey()]])
+            ->set('mercure', ['publish' => [$this->mercureTopic . '/user/' . $user->getPublicKey()]])
             ->sign(new Sha256(), $this->mercureSecretKey)
             ->getToken();
 
@@ -286,9 +288,9 @@ class UserNotification
         }
 
         $update = new Update(
-            'http://publiq.site/notification',
+            $this->mercureTopic . '/notification',
             json_encode($data),
-            ["http://publiq.site/user/" . $user->getPublicKey()]
+            [$this->mercureTopic . '/user/' . $user->getPublicKey()]
         );
         $publisher($update);
 

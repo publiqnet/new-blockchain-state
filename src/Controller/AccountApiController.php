@@ -125,8 +125,9 @@ class AccountApiController extends AbstractController
             unset($account['apiKey']);
 
             //  create jwt token
+            $topic = $this->getParameter('mercure_topic');
             $token = (new Builder())
-                ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+                ->set('mercure', ['subscribe' => [$topic . "/user/" . $account['publicKey']]])
                 ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
                 ->getToken();
             $account['jwtToken'] = (string) $token;
@@ -165,8 +166,9 @@ class AccountApiController extends AbstractController
         unset($account['apiKey']);
 
         //  create jwt token
+        $topic = $this->getParameter('mercure_topic');
         $token = (new Builder())
-            ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+            ->set('mercure', ['subscribe' => [$topic . "/user/" . $account['publicKey']]])
             ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
             ->getToken();
         $account['jwtToken'] = (string) $token;
