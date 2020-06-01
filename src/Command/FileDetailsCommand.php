@@ -200,13 +200,22 @@ class FileDetailsCommand extends ContainerAwareCommand
                         if ($file->getMimeType() == 'text/html') {
                             $fileText = $file->getContent();
                             $contentUnitText = str_replace($file->getUri(), $fileText, $contentUnitText);
-                        } elseif ($contentUnit->getChannel()) {
+                        } else {
                             /**
-                             * @var Account $channel
+                             * @var ContentUnit[] $fileContentUnits
                              */
-                            $channel = $contentUnit->getChannel();
+                            $fileContentUnits = $file->getContentUnits();
+                            if ($fileContentUnits && count($fileContentUnits) > 0) {
+                                /**
+                                 * @var Account $firstChannel
+                                 */
+                                $firstChannel = $fileContentUnits[0]->getChannel();
+                                if ($firstChannel->getUrl()) {
+                                    $channelUrl = $firstChannel->getUrl();
+                                }
+                            }
 
-                            $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
+                            $fileUrl = $channelUrl . '/storage?file=' . $file->getUri();
                             $contentUnitText = str_replace('src="' . $file->getUri() . '"', 'src="' . $fileUrl . '"', $contentUnitText);
                         }
 
