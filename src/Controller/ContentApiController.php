@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\BoostedContentUnit;
 use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
@@ -465,7 +466,21 @@ class ContentApiController extends AbstractController
                 return new JsonResponse('', Response::HTTP_NOT_FOUND);
             }
 
-            if ($contentUnit->getAuthor() !== $account) {
+            $isOwner = false;
+            if ($account) {
+                /**
+                 * @var AccountContentUnit[] $contentUnitAuthors
+                 */
+                $contentUnitAuthors = $contentUnit->getAuthors();
+                foreach ($contentUnitAuthors as $contentUnitAuthor) {
+                    if ($contentUnitAuthor->getAccount() === $account) {
+                        $isOwner = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$isOwner) {
                 return new JsonResponse('', Response::HTTP_FORBIDDEN);
             }
 
@@ -760,7 +775,21 @@ class ContentApiController extends AbstractController
         $userIdentifier = $customService->viewLog($request, $contentUnit, $account);
 
         // update user preference if viewer is not article author
-        if ($account && $contentUnit->getAuthor() != $account) {
+        $isOwner = false;
+        if ($account) {
+            /**
+             * @var AccountContentUnit[] $contentUnitAuthors
+             */
+            $contentUnitAuthors = $contentUnit->getAuthors();
+            foreach ($contentUnitAuthors as $contentUnitAuthor) {
+                if ($contentUnitAuthor->getAccount() === $account) {
+                    $isOwner = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$isOwner && $account) {
             $eventDispatcher->dispatch(
                 new UserPreferenceEvent($account, $contentUnit),
                 UserPreferenceEvent::NAME
@@ -768,7 +797,7 @@ class ContentApiController extends AbstractController
         }
 
         //  if viewer is article author return full data without adding view
-        if ($account && $contentUnit->getAuthor() == $account) {
+        if ($isOwner) {
             //  get files & find storage address
             $files = $contentUnit->getFiles();
             if ($files) {
@@ -953,16 +982,12 @@ class ContentApiController extends AbstractController
             /**
              * @var Account $author
              */
-            $author = $contentUnit->getAuthor();
+            $author = $contentUnit->getAuthors()[0];
             $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
             $author->setSubscribed($subscribed ? true : false);
         }
 
-        if ($account && $contentUnit->getAuthor() == $account) {
-            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions', 'accountSubscribed']]);
-        } else {
-            $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions', 'accountSubscribed']]);
-        }
+        $contentUnit = $this->get('serializer')->normalize($contentUnit, null, ['groups' => ['contentUnitFull', 'contentUnitContentId', 'tag', 'file', 'accountBase', 'publication', 'previousVersions', 'nextVersions', 'accountSubscribed']]);
 
         $contentUnit = $contentUnitService->prepareTags($contentUnit, false);
         $contentUnit['related'] = $relatedArticles;

@@ -249,7 +249,7 @@ class Custom
         /**
          * @var Account $author
          */
-        $author = $contentUnit->getAuthor();
+        $author = $contentUnit->getAuthors()[0];
         if ($author->getFirstName() || $author->getLastName()) {
             $authorName = trim($author->getFirstName() . ' ' . $author->getLastName());
             $authorBio = trim($author->getBio());

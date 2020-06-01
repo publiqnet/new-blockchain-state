@@ -9,6 +9,7 @@
 namespace App\Service;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\BoostedContentUnit;
 use App\Entity\File;
 use App\Entity\Transaction;
@@ -97,7 +98,21 @@ class ContentUnit
                 $contentUnit->setBoosted($boosted);
             }
 
-            if ($author == $contentUnit->getAuthor()) {
+            $isOwner = false;
+            if ($author) {
+                /**
+                 * @var AccountContentUnit[] $contentUnitAuthors
+                 */
+                $contentUnitAuthors = $contentUnit->getAuthors();
+                foreach ($contentUnitAuthors as $contentUnitAuthor) {
+                    if ($contentUnitAuthor->getAccount() === $author) {
+                        $isOwner = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($isOwner) {
                 //  get article next & previous versions
                 $previousVersions = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
                 if ($previousVersions) {
