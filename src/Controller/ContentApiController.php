@@ -980,9 +980,14 @@ class ContentApiController extends AbstractController
         //  check if user subscribed to author
         if ($account) {
             /**
+             * @var AccountContentUnit $accountContentUnit
+             */
+            $accountContentUnit = $contentUnit->getAuthors()[0];
+
+            /**
              * @var Account $author
              */
-            $author = $contentUnit->getAuthors()[0];
+            $author = $accountContentUnit->getAccount();
             $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
             $author->setSubscribed($subscribed ? true : false);
         }
