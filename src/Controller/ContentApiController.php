@@ -662,7 +662,11 @@ class ContentApiController extends AbstractController
             $fromContentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $fromUri]);
         }
 
-        $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
+        if ($account === $author) {
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit, true);
+        } else {
+            $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
+        }
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
 
         //  prepare data to return

@@ -58,20 +58,31 @@ class ContentUnitRepository extends EntityRepository
      * @param Account $account
      * @param int $count
      * @param ContentUnit|null $fromContentUnit
+     * @param bool $self
      * @return array|null
      */
-    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null)
+    public function getAuthorArticles(Account $account, int $count = 10, ContentUnit $fromContentUnit = null, $self = false)
     {
         $subQuery = $this->createQueryBuilder('cu2');
-        $subQuery
-            ->select('max(cu2.id)')
-            ->join('cu2.transaction', 't2')
-            ->join('cu2.authors', 'acu2')
-            ->where('acu2.account = :author')
-            ->andWhere('t2.block is not null')
-            ->andWhere('cu2.content is not null')
-            ->setParameter('author', $account)
-            ->groupBy('cu2.contentId');
+        if ($self) {
+            $subQuery
+                ->select('max(cu2.id)')
+                ->join('cu2.authors', 'acu2')
+                ->where('acu2.account = :author')
+                ->andWhere('cu2.content is not null')
+                ->setParameter('author', $account)
+                ->groupBy('cu2.contentId');
+        } else {
+            $subQuery
+                ->select('max(cu2.id)')
+                ->join('cu2.transaction', 't2')
+                ->join('cu2.authors', 'acu2')
+                ->where('acu2.account = :author')
+                ->andWhere('t2.block is not null')
+                ->andWhere('cu2.content is not null')
+                ->setParameter('author', $account)
+                ->groupBy('cu2.contentId');
+        }
 
         $query = $this->createQueryBuilder('cu');
         if ($fromContentUnit) {
