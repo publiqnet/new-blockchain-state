@@ -301,6 +301,15 @@ class ContentApiController extends AbstractController
                     $contentUnitEntity->setCover($coverFileEntity);
                 }
 
+                $accountContentUnit = new AccountContentUnit();
+                $accountContentUnit->setAccount($account);
+                $accountContentUnit->setContentUnit($contentUnitEntity);
+                $accountContentUnit->setSigned(true);
+                $accountContentUnit->setSignature($signedContentUnit);
+                $em->persist($accountContentUnit);
+
+                $contentUnitEntity->addAuthor($accountContentUnit);
+
                 //  add temporary transaction with size = 0
                 $transactionEntity = new Transaction();
                 $transactionEntity->setTransactionHash($currentTransactionHash);
