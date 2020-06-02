@@ -941,7 +941,7 @@ class StateSyncCommand extends Command
                             $accountContentUnitEntity->setSigned(true);
                             $this->em->persist($accountContentUnitEntity);
                         }
-                        
+
                         $this->em->flush();
 
                         //  check for related tags
