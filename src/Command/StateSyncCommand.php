@@ -331,7 +331,11 @@ class StateSyncCommand extends Command
                                 }
                                 if ($coverUri) {
                                     $coverFileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $coverUri]);
-                                    $contentUnitEntity->setCover($coverFileEntity);
+                                    if ($coverFileEntity) {
+                                        $contentUnitEntity->setCover($coverFileEntity);
+                                    } else {
+                                        $contentUnitEntity->setCoverExternalUrl($coverUri);
+                                    }
                                 }
 
                                 //  check for related Publication
@@ -918,7 +922,11 @@ class StateSyncCommand extends Command
                         }
                         if ($coverUri) {
                             $coverFileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $coverUri]);
-                            $contentUnitEntity->setCover($coverFileEntity);
+                            if ($coverFileEntity) {
+                                $contentUnitEntity->setCover($coverFileEntity);
+                            } else {
+                                $contentUnitEntity->setCoverExternalUrl($coverUri);
+                            }
                         }
 
                         //  check for related Publication

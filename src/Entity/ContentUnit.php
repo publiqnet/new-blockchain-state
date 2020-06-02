@@ -72,6 +72,12 @@ class ContentUnit
     private $views = 0;
 
     /**
+     * @ORM\Column(name="cover_external_url", type="string", length=320, nullable=true)
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo", "contentUnitNotification"})
+     */
+    private $coverExternalUrl;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
      * @ORM\JoinColumn(name="cover_id", referencedColumnName="id", onDelete="SET NULL")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
@@ -379,6 +385,22 @@ class ContentUnit
     public function minusViews($views)
     {
         $this->views -= $views;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCoverExternalUrl()
+    {
+        return $this->coverExternalUrl;
+    }
+
+    /**
+     * @param mixed $coverExternalUrl
+     */
+    public function setCoverExternalUrl($coverExternalUrl)
+    {
+        $this->coverExternalUrl = $coverExternalUrl;
     }
 
     /**
