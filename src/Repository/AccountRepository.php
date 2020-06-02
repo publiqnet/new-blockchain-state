@@ -273,7 +273,8 @@ class AccountRepository extends \Doctrine\ORM\EntityRepository
 
         return $this->createQueryBuilder('a')
             ->select("a, SUM(vpc.viewsCount) as totalViews")
-            ->join('a.authorContentUnits', 'cu')
+            ->join('a.authorContentUnits', 'acu')
+            ->join('acu.contentUnit', 'cu')
             ->join('cu.viewsPerChannel', 'vpc')
             ->where('vpc.viewsTime > :currentTimestamp')
             ->setParameters(['currentTimestamp' => $date->getTimestamp() - 7 * 86400])
