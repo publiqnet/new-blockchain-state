@@ -231,4 +231,13 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getCurrentTrendingPublications()
+    {
+        return $this->createQueryBuilder('p')
+            ->select("p")
+            ->where('p.trendingPosition > 0')
+            ->getQuery()
+            ->getResult();
+    }
 }

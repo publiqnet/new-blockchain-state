@@ -85,10 +85,13 @@ class TrendingsCommand extends ContainerAwareCommand
         /**
          * @var Account[] $trendingAuthors
          */
-        $trendingAuthors = $this->em->getRepository(Account::class)->getTrendingAuthors(32);
+        $trendingAuthors = $this->em->getRepository(Account::class)->getTrendingAuthors(16);
         if ($trendingAuthors) {
             $i = 32;
             foreach ($trendingAuthors as $trendingAuthor) {
+                if ($trendingAuthor->getTotalViews() == 0) {
+                    break;
+                }
                 $trendingAuthor->setTrendingPosition($i);
                 $this->em->persist($trendingAuthor);
 
@@ -105,10 +108,13 @@ class TrendingsCommand extends ContainerAwareCommand
         /**
          * @var Publication[] $trendingPublications
          */
-        $trendingPublications = $this->em->getRepository(Publication::class)->getTrendingPublications(32);
+        $trendingPublications = $this->em->getRepository(Publication::class)->getTrendingPublications(16);
         if ($trendingPublications) {
             $i = 32;
             foreach ($trendingPublications as $trendingPublication) {
+                if ($trendingPublication->getTotalViews() == 0) {
+                    break;
+                }
                 $trendingPublication->setTrendingPosition($i);
                 $this->em->persist($trendingPublication);
 
