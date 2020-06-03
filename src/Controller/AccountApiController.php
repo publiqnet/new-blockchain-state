@@ -811,7 +811,7 @@ class AccountApiController extends AbstractController
         /**
          * @var Publication[] $trendingPublications
          */
-        $trendingPublications = $em->getRepository(Publication::class)->findBy([], ['trendingPosition' => 'DESC'], 16);
+        $trendingPublications = $em->getRepository(Publication::class)->getCurrentTrendingPublications();
         if ($trendingPublications) {
             foreach ($trendingPublications as $publication) {
                 //  get subscribers
@@ -835,7 +835,7 @@ class AccountApiController extends AbstractController
         /**
          * @var Account[] $trendingAuthors
          */
-        $trendingAuthors = $em->getRepository(Account::class)->findBy([], ['trendingPosition' => 'DESC'], 16);
+        $trendingAuthors = $em->getRepository(Account::class)->getCurrentTrendingAuthors();
         if ($trendingAuthors) {
             foreach ($trendingAuthors as $author) {
                 //  get subscribers

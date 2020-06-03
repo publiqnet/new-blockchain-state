@@ -13,13 +13,14 @@ use App\Entity\Publication;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class TrendingsCommand extends ContainerAwareCommand
+class TrendingsCommand extends Command
 {
     const ACTION_COUNT = 5000;
 
@@ -39,10 +40,11 @@ class TrendingsCommand extends ContainerAwareCommand
     /** @var SymfonyStyle $io */
     private $io;
 
-    public function __construct(BlockChain $blockChain, Custom $custom)
+    public function __construct(EntityManagerInterface $em, BlockChain $blockChain, Custom $custom)
     {
         parent::__construct();
 
+        $this->em = $em;
         $this->blockChainService = $blockChain;
         $this->customService = $custom;
     }
@@ -56,7 +58,6 @@ class TrendingsCommand extends ContainerAwareCommand
     {
         parent::initialize($input, $output);
 
-        $this->em = $this->getContainer()->get('doctrine.orm.entity_manager');
         // DISABLE SQL LOGGING, CAUSE IT CAUSES MEMORY SHORTAGE on large inserts
         $this->em->getConnection()->getConfiguration()->setSQLLogger(null);
         $this->io = new SymfonyStyle($input, $output);
@@ -78,6 +79,9 @@ class TrendingsCommand extends ContainerAwareCommand
             return 0;
         }
 
+        //  enable channel exclude filter
+        $this->em->getFilters()->enable('channel_exclude_filter');
+
         //  AUTHOR
         $query = $this->em->getRepository(Account::class)->createQueryBuilder('a')->update()->set('a.trendingPosition', 0)->getQuery();
         $query->execute();
@@ -85,10 +89,13 @@ class TrendingsCommand extends ContainerAwareCommand
         /**
          * @var Account[] $trendingAuthors
          */
-        $trendingAuthors = $this->em->getRepository(Account::class)->getTrendingAuthors(32);
+        $trendingAuthors = $this->em->getRepository(Account::class)->getTrendingAuthors(16);
         if ($trendingAuthors) {
             $i = 32;
             foreach ($trendingAuthors as $trendingAuthor) {
+                if ($trendingAuthor->getTotalViews() == 0) {
+                    break;
+                }
                 $trendingAuthor->setTrendingPosition($i);
                 $this->em->persist($trendingAuthor);
 
@@ -105,10 +112,13 @@ class TrendingsCommand extends ContainerAwareCommand
         /**
          * @var Publication[] $trendingPublications
          */
-        $trendingPublications = $this->em->getRepository(Publication::class)->getTrendingPublications(32);
+        $trendingPublications = $this->em->getRepository(Publication::class)->getTrendingPublications(16);
         if ($trendingPublications) {
             $i = 32;
             foreach ($trendingPublications as $trendingPublication) {
+                if ($trendingPublication->getTotalViews() == 0) {
+                    break;
+                }
                 $trendingPublication->setTrendingPosition($i);
                 $this->em->persist($trendingPublication);
 
