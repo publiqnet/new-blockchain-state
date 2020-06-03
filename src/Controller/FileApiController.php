@@ -452,6 +452,7 @@ class FileApiController extends AbstractController
      *         @SWG\Schema(
      *             type="object",
      *             @SWG\Property(property="content", type="string"),
+     *             @SWG\Property(property="key", type="integer"),
      *         )
      *     ),
      *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
@@ -468,14 +469,19 @@ class FileApiController extends AbstractController
     public function uploadContentFile(Request $request, BlockChain $blockChain)
     {
         //  get data from submitted data
+        $key = null;
         $contentType = $request->getContentType();
         if ($contentType == 'application/json' || $contentType == 'json') {
             $content = $request->getContent();
             $content = json_decode($content, true);
 
             $content = $content['content'];
+            if (isset($content['key'])) {
+                $key = $content['key'];
+            }
         } else {
             $content = $request->request->get('content');
+            $key = $request->request->get('key');
         }
 
         if (!$content) {
@@ -486,10 +492,10 @@ class FileApiController extends AbstractController
 
         $uploadResult = $blockChain->uploadFile($content, 'text/html');
         if ($uploadResult instanceof StorageFileAddress) {
-            return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
+            return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri(), 'key' => $key]);
         } elseif ($uploadResult instanceof UriError) {
             if ($uploadResult->getUriProblemType() === UriProblemType::duplicate) {
-                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri()]);
+                return new JsonResponse(['uri' => $uploadResult->getUri(), 'link' => $channelStorageEndpoint . '/storage?file=' . $uploadResult->getUri(), 'key' => $key]);
             } else {
                 return new JsonResponse(['File upload error: ' . $uploadResult->getUriProblemType()], Response::HTTP_CONFLICT);
             }
