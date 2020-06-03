@@ -475,10 +475,10 @@ class FileApiController extends AbstractController
             $content = $request->getContent();
             $content = json_decode($content, true);
 
-            $content = $content['content'];
             if (isset($content['key'])) {
                 $key = $content['key'];
             }
+            $content = $content['content'];
         } else {
             $content = $request->request->get('content');
             $key = $request->request->get('key');
