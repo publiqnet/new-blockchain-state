@@ -20,6 +20,6 @@ class ChannelExcludeFilter extends SQLFilter
             return "";
         }
 
-        return $targetTableAlias . '.channel_id in (select id from account where excluded = 0 and channel = 1) ';
+        return $targetTableAlias . '.channel_id in (select id from account where excluded = 0 and channel = 1) and ' . $targetTableAlias . '.excluded = 0 ';
     }
 }
