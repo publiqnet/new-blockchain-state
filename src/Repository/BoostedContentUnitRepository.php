@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
@@ -102,7 +103,19 @@ class BoostedContentUnitRepository extends EntityRepository
      */
     public function getArticleBoostsForUser(ContentUnit $article, Account $user)
     {
-        if ($article->getAuthor() === $user) {
+        /**
+         * @var AccountContentUnit[] $authors
+         */
+        $authors = $article->getAuthors();
+        $isOwner = false;
+        foreach ($authors as $author) {
+            if ($user === $author->getAccount()) {
+                $isOwner = true;
+                break;
+            }
+        }
+
+        if ($isOwner) {
             return $this->createQueryBuilder('bcu')
                 ->select('bcu')
                 ->join('bcu.contentUnit', 'cu')

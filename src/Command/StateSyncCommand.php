@@ -679,6 +679,15 @@ class StateSyncCommand extends Command
                                 $this->em->persist($boostedContentUnitEntity);
                                 $this->em->flush();
 
+                                /**
+                                 * @var \App\Entity\ContentUnit $contentUnitEntity
+                                 */
+                                $contentUnitEntity = $boostedContentUnitEntity->getContentUnit();
+                                $isBoosted = $this->em->getRepository(BoostedContentUnit::class)->isContentUnitBoosted($contentUnitEntity);
+                                if (!$isBoosted) {
+                                    $contentUnitEntity->setHighlight(false);
+                                }
+
                                 //  add transaction record without relation
                                 $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction, null, null, null, null, null, $cancelBoostedContentUnitEntity);
 
@@ -1510,10 +1519,21 @@ class StateSyncCommand extends Command
                  * @var \App\Entity\ContentUnit $article
                  */
                 $article = $boostedArticle->getContentUnit();
-                $author = $article->getAuthor();
 
-                if ($sponsor !== $author) {
-                    // notify author about boost by other
+                /**
+                 * @var AccountContentUnit[] $authors
+                 */
+                $authors = $article->getAuthors();
+                $isOwner = false;
+                foreach ($authors as $author) {
+                    if ($sponsor === $author->getAccount()) {
+                        $isOwner = true;
+                        break;
+                    }
+                }
+
+                if (!$isOwner) {
+                    // notify authors about boost by other user
                     $this->eventDispatcher->dispatch(
                         new ArticleBoostedByOtherEvent($sponsor, $article),
                         ArticleBoostedByOtherEvent::NAME

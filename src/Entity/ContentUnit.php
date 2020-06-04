@@ -233,6 +233,11 @@ class ContentUnit
      */
     private $notifications;
 
+    /**
+     * @ORM\Column(name="excluded", type="boolean", options={"default": 0})
+     */
+    private $excluded = false;
+
 
     public function __toString()
     {
@@ -790,5 +795,21 @@ class ContentUnit
     public function getNotifications()
     {
         return $this->notifications;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isExcluded()
+    {
+        return $this->excluded;
+    }
+
+    /**
+     * @param mixed $excluded
+     */
+    public function setExcluded($excluded)
+    {
+        $this->excluded = $excluded;
     }
 }
