@@ -135,6 +135,7 @@ class BoostedContentUnitRepository extends EntityRepository
             ->join('bcu.sponsor', 'a')
             ->join('bcu.transaction', 't')
             ->join('t.block', 'b')
+            ->join('bcu.contentUnit', 'cu')
             ->where('b.signTime > :datetime')
             ->setParameters(['datetime' => $datetime])
             ->getQuery()
