@@ -80,7 +80,11 @@ class SocialImagesCommand extends ContainerAwareCommand
                     continue;
                 }
 
-                $this->customService->createSocialImageOfArticle($contentUnit, getcwd() . '/public/');
+                try {
+                    $this->customService->createSocialImageOfArticle($contentUnit, 'public/');
+                } catch (\Exception $e) {
+
+                }
             }
         }
 
@@ -90,7 +94,11 @@ class SocialImagesCommand extends ContainerAwareCommand
         $publications = $this->em->getRepository(Publication::class)->findBy(['socialImage' => null]);
         if ($publications) {
             foreach ($publications as $publication) {
-                $this->customService->createSocialImageOfPublication($publication, getcwd() . '/public/');
+                try {
+                    $this->customService->createSocialImageOfPublication($publication, 'public/');
+                } catch (\Exception $e) {
+
+                }
             }
         }
 

@@ -1286,7 +1286,7 @@ class ContentApiController extends AbstractController
             }
 
             //  background is required if article has no cover
-            if (!$background && !$contentUnit->getCover()) {
+            if (!$background && !$contentUnit->getCover() && !$contentUnit->getCoverExternalUrl()) {
                 return new JsonResponse(['type' => 'highlight_background_required'], Response::HTTP_CONFLICT);
             }
 
