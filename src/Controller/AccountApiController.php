@@ -856,13 +856,10 @@ class AccountApiController extends AbstractController
         //  HIGHLIGHTS
         $highlights = $em->getRepository(ContentUnit::class)->getHighlights(20);
         if ($highlights) {
-            try {
-                $highlights = $contentUnitService->prepare($highlights, true);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
+            $highlights = $contentUnitService->prepare($highlights, true);
         }
         $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'highlight', 'tag', 'file', 'accountBase', 'publication']]);
+        $highlights = $contentUnitService->prepareTags($highlights);
 
         return new JsonResponse([
             'preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles],
