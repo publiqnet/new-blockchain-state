@@ -323,6 +323,7 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere('bcu.cancelled = 0')
                 ->andWhere('bcu.endTimePoint >= :date')
                 ->andWhere('cu NOT IN (:excludes)')
+                ->andWhere('cu.excluded = 0')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['date' => $date->getTimestamp(), 'excludes' => $excludes])
                 ->setMaxResults($count)
@@ -336,6 +337,7 @@ class ContentUnitRepository extends EntityRepository
                 ->where('bcu.startTimePoint <= :date')
                 ->andWhere('bcu.cancelled = 0')
                 ->andWhere('bcu.endTimePoint >= :date')
+                ->andWhere('cu.excluded = 0')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['date' => $date->getTimestamp()])
                 ->setMaxResults($count)
@@ -344,38 +346,6 @@ class ContentUnitRepository extends EntityRepository
                 ->getQuery()
                 ->getResult();
         }
-    }
-
-    /**
-     * @param int $count
-     * @return array|null
-     */
-    public function getBoostedArticlesWithCover(int $count)
-    {
-        $timezone = new \DateTimeZone('UTC');
-        $date = new \DateTime();
-        $date->setTimezone($timezone);
-
-        $subQuery = $this->createQueryBuilder('cu2');
-        $subQuery->select('max(cu2.id)')
-            ->join('cu2.transaction', 't2')
-            ->where('t2.block is not null')
-            ->andWhere('cu2.content is not null')
-            ->groupBy('cu2.contentId');
-
-        $query = $this->createQueryBuilder('cu');
-        return $query->select('cu')
-            ->join('cu.boosts', 'bcu')
-            ->where('bcu.startTimePoint <= :date')
-            ->andWhere('bcu.endTimePoint >= :date')
-            ->andWhere('cu.cover is not null')
-            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-            ->setParameters(['date' => $date->getTimestamp()])
-            ->setMaxResults($count)
-            ->orderBy('RAND()')
-            ->groupBy('cu.id')
-            ->getQuery()
-            ->getResult();
     }
 
     /**
