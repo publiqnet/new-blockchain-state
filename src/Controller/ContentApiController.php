@@ -780,7 +780,7 @@ class ContentApiController extends AbstractController
          * @var Account $contentUnitChannel
          */
         $contentUnitChannel = $contentUnit->getChannel();
-        if (($contentUnitChannel->isExcluded() || $contentUnit->isExcluded()) && !$isBoosted) {
+        if (($contentUnitChannel->isExcluded() && !$isBoosted) || $contentUnit->isExcluded()) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
@@ -1050,7 +1050,7 @@ class ContentApiController extends AbstractController
          * @var Account $contentUnitChannel
          */
         $contentUnitChannel = $contentUnit->getChannel();
-        if (($contentUnitChannel->isExcluded() || $contentUnit->isExcluded()) && !$isBoosted) {
+        if (($contentUnitChannel->isExcluded() && !$isBoosted) || $contentUnit->isExcluded()) {
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
