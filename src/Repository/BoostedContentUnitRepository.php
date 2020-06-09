@@ -9,6 +9,7 @@
 namespace App\Repository;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnit;
 use Doctrine\ORM\EntityRepository;
 
@@ -53,8 +54,9 @@ class BoostedContentUnitRepository extends EntityRepository
             ->select('bcu, cu, a')
             ->join('bcu.contentUnit', 'cu')
             ->join('bcu.sponsor', 'a')
+            ->join('cu.authors', 'acu')
             ->where('bcu.sponsor = :author')
-            ->orWhere('cu.author = :author')
+            ->orWhere('acu.account = :author')
             ->andWhere('bcu.cancelled = 0')
             ->setParameters(['author' => $author])
             ->getQuery()
@@ -101,7 +103,19 @@ class BoostedContentUnitRepository extends EntityRepository
      */
     public function getArticleBoostsForUser(ContentUnit $article, Account $user)
     {
-        if ($article->getAuthor() === $user) {
+        /**
+         * @var AccountContentUnit[] $authors
+         */
+        $authors = $article->getAuthors();
+        $isOwner = false;
+        foreach ($authors as $author) {
+            if ($user === $author->getAccount()) {
+                $isOwner = true;
+                break;
+            }
+        }
+
+        if ($isOwner) {
             return $this->createQueryBuilder('bcu')
                 ->select('bcu')
                 ->join('bcu.contentUnit', 'cu')
@@ -134,6 +148,7 @@ class BoostedContentUnitRepository extends EntityRepository
             ->join('bcu.sponsor', 'a')
             ->join('bcu.transaction', 't')
             ->join('t.block', 'b')
+            ->join('bcu.contentUnit', 'cu')
             ->where('b.signTime > :datetime')
             ->setParameters(['datetime' => $datetime])
             ->getQuery()

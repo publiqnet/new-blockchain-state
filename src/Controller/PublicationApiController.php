@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnit;
 use App\Entity\Publication;
 use App\Entity\PublicationMember;
@@ -1035,8 +1036,8 @@ class PublicationApiController extends AbstractController
 
                     // notify invited user
                     $eventDispatcher->dispatch(
-                        PublicationInvitationRequestEvent::NAME,
-                        new PublicationInvitationRequestEvent($publication, $account, $member)
+                        new PublicationInvitationRequestEvent($publication, $account, $member),
+                        PublicationInvitationRequestEvent::NAME
                     );
                 }
             }
@@ -1123,8 +1124,8 @@ class PublicationApiController extends AbstractController
 
         // notify invited user
         $eventDispatcher->dispatch(
-            PublicationInvitationCancelEvent::NAME,
-            new PublicationInvitationCancelEvent($publication, $account, $member)
+            new PublicationInvitationCancelEvent($publication, $account, $member),
+            PublicationInvitationCancelEvent::NAME
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -1185,8 +1186,8 @@ class PublicationApiController extends AbstractController
 
         // notify inviter
         $eventDispatcher->dispatch(
-            PublicationInvitationAcceptEvent::NAME,
-            new PublicationInvitationAcceptEvent($publication, $account, $invitation->getInviter())
+            new PublicationInvitationAcceptEvent($publication, $account, $invitation->getInviter()),
+            PublicationInvitationAcceptEvent::NAME
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -1241,8 +1242,8 @@ class PublicationApiController extends AbstractController
 
         // notify inviter
         $eventDispatcher->dispatch(
-            PublicationInvitationRejectEvent::NAME,
-            new PublicationInvitationRejectEvent($publication, $account, $invitation->getInviter())
+            new PublicationInvitationRejectEvent($publication, $account, $invitation->getInviter()),
+            PublicationInvitationRejectEvent::NAME
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -1298,8 +1299,8 @@ class PublicationApiController extends AbstractController
 
             // notify owner & editors
             $eventDispatcher->dispatch(
-                PublicationMembershipRequestEvent::NAME,
-                new PublicationMembershipRequestEvent($publication, $account)
+                new PublicationMembershipRequestEvent($publication, $account),
+                PublicationMembershipRequestEvent::NAME
             );
         }
 
@@ -1352,8 +1353,8 @@ class PublicationApiController extends AbstractController
 
             // notify owner & editors
             $eventDispatcher->dispatch(
-                PublicationMembershipRequestCancelEvent::NAME,
-                new PublicationMembershipRequestCancelEvent($publication, $account)
+                new PublicationMembershipRequestCancelEvent($publication, $account),
+                PublicationMembershipRequestCancelEvent::NAME
             );
         }
 
@@ -1423,8 +1424,8 @@ class PublicationApiController extends AbstractController
 
             // notify member
             $eventDispatcher->dispatch(
-                PublicationMembershipRequestAcceptEvent::NAME,
-                new PublicationMembershipRequestAcceptEvent($publication, $account, $member)
+                new PublicationMembershipRequestAcceptEvent($publication, $account, $member),
+                PublicationMembershipRequestAcceptEvent::NAME
             );
 
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -1494,8 +1495,8 @@ class PublicationApiController extends AbstractController
 
             // notify member
             $eventDispatcher->dispatch(
-                PublicationMembershipRequestRejectEvent::NAME,
-                new PublicationMembershipRequestRejectEvent($publication, $account, $member)
+                new PublicationMembershipRequestRejectEvent($publication, $account, $member),
+                PublicationMembershipRequestRejectEvent::NAME
             );
 
             return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -1662,8 +1663,8 @@ class PublicationApiController extends AbstractController
 
         // notify member
         $eventDispatcher->dispatch(
-            PublicationMembershipCancelEvent::NAME,
-            new PublicationMembershipCancelEvent($publication, $account, $member)
+            new PublicationMembershipCancelEvent($publication, $account, $member),
+            PublicationMembershipCancelEvent::NAME
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -1719,8 +1720,8 @@ class PublicationApiController extends AbstractController
 
         // notify member
         $eventDispatcher->dispatch(
-            PublicationMembershipLeaveEvent::NAME,
-            new PublicationMembershipLeaveEvent($publication, $account)
+            new PublicationMembershipLeaveEvent($publication, $account),
+            PublicationMembershipLeaveEvent::NAME
         );
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
@@ -2028,9 +2029,21 @@ class PublicationApiController extends AbstractController
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
+        /**
+         * @var AccountContentUnit[] $authors
+         */
+        $authors = $article->getAuthors();
+        $isOwner = false;
+        foreach ($authors as $author) {
+            if ($account === $author->getAccount()) {
+                $isOwner = true;
+                break;
+            }
+        }
+
         //  check if user is an article author or publication owner / editor
         $publicationMember = $em->getRepository(PublicationMember::class)->findOneBy(['publication' => $publication, 'member' => $account]);
-        if ($publicationMember && ($account == $article->getAuthor() || $publicationMember->getStatus() == PublicationMember::TYPES['editor'] || $publicationMember->getStatus() == PublicationMember::TYPES['owner'])) {
+        if ($publicationMember && ($isOwner || $publicationMember->getStatus() == PublicationMember::TYPES['editor'] || $publicationMember->getStatus() == PublicationMember::TYPES['owner'])) {
             $article->setPublication(null);
             $em->persist($article);
             $em->flush();

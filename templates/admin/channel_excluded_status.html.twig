@@ -1,0 +1,13 @@
+<td>
+
+    {% if object.excluded == 1 %}
+
+        <a class="btn btn-sm btn-default view_link" href="{{ admin.generateObjectUrl('include', object) }}">Include</a>
+
+    {% else %}
+
+        <a class="btn btn-sm btn-default view_link" href="{{ admin.generateObjectUrl('exclude', object) }}">Exclude</a>
+
+    {% endif %}
+
+</td>

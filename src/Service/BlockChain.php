@@ -586,6 +586,7 @@ class BlockChain
      * @return array
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
+     * @throws \Exception
      */
     public function publishContentUnit(\App\Entity\ContentUnit $contentUnitEntity, Draft $draft = null)
     {

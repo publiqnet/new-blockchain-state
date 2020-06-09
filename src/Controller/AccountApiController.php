@@ -125,8 +125,9 @@ class AccountApiController extends AbstractController
             unset($account['apiKey']);
 
             //  create jwt token
+            $topic = $this->getParameter('mercure_topic');
             $token = (new Builder())
-                ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+                ->set('mercure', ['subscribe' => [$topic . "/user/" . $account['publicKey']]])
                 ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
                 ->getToken();
             $account['jwtToken'] = (string) $token;
@@ -165,8 +166,9 @@ class AccountApiController extends AbstractController
         unset($account['apiKey']);
 
         //  create jwt token
+        $topic = $this->getParameter('mercure_topic');
         $token = (new Builder())
-            ->set('mercure', ['subscribe' => ["http://publiq.site/user/" . $account['publicKey']]])
+            ->set('mercure', ['subscribe' => [$topic . "/user/" . $account['publicKey']]])
             ->sign(new Sha256(), $this->getParameter('mercure_secret_key'))
             ->getToken();
         $account['jwtToken'] = (string) $token;
@@ -373,10 +375,6 @@ class AccountApiController extends AbstractController
          */
         $em = $this->getDoctrine()->getManager();
 
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
-
         /**
          * @var Account $account
          */
@@ -536,8 +534,8 @@ class AccountApiController extends AbstractController
 
             // notify author
             $eventDispatcher->dispatch(
-                SubscribeUserEvent::NAME,
-                new SubscribeUserEvent($account, $author)
+                new SubscribeUserEvent($account, $author),
+                SubscribeUserEvent::NAME
             );
         }
 
@@ -662,8 +660,8 @@ class AccountApiController extends AbstractController
 
             // notify author
             $eventDispatcher->dispatch(
-                UnsubscribeUserEvent::NAME,
-                new UnsubscribeUserEvent($account, $author)
+                new UnsubscribeUserEvent($account, $author),
+                UnsubscribeUserEvent::NAME
             );
         }
 
@@ -697,10 +695,6 @@ class AccountApiController extends AbstractController
          * @var EntityManager $em
          */
         $em = $this->getDoctrine()->getManager();
-
-        //  enable channel exclude filter
-        $em->getFilters()->enable('channel_exclude_filter');
-        $em->getFilters()->getFilter('channel_exclude_filter')->setParameter('exclude_channels_addresses', $this->getParameter('exclude_channels_addresses'));
 
         $preferredAuthorsArticles = null;
         $preferredTagsArticles = null;
@@ -817,7 +811,7 @@ class AccountApiController extends AbstractController
         /**
          * @var Publication[] $trendingPublications
          */
-        $trendingPublications = $em->getRepository(Publication::class)->findBy([], ['trendingPosition' => 'DESC'], 16);
+        $trendingPublications = $em->getRepository(Publication::class)->getCurrentTrendingPublications();
         if ($trendingPublications) {
             foreach ($trendingPublications as $publication) {
                 //  get subscribers
@@ -841,7 +835,7 @@ class AccountApiController extends AbstractController
         /**
          * @var Account[] $trendingAuthors
          */
-        $trendingAuthors = $em->getRepository(Account::class)->findBy([], ['trendingPosition' => 'DESC'], 16);
+        $trendingAuthors = $em->getRepository(Account::class)->getCurrentTrendingAuthors();
         if ($trendingAuthors) {
             foreach ($trendingAuthors as $author) {
                 //  get subscribers
@@ -862,13 +856,10 @@ class AccountApiController extends AbstractController
         //  HIGHLIGHTS
         $highlights = $em->getRepository(ContentUnit::class)->getHighlights(20);
         if ($highlights) {
-            try {
-                $highlights = $contentUnitService->prepare($highlights, true);
-            } catch (Exception $e) {
-                return new JsonResponse($e->getMessage(), Response::HTTP_CONFLICT);
-            }
+            $highlights = $contentUnitService->prepare($highlights, true);
         }
         $highlights = $this->get('serializer')->normalize($highlights, null, ['groups' => ['contentUnitList', 'highlight', 'tag', 'file', 'accountBase', 'publication']]);
+        $highlights = $contentUnitService->prepareTags($highlights);
 
         return new JsonResponse([
             'preferences' => ['author' => $preferredAuthorsArticles, 'tag' => $preferredTagsArticles],
@@ -879,5 +870,69 @@ class AccountApiController extends AbstractController
             'recommended' => ['publications' => $recommendedPublications, 'authors' => $recommendedAuthors],
             'highlights' => $highlights
         ]);
+    }
+
+    /**
+     * @Route("/subscriptions/check", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Check subscription",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="publicKeys", type="array", items={"type": "string"}),
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param Request $request
+     * @return Response
+     */
+    public function checkSubscription(Request $request)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $contentArr = json_decode($content, true);
+
+            $publicKeys = $contentArr['publicKeys'];
+        } else {
+            $publicKeys = $request->request->get('publicKeys');
+        }
+
+        try {
+            $subscriptionStatus = [];
+            foreach ($publicKeys as $publicKey) {
+                //  check if user subscribed to author
+                $author = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
+                $subscribed = $em->getRepository(Subscription::class)->findOneBy(['subscriber' => $account, 'author' => $author]);
+
+                $subscriptionStatus[$publicKey] = $subscribed ? true: false;
+            }
+
+            return new JsonResponse($subscriptionStatus);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
     }
 }

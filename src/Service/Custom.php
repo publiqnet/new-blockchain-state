@@ -8,6 +8,7 @@
 
 namespace App\Service;
 
+use App\Entity\AccountContentUnit;
 use App\Entity\Block;
 use App\Entity\File;
 use App\Entity\Account;
@@ -247,9 +248,14 @@ class Custom
         $authorBio = null;
 
         /**
+         * @var AccountContentUnit $accountContentUnit
+         */
+        $accountContentUnit = $contentUnit->getAuthors()[0];
+
+        /**
          * @var Account $author
          */
-        $author = $contentUnit->getAuthor();
+        $author = $accountContentUnit->getAccount();
         if ($author->getFirstName() || $author->getLastName()) {
             $authorName = trim($author->getFirstName() . ' ' . $author->getLastName());
             $authorBio = trim($author->getBio());

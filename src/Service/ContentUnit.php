@@ -9,6 +9,7 @@
 namespace App\Service;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\BoostedContentUnit;
 use App\Entity\File;
 use App\Entity\Transaction;
@@ -97,7 +98,21 @@ class ContentUnit
                 $contentUnit->setBoosted($boosted);
             }
 
-            if ($author == $contentUnit->getAuthor()) {
+            $isOwner = false;
+            if ($author) {
+                /**
+                 * @var AccountContentUnit[] $contentUnitAuthors
+                 */
+                $contentUnitAuthors = $contentUnit->getAuthors();
+                foreach ($contentUnitAuthors as $contentUnitAuthor) {
+                    if ($contentUnitAuthor->getAccount() === $author) {
+                        $isOwner = true;
+                        break;
+                    }
+                }
+            }
+
+            if ($isOwner) {
                 //  get article next & previous versions
                 $previousVersions = $this->em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
                 if ($previousVersions) {
@@ -171,6 +186,13 @@ class ContentUnit
                     }
                     $contentUnits[$i]['tags'] = $cuTagsArr;
                 }
+
+                $cuAuthorsArr = [];
+                $cuAuthors = $contentUnits[$i]['authors'];
+                for ($j=0; $j<count($cuAuthors); $j++) {
+                    $cuAuthorsArr[] = $cuAuthors[$j]['account'];
+                }
+                $contentUnits[$i]['authors'] = $cuAuthorsArr;
             }
         } else {
             if ($contentUnits['tags']) {
@@ -180,6 +202,29 @@ class ContentUnit
                     $cuTagsArr[] = $cuTags[$j]['tag'];
                 }
                 $contentUnits['tags'] = $cuTagsArr;
+            }
+
+            $cuAuthorsArr = [];
+            $cuAuthors = $contentUnits['authors'];
+            for ($j=0; $j<count($cuAuthors); $j++) {
+                $cuAuthorsArr[] = $cuAuthors[$j]['account'];
+            }
+            $contentUnits['authors'] = $cuAuthorsArr;
+
+            //  FILES
+            if ($contentUnits['files']) {
+                $cuFiles = $contentUnits['files'];
+                for ($j=0; $j<count($cuFiles); $j++) {
+                    $fileAuthors = [];
+                    $cuFileAuthors = $cuFiles[$j]['authors'];
+                    for ($l=0; $l<count($cuFileAuthors); $l++) {
+                        $fileAuthors[] = $cuFileAuthors[$l]['account'];
+                    }
+
+                    $cuFiles[$j]['authors'] = $fileAuthors;
+                }
+
+                $contentUnits['files'] = $cuFiles;
             }
         }
 

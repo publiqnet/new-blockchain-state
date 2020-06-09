@@ -72,6 +72,12 @@ class ContentUnit
     private $views = 0;
 
     /**
+     * @ORM\Column(name="cover_external_url", type="string", length=320, nullable=true)
+     * @Groups({"contentUnit", "contentUnitFull", "contentUnitList", "contentUnitSeo", "contentUnitNotification"})
+     */
+    private $coverExternalUrl;
+
+    /**
      * @ORM\ManyToOne(targetEntity="App\Entity\File", inversedBy="covers")
      * @ORM\JoinColumn(name="cover_id", referencedColumnName="id", onDelete="SET NULL")
      * @Groups({"contentUnit", "contentUnitFull", "contentUnitList"})
@@ -80,9 +86,14 @@ class ContentUnit
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="authorContentUnits")
-     * @Groups({"contentUnitFull", "contentUnitList"})
      */
     private $author;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\AccountContentUnit", mappedBy="contentUnit", cascade={"remove"})
+     * @Groups({"contentUnitFull", "contentUnitList"})
+     */
+    private $authors;
 
     /**
      * @ORM\ManyToOne(targetEntity="App\Entity\Account", inversedBy="channelContentUnits")
@@ -222,6 +233,16 @@ class ContentUnit
      */
     private $notifications;
 
+    /**
+     * @ORM\Column(name="excluded", type="boolean", options={"default": 0})
+     */
+    private $excluded = false;
+
+
+    public function __toString()
+    {
+        return $this->uri;
+    }
 
     public function __construct()
     {
@@ -232,6 +253,7 @@ class ContentUnit
         $this->viewLogs = new ArrayCollection();
         $this->viewLogsHistory = new ArrayCollection();
         $this->notifications = new ArrayCollection();
+        $this->authors = new ArrayCollection();
     }
 
     /**
@@ -373,6 +395,22 @@ class ContentUnit
     /**
      * @return mixed
      */
+    public function getCoverExternalUrl()
+    {
+        return $this->coverExternalUrl;
+    }
+
+    /**
+     * @param mixed $coverExternalUrl
+     */
+    public function setCoverExternalUrl($coverExternalUrl)
+    {
+        $this->coverExternalUrl = $coverExternalUrl;
+    }
+
+    /**
+     * @return mixed
+     */
     public function getCover()
     {
         return $this->cover;
@@ -400,6 +438,22 @@ class ContentUnit
     public function setAuthor($author)
     {
         $this->author = $author;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
+    }
+
+    /**
+     * @param AccountContentUnit $accountContentUnit
+     */
+    public function addAuthor(AccountContentUnit $accountContentUnit)
+    {
+        $this->authors->add($accountContentUnit);
     }
 
     /**
@@ -741,5 +795,21 @@ class ContentUnit
     public function getNotifications()
     {
         return $this->notifications;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isExcluded()
+    {
+        return $this->excluded;
+    }
+
+    /**
+     * @param mixed $excluded
+     */
+    public function setExcluded($excluded)
+    {
+        $this->excluded = $excluded;
     }
 }

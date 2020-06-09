@@ -199,7 +199,8 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
         $query = $this->createQueryBuilder('p');
         return $query->select("p")
             ->join('p.contentUnits', 'cu')
-            ->where($query->expr()->in('cu.author', $authorPreferenceQuery->getDQL()))
+            ->join('cu.authors', 'acu')
+            ->where($query->expr()->in('acu.account', $authorPreferenceQuery->getDQL()))
             ->orWhere($query->expr()->in('cu', $tagPreferenceQuery->getDQL()))
             ->andWhere($query->expr()->notIn('p', $subscriptionQuery->getDQL()))
             ->andWhere($query->expr()->notIn('p', $memberQuery->getDQL()))
@@ -227,6 +228,15 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
             ->select("p")
             ->where('p.logoThumbnail is null')
             ->andWhere('p.logo is not null')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getCurrentTrendingPublications()
+    {
+        return $this->createQueryBuilder('p')
+            ->select("p")
+            ->where('p.trendingPosition > 0')
             ->getQuery()
             ->getResult();
     }

@@ -65,6 +65,12 @@ class File
     private $author;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\AccountFile", mappedBy="file", cascade={"remove"})
+     * @Groups({"file", "images"})
+     */
+    private $authors;
+
+    /**
      * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="file")
      */
     private $transaction;
@@ -108,6 +114,7 @@ class File
     {
         $this->contentUnits = new ArrayCollection();
         $this->storages = new ArrayCollection();
+        $this->authors = new ArrayCollection();
     }
 
     /**
@@ -244,6 +251,14 @@ class File
     public function getStorages()
     {
         return $this->storages;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAuthors()
+    {
+        return $this->authors;
     }
 
     /**

@@ -9,28 +9,17 @@
 namespace App\Event;
 
 use App\Entity\ContentUnit;
-use App\Entity\Account;
 use Symfony\Component\EventDispatcher\Event;
 
 class ArticleNewEvent extends Event
 {
     const NAME = 'article.new';
 
-    private $publisher;
     private $article;
 
-    public function __construct(Account $publisher, ContentUnit $article)
+    public function __construct(ContentUnit $article)
     {
-        $this->publisher = $publisher;
         $this->article = $article;
-    }
-
-    /**
-     * @return Account
-     */
-    public function getPublisher()
-    {
-        return $this->publisher;
     }
 
     /**

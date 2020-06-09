@@ -9,6 +9,7 @@
 namespace App\EventSubscriber;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnitTag;
 use App\Entity\NotificationType;
 use App\Entity\Subscription;
@@ -122,6 +123,9 @@ class GeneralEventSubscriber implements EventSubscriberInterface
     public function onKernelRequest(GetResponseEvent $event)
     {
         $request = $event->getRequest();
+
+        //  enable channel exclude filter
+        $this->em->getFilters()->enable('channel_exclude_filter');
 
         return null;
     }
@@ -323,19 +327,24 @@ class GeneralEventSubscriber implements EventSubscriberInterface
     public function onArticleNewEvent(ArticleNewEvent $event)
     {
         try {
-            $publisher = $event->getPublisher();
             $article = $event->getArticle();
 
-            //  get subscribers
             /**
-             * @var Subscription[] $subscribers
+             * @var AccountContentUnit[] $authors
              */
-            $subscribers = $publisher->getSubscribers();
-            if (count($subscribers)) {
-                $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['new_article']['key'], $publisher, $article->getUri());
+            $authors = $article->getAuthors();
+            foreach ($authors as $author) {
+                //  get subscribers
+                /**
+                 * @var Subscription[] $subscribers
+                 */
+                $subscribers = $author->getAccount()->getSubscribers();
+                if (count($subscribers)) {
+                    $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['new_article']['key'], $author->getAccount(), $article->getUri());
 
-                foreach ($subscribers as $subscriber) {
-                    $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
+                    foreach ($subscribers as $subscriber) {
+                        $this->userNotificationService->notify($subscriber->getSubscriber(), $notification, true);
+                    }
                 }
             }
         } catch (\Throwable $e) {
@@ -352,7 +361,14 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $article = $event->getArticle();
 
             $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['share_article']['key'], null, $article->getUri(), null, $article);
-            $this->userNotificationService->notify($article->getAuthor(), $notification);
+
+            /**
+             * @var AccountContentUnit[] $authors
+             */
+            $authors = $article->getAuthors();
+            foreach ($authors as $author) {
+                $this->userNotificationService->notify($author->getAccount(), $notification);
+            }
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }
@@ -399,19 +415,24 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $user = $event->getUser();
             $article = $event->getArticle();
 
-            $articleAuthor = $article->getAuthor();
+            /**
+             * @var AccountContentUnit[] $articleAuthors
+             */
+            $articleAuthors = $article->getAuthors();
             $articleTags = $article->getTags();
 
             //  AUTHOR
-            $authorPreference = $this->em->getRepository(UserPreference::class)->findOneBy(['account' => $user, 'author' => $articleAuthor]);
-            if (!$authorPreference) {
-                $authorPreference = new UserPreference();
-                $authorPreference->setAccount($user);
-                $authorPreference->setAuthor($articleAuthor);
+            foreach ($articleAuthors as $articleAuthor) {
+                $authorPreference = $this->em->getRepository(UserPreference::class)->findOneBy(['account' => $user, 'author' => $articleAuthor->getAccount()]);
+                if (!$authorPreference) {
+                    $authorPreference = new UserPreference();
+                    $authorPreference->setAccount($user);
+                    $authorPreference->setAuthor($articleAuthor->getAccount());
+                }
+                $count = $authorPreference->getCount();
+                $authorPreference->setCount(++$count);
+                $this->em->persist($authorPreference);
             }
-            $count = $authorPreference->getCount();
-            $authorPreference->setCount(++$count);
-            $this->em->persist($authorPreference);
 
             //  TAGS
             if ($articleTags) {
@@ -446,8 +467,15 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             $performer = $event->getPerformer();
             $article = $event->getArticle();
 
+            /**
+             * @var AccountContentUnit[] $articleAuthors
+             */
+            $articleAuthors = $article->getAuthors();
+
             $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['article_boosted_by_other']['key'], $performer, $article->getUri(), null, $article);
-            $this->userNotificationService->notify($article->getAuthor(), $notification, true);
+            foreach ($articleAuthors as $articleAuthor) {
+                $this->userNotificationService->notify($articleAuthor->getAccount(), $notification, true);
+            }
 
             //  send email
             $backendEndpoint = $this->container->getParameter('backend_endpoint');
@@ -465,11 +493,13 @@ class GeneralEventSubscriber implements EventSubscriberInterface
                 ['name' => $performerName, 'title' => $article->getTitle(), 'sponsorUrl' => $sponsorUrl, 'articleUrl' => $articleUrl, 'backendEndpoint' => $backendEndpoint]
             );
 
-            $messageObj = (new \Swift_Message('Your story goes viral'))
-                ->setFrom('no-reply@publiq.network', 'Slog')
-                ->setTo($article->getAuthor()->getEmail())
-                ->setBody($emailBody, 'text/html');
-            $this->swiftMailer->send($messageObj);
+            foreach ($articleAuthors as $articleAuthor) {
+                $messageObj = (new \Swift_Message('Your story goes viral'))
+                    ->setFrom('no-reply@publiq.network', 'Slog')
+                    ->setTo($articleAuthor->getAccount()->getEmail())
+                    ->setBody($emailBody, 'text/html');
+                $this->swiftMailer->send($messageObj);
+            }
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }
