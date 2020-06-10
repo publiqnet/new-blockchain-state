@@ -11,15 +11,16 @@ namespace App\Command;
 use App\Entity\Account;
 use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use PubliqAPI\Model\PublicAddressesInfo;
 use PubliqAPI\Model\PublicAddressInfo;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class PublicAddressesCommand extends ContainerAwareCommand
+class PublicAddressesCommand extends Command
 {
     use LockableTrait;
 
@@ -35,10 +36,11 @@ class PublicAddressesCommand extends ContainerAwareCommand
     private $io;
 
 
-    public function __construct(BlockChain $blockChain)
+    public function __construct(EntityManagerInterface $em, BlockChain $blockChain)
     {
         parent::__construct();
 
+        $this->em = $em;
         $this->blockChainService = $blockChain;
     }
 
@@ -50,7 +52,6 @@ class PublicAddressesCommand extends ContainerAwareCommand
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
         parent::initialize($input, $output);
-        $this->em = $this->getContainer()->get('doctrine.orm.entity_manager');
 
         // DISABLE SQL LOGGING, CAUSE IT CAUSES MEMORY SHORTAGE on large inserts
         $this->em->getConnection()->getConfiguration()->setSQLLogger(null);

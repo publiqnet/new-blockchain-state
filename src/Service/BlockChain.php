@@ -19,6 +19,7 @@ use PubliqAPI\Model\Broadcast;
 use PubliqAPI\Model\CancelSponsorContentUnit;
 use PubliqAPI\Model\Coin;
 use PubliqAPI\Model\Content;
+use PubliqAPI\Model\File;
 use PubliqAPI\Model\LoggedTransactionsRequest;
 use PubliqAPI\Model\PublicAddressesRequest;
 use PubliqAPI\Model\Served;
@@ -293,15 +294,122 @@ class BlockChain
     }
 
     /**
-     * @param Content $content
-     * @param string $channelPrivateKey
-     * @param int $feeWhole
-     * @param int $feeFraction
+     * @param string $uri
      * @return bool|string
      * @throws \Exception
      */
-    public function signContent(Content $content, string $channelPrivateKey, $feeWhole = 0, $feeFraction = 0)
+    public function signFile(string $uri)
     {
+        list($feeWhole, $feeFraction) = $this->customService->getFee();
+
+        $date = new \DateTime();
+        $timeZone = new \DateTimeZone('UTC');
+        $date->setTimezone($timeZone);
+
+        $action = new File();
+        $action->setUri($uri);
+        $action->addAuthorAddresses($this->channelAddress);
+
+        $coin = new Coin();
+        $coin->setFraction($feeFraction);
+        $coin->setWhole($feeWhole);
+
+        $transaction = new Transaction();
+        $transaction->setAction($action);
+        $transaction->setFee($coin);
+        $transaction->setCreation($date->getTimestamp());
+        $transaction->setExpiry($date->getTimestamp() + 3600);
+
+        $transactionBroadcastRequest = new TransactionBroadcastRequest();
+        $transactionBroadcastRequest->setTransactionDetails($transaction);
+        $transactionBroadcastRequest->setPrivateKey($this->channelPrivateKey);
+
+        $data = $transactionBroadcastRequest->convertToJson();
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        $body = $this->callJsonRPC($this->broadcastEndpoint, $header, $data);
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with content publishing');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
+    }
+
+    /**
+     * @param string $uri
+     * @param array $files
+     * @param int $contentId
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function signContentUnit(string $uri, array $files, int $contentId)
+    {
+        list($feeWhole, $feeFraction) = $this->customService->getFee();
+
+        $date = new \DateTime();
+        $timeZone = new \DateTimeZone('UTC');
+        $date->setTimezone($timeZone);
+
+        $action = new \PubliqAPI\Model\ContentUnit();
+        $action->setUri($uri);
+        $action->addAuthorAddresses($this->channelAddress);
+        $action->setContentId($contentId);
+        foreach ($files as $fileUri) {
+            $action->addFileUris($fileUri);
+        }
+
+        $coin = new Coin();
+        $coin->setFraction($feeFraction);
+        $coin->setWhole($feeWhole);
+
+        $transaction = new Transaction();
+        $transaction->setAction($action);
+        $transaction->setFee($coin);
+        $transaction->setCreation($date->getTimestamp());
+        $transaction->setExpiry($date->getTimestamp() + 3600);
+
+        $transactionBroadcastRequest = new TransactionBroadcastRequest();
+        $transactionBroadcastRequest->setTransactionDetails($transaction);
+        $transactionBroadcastRequest->setPrivateKey($this->channelPrivateKey);
+
+        $data = $transactionBroadcastRequest->convertToJson();
+        $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
+
+        $body = $this->callJsonRPC($this->broadcastEndpoint, $header, $data);
+
+        $headerStatusCode = $body['status_code'];
+        $data = json_decode($body['data'], true);
+
+        //  check for errors
+        if ($headerStatusCode != 200 || isset($data['error'])) {
+            throw new \Exception('Issue with content publishing');
+        }
+
+        $validateRes = Rtt::validate($body['data']);
+
+        return $validateRes;
+    }
+
+    /**
+     * @param Content $content
+     * @return bool|string
+     * @throws \Exception
+     */
+    public function signContent(Content $content)
+    {
+        list($feeWhole, $feeFraction) = $this->customService->getFee();
+
+        if (!$content->getChannelAddress()) {
+            $content->setChannelAddress($this->channelAddress);
+        }
+
         $date = new \DateTime();
         $timeZone = new \DateTimeZone('UTC');
         $date->setTimezone($timeZone);
@@ -318,7 +426,7 @@ class BlockChain
 
         $transactionBroadcastRequest = new TransactionBroadcastRequest();
         $transactionBroadcastRequest->setTransactionDetails($transaction);
-        $transactionBroadcastRequest->setPrivateKey($channelPrivateKey);
+        $transactionBroadcastRequest->setPrivateKey($this->channelPrivateKey);
 
         $data = $transactionBroadcastRequest->convertToJson();
         $header = ['Content-Type:application/json', 'Content-Length: ' . strlen($data)];
@@ -584,13 +692,10 @@ class BlockChain
      * @param \App\Entity\ContentUnit $contentUnitEntity
      * @param Draft|null $draft
      * @return array
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Exception
      */
     public function publishContentUnit(\App\Entity\ContentUnit $contentUnitEntity, Draft $draft = null)
     {
-        list($feeWhole, $feeFraction) = $this->customService->getFee();
         $timezone = new \DateTimeZone('UTC');
         $datetime = new \DateTime();
         $datetime->setTimezone($timezone);
@@ -600,7 +705,7 @@ class BlockChain
         $content->setChannelAddress($this->channelAddress);
         $content->addContentUnitUris($contentUnitEntity->getUri());
 
-        $broadcastResult = $this->signContent($content, $this->channelPrivateKey, $feeWhole, $feeFraction);
+        $broadcastResult = $this->signContent($content);
         if ($broadcastResult instanceof TransactionDone) {
             //  add temp data
             $channelAccount = $this->em->getRepository(Account::class)->findOneBy(['publicKey' => $this->channelAddress]);
