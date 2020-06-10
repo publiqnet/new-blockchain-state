@@ -8,6 +8,7 @@
 
 namespace App\Command;
 
+use App\Entity\ContentUnit;
 use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
@@ -110,6 +111,12 @@ class MirrorRssCommand extends Command
             $guid = (int)$item->guid;
             $content = (string)$item->contentEncoded;
             $media = $item->mediaContent;
+
+            //  checkout for existing
+            $contentUnitEntity = $this->em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $guid]);
+            if ($contentUnitEntity) {
+                continue;
+            }
 
             $attributes = $media->attributes;
             if ($attributes) {
@@ -229,8 +236,6 @@ class MirrorRssCommand extends Command
 
                 return null;
             }
-
-            exit();
         }
 
         $this->io->success('Data received');
@@ -250,15 +255,9 @@ class MirrorRssCommand extends Command
     {
         $uploadResult = $this->blockChainService->uploadFile($data, $mimeType);
 
-        echo 'File upload result' . PHP_EOL;
-        var_dump($uploadResult);
-
         if ($uploadResult instanceof StorageFileAddress) {
             $uri = $uploadResult->getUri();
             $broadcastResult = $this->blockChainService->signFile($uri);
-
-            echo 'File sign result' . PHP_EOL;
-            var_dump($broadcastResult);
 
             if (!($broadcastResult instanceof TransactionDone)) {
                 return null;
@@ -285,15 +284,9 @@ class MirrorRssCommand extends Command
     {
         $uploadResult = $this->blockChainService->uploadFile($data, 'text/html');
 
-        echo 'Content unit upload result' . PHP_EOL;
-        var_dump($uploadResult);
-
         if ($uploadResult instanceof StorageFileAddress) {
             $uri = $uploadResult->getUri();
             $broadcastResult = $this->blockChainService->signContentUnit($uri, $fileUris, $guid);
-
-            echo 'Content unit sign result' . PHP_EOL;
-            var_dump($broadcastResult);
 
             if (!($broadcastResult instanceof TransactionDone)) {
                 return null;
