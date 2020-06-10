@@ -173,7 +173,10 @@ class MirrorRssCommand extends Command
                         if ($attribute->nodeName == 'src') {
                             echo $childNode->nodeName . ' - ' . $attribute->nodeValue . PHP_EOL;
 
-                            $fileObj = new \Symfony\Component\HttpFoundation\File\File($attribute->nodeValue);
+                            $tempImageName = substr($attribute->nodeValue, strrpos($attribute->nodeValue, '/') + 1);
+                            copy($attribute->nodeValue, 'public/uploads/' . $tempImageName);
+
+                            $fileObj = new \Symfony\Component\HttpFoundation\File\File('public/uploads/' . $tempImageName);
                             $fileData = file_get_contents($fileObj->getRealPath());
 
                             //  upload file into channel storage
@@ -187,6 +190,7 @@ class MirrorRssCommand extends Command
 
                             $fileUris[] = $uri;
                             $contentUnit .= ' <img src="' . $uri . '" />';
+                            unlink('public/uploads/' . $tempImageName);
 
                             break;
                         }
