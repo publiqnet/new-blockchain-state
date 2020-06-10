@@ -208,6 +208,7 @@ class MirrorRssCommand extends Command
             }
 
             //  CONTENT UNIT
+            $fileUris = array_unique($fileUris);
             $uri = $this->uploadContentUnit($contentUnit, $fileUris, $guid);
             if ($uri === null) {
                 $this->io->error('Error on content unit sign/broadcast');
