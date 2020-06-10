@@ -260,6 +260,8 @@ class MirrorRssCommand extends Command
             $broadcastResult = $this->blockChainService->signFile($uri);
 
             if (!($broadcastResult instanceof TransactionDone)) {
+                var_dump($broadcastResult);
+                
                 return null;
             } else {
                 return $uri;
@@ -269,6 +271,8 @@ class MirrorRssCommand extends Command
 
             return $uri;
         } else {
+            var_dump($uploadResult);
+
             return null;
         }
     }
@@ -289,6 +293,8 @@ class MirrorRssCommand extends Command
             $broadcastResult = $this->blockChainService->signContentUnit($uri, $fileUris, $guid);
 
             if (!($broadcastResult instanceof TransactionDone)) {
+                var_dump($broadcastResult);
+
                 return null;
             } else {
                 return $uri;
@@ -298,6 +304,8 @@ class MirrorRssCommand extends Command
 
             return $uri;
         } else {
+            var_dump($uploadResult);
+
             return null;
         }
     }
