@@ -359,6 +359,7 @@ class BlockChain
 
         $action = new \PubliqAPI\Model\ContentUnit();
         $action->setUri($uri);
+        $action->setChannelAddress($this->channelAddress);
         $action->addAuthorAddresses($this->channelAddress);
         $action->setContentId($contentId);
         foreach ($files as $fileUri) {
