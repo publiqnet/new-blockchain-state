@@ -231,6 +231,8 @@ class MirrorRssCommand extends Command
 
             $broadcastResult = $this->blockChainService->signContent($content);
             if (!($broadcastResult instanceof TransactionDone)) {
+                var_dump($broadcastResult);
+
                 $this->io->error('Error on content sign/broadcast');
                 $this->release();
 
@@ -261,7 +263,7 @@ class MirrorRssCommand extends Command
 
             if (!($broadcastResult instanceof TransactionDone)) {
                 var_dump($broadcastResult);
-                
+
                 return null;
             } else {
                 return $uri;
