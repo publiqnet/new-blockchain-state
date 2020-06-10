@@ -194,12 +194,23 @@ class MirrorRssCommand extends Command
                             }
 
                             $fileUris[] = $uri;
-                            $contentUnit .= ' <img src="' . $uri . '" />';
+                            $contentUnit .= ' <figure class="image gridsize-image"><img src="' . $uri . '" /></figure>';
                             unlink('public/uploads/' . $tempImageName);
 
                             break;
                         }
                     }
+                } elseif ($childNode->nodeName == 'video') {
+                    $uri = $this->uploadFile('<figure class="image gridsize-image">' . $childNode->ownerDocument->saveHTML($childNode) . '</figure>', 'text/html');
+                    if ($uri === null) {
+                        $this->io->error('Error on file sign/broadcast');
+                        $this->release();
+
+                        return null;
+                    }
+
+                    $fileUris[] = $uri;
+                    $contentUnit .= ' ' . $uri;
                 } else {
                     $uri = $this->uploadFile($childNode->ownerDocument->saveHTML($childNode), 'text/html');
                     if ($uri === null) {
