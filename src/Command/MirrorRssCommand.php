@@ -171,8 +171,6 @@ class MirrorRssCommand extends Command
                      */
                     foreach ($attributes as $attribute) {
                         if ($attribute->nodeName == 'src') {
-                            echo $childNode->nodeName . ' - ' . $attribute->nodeValue . PHP_EOL;
-
                             $tempImageName = substr($attribute->nodeValue, strrpos($attribute->nodeValue, '/') + 1);
                             copy($attribute->nodeValue, 'public/uploads/' . $tempImageName);
 
@@ -196,8 +194,6 @@ class MirrorRssCommand extends Command
                         }
                     }
                 } else {
-                    echo $childNode->nodeName . ' - ' . $childNode->ownerDocument->saveHTML($childNode) . PHP_EOL;
-
                     $uri = $this->uploadFile($childNode->ownerDocument->saveHTML($childNode), 'text/html');
                     if ($uri === null) {
                         $this->io->error('Error on file sign/broadcast');
@@ -252,9 +248,17 @@ class MirrorRssCommand extends Command
     private function uploadFile($data, $mimeType)
     {
         $uploadResult = $this->blockChainService->uploadFile($data, $mimeType);
+
+        echo 'File upload result' . PHP_EOL;
+        var_dump($uploadResult);
+
         if ($uploadResult instanceof StorageFileAddress) {
             $uri = $uploadResult->getUri();
             $broadcastResult = $this->blockChainService->signFile($uri);
+
+            echo 'File sign result' . PHP_EOL;
+            var_dump($broadcastResult);
+
             if (!($broadcastResult instanceof TransactionDone)) {
                 return null;
             } else {
@@ -279,9 +283,17 @@ class MirrorRssCommand extends Command
     private function uploadContentUnit($data, $fileUris, $guid)
     {
         $uploadResult = $this->blockChainService->uploadFile($data, 'text/html');
+
+        echo 'Content unit upload result' . PHP_EOL;
+        var_dump($uploadResult);
+
         if ($uploadResult instanceof StorageFileAddress) {
             $uri = $uploadResult->getUri();
             $broadcastResult = $this->blockChainService->signContentUnit($uri, $fileUris, $guid);
+
+            echo 'Content unit sign result' . PHP_EOL;
+            var_dump($broadcastResult);
+
             if (!($broadcastResult instanceof TransactionDone)) {
                 return null;
             } else {

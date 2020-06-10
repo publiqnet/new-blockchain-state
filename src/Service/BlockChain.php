@@ -334,7 +334,7 @@ class BlockChain
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with content publishing');
+            throw new \Exception('Issue with file publishing');
         }
 
         $validateRes = Rtt::validate($body['data']);
@@ -390,7 +390,7 @@ class BlockChain
 
         //  check for errors
         if ($headerStatusCode != 200 || isset($data['error'])) {
-            throw new \Exception('Issue with content publishing');
+            throw new \Exception('Issue with content unit publishing');
         }
 
         $validateRes = Rtt::validate($body['data']);
