@@ -9,7 +9,6 @@
 namespace App\Controller;
 
 use App\Entity\Account;
-use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\Publication;
@@ -297,12 +296,11 @@ class AccountApiController extends AbstractController
 
                 //  set author articles social images as 'must be updated'
                 /**
-                 * @var AccountContentUnit[] $accountContentUnits
+                 * @var ContentUnit[] $contentUnits
                  */
-                $accountContentUnits = $account->getAuthorContentUnits();
-                if ($accountContentUnits) {
-                    foreach ($accountContentUnits as $accountContentUnit) {
-                        $contentUnit = $accountContentUnit->getContentUnit();
+                $contentUnits = $em->getRepository(ContentUnit::class)->getAuthorArticles($account, 9999);
+                if ($contentUnits) {
+                    foreach ($contentUnits as $contentUnit) {
                         $contentUnit->setUpdateSocialImage(true);
                         $em->persist($contentUnit);
                     }
@@ -312,6 +310,20 @@ class AccountApiController extends AbstractController
             } elseif ($deleteImage) {
                 $account->setImage(null);
                 $account->setThumbnail(null);
+
+                //  set author articles social images as 'must be updated'
+                /**
+                 * @var ContentUnit[] $contentUnits
+                 */
+                $contentUnits = $em->getRepository(ContentUnit::class)->getAuthorArticles($account, 9999);
+                if ($contentUnits) {
+                    foreach ($contentUnits as $contentUnit) {
+                        $contentUnit->setUpdateSocialImage(true);
+                        $em->persist($contentUnit);
+                    }
+
+                    $em->flush();
+                }
             }
 
             $em->persist($account);
