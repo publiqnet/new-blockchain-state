@@ -22,8 +22,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class TrendingsCommand extends Command
 {
-    const ACTION_COUNT = 5000;
-
     use LockableTrait;
 
     protected static $defaultName = 'state:update-trending';
