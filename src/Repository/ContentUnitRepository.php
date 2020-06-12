@@ -584,24 +584,6 @@ class ContentUnitRepository extends EntityRepository
 
     /**
      * @param Account $account
-     * @return boolean
-     */
-    public function updateSocialImageStatus(Account $account)
-    {
-        $this->createQueryBuilder('cu')
-            ->update()
-            ->join('cu.authors', 'acu')
-            ->where('acu.account= :author')
-            ->setParameter('author', $account)
-            ->set('cu.updateSocialImage', true)
-            ->getQuery()
-            ->execute();
-
-        return true;
-    }
-
-    /**
-     * @param Account $account
      * @return array|null
      */
     public function getAuthorRelatedBoosts(Account $account)

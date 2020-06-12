@@ -49,7 +49,7 @@ class MirrorRssCommand extends Command
 
     protected function configure()
     {
-        $this->setDescription('Update public addresses');
+        $this->setDescription('Get data from Mirror RSS');
     }
 
     protected function initialize(InputInterface $input, OutputInterface $output)
@@ -179,7 +179,7 @@ class MirrorRssCommand extends Command
                     foreach ($attributes as $attribute) {
                         if ($attribute->nodeName == 'src') {
                             $tempImageName = substr($attribute->nodeValue, strrpos($attribute->nodeValue, '/') + 1);
-                            copy($attribute->nodeValue, 'public/uploads/' . $tempImageName);
+                            copy(urlencode($attribute->nodeValue), 'public/uploads/' . $tempImageName);
 
                             $fileObj = new \Symfony\Component\HttpFoundation\File\File('public/uploads/' . $tempImageName);
                             $fileData = file_get_contents($fileObj->getRealPath());
@@ -273,7 +273,7 @@ class MirrorRssCommand extends Command
             $broadcastResult = $this->blockChainService->signFile($uri);
 
             if (!($broadcastResult instanceof TransactionDone)) {
-                var_dump($broadcastResult);
+                $this->io->error($broadcastResult->convertToJson());
 
                 return null;
             } else {
@@ -284,7 +284,7 @@ class MirrorRssCommand extends Command
 
             return $uri;
         } else {
-            var_dump($uploadResult);
+            $this->io->error($uploadResult->convertToJson());
 
             return null;
         }
@@ -306,7 +306,7 @@ class MirrorRssCommand extends Command
             $broadcastResult = $this->blockChainService->signContentUnit($uri, $fileUris, $guid);
 
             if (!($broadcastResult instanceof TransactionDone)) {
-                var_dump($broadcastResult);
+                $this->io->error($broadcastResult->convertToJson());
 
                 return null;
             } else {
@@ -317,7 +317,7 @@ class MirrorRssCommand extends Command
 
             return $uri;
         } else {
-            var_dump($uploadResult);
+            $this->io->error($uploadResult->convertToJson());
 
             return null;
         }
