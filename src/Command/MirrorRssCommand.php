@@ -272,7 +272,11 @@ class MirrorRssCommand extends Command
             $uri = $uploadResult->getUri();
             $broadcastResult = $this->blockChainService->signFile($uri);
 
-            if (!($broadcastResult instanceof TransactionDone)) {
+            if (($broadcastResult instanceof UriError) && $broadcastResult->getUriProblemType() === UriProblemType::duplicate) {
+                $uri = $uploadResult->getUri();
+
+                return $uri;
+            } elseif (!($broadcastResult instanceof TransactionDone)) {
                 $this->io->error($broadcastResult->convertToJson());
 
                 return null;
