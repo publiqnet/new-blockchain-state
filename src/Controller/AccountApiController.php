@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\AccountContentUnit;
 use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\Publication;
@@ -294,8 +295,20 @@ class AccountApiController extends AbstractController
             if ($image instanceof UploadedFile) {
                 $account->setImage($moveFile($image, $currentAccountPath));
 
-                //  set author articles social images as to be updated
-                $em->getRepository(ContentUnit::class)->updateSocialImageStatus($account);
+                //  set author articles social images as 'must be updated'
+                /**
+                 * @var AccountContentUnit[] $accountContentUnits
+                 */
+                $accountContentUnits = $account->getAuthorContentUnits();
+                if ($accountContentUnits) {
+                    foreach ($accountContentUnits as $accountContentUnit) {
+                        $contentUnit = $accountContentUnit->getContentUnit();
+                        $contentUnit->setUpdateSocialImage(true);
+                        $em->persist($contentUnit);
+                    }
+
+                    $em->flush();
+                }
             } elseif ($deleteImage) {
                 $account->setImage(null);
                 $account->setThumbnail(null);
