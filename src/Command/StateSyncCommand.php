@@ -140,6 +140,16 @@ class StateSyncCommand extends Command
         $transactions = $this->em->getRepository(Transaction::class)->findBy(['transactionSize' => 0], ['timeSigned' => 'DESC', 'id' => 'DESC']);
         if ($transactions) {
             foreach ($transactions as $transaction) {
+                if ($transaction->getFile()) {
+                    /**
+                     * @var \App\Entity\File $fileEntity
+                     */
+                    $fileEntity = $transaction->getFile();
+                    $fileEntity->setTransaction(null);
+                    $this->em->persist($fileEntity);
+                    $this->em->flush();
+                }
+
                 $this->em->remove($transaction);
                 $this->em->flush();
             }
