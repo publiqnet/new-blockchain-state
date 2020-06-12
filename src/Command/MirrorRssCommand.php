@@ -179,7 +179,7 @@ class MirrorRssCommand extends Command
                     foreach ($attributes as $attribute) {
                         if ($attribute->nodeName == 'src') {
                             $tempImageName = substr($attribute->nodeValue, strrpos($attribute->nodeValue, '/') + 1);
-                            copy(urlencode($attribute->nodeValue), 'public/uploads/' . $tempImageName);
+                            copy($attribute->nodeValue, 'public/uploads/' . $tempImageName);
 
                             $fileObj = new \Symfony\Component\HttpFoundation\File\File('public/uploads/' . $tempImageName);
                             $fileData = file_get_contents($fileObj->getRealPath());
