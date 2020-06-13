@@ -22,6 +22,7 @@ use Symfony\Component\Console\Command\LockableTrait;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\HttpFoundation\File\File;
 
 class MirrorRssCommand extends Command
 {
@@ -94,7 +95,7 @@ class MirrorRssCommand extends Command
         $body = str_replace("<content:encoded>", "<contentEncoded>", $body);
         $body = str_replace("</content:encoded>", "</contentEncoded>", $body);
 
-        $body = str_replace("<media:content", "<mediaContent>", $body);
+        $body = str_replace("<media:content", "<mediaContent", $body);
         $body = str_replace("</media:content>", "</mediaContent>", $body);
 
         $data = simplexml_load_string($body);
@@ -110,23 +111,11 @@ class MirrorRssCommand extends Command
             $description = $item->description;
             $guid = (int)$item->guid;
             $content = (string)$item->contentEncoded;
-            $media = $item->mediaContent;
 
             //  checkout for existing
             $contentUnitEntity = $this->em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $guid]);
             if ($contentUnitEntity) {
                 continue;
-            }
-
-            $attributes = $media->attributes;
-            if ($attributes) {
-                /**
-                 * @var \DOMAttr $attribute
-                 */
-                foreach ($attributes as $attribute) {
-                    echo $attribute->nodeName . ' - ' . $attribute->nodeValue . PHP_EOL;
-                }
-                exit();
             }
 
 
@@ -143,6 +132,30 @@ class MirrorRssCommand extends Command
             $fileUris = [];
 
             //  CREATE CONTENT UNIT
+            //  cover
+            if ($item->mediaContent[0] && $item->mediaContent[0]['medium'] == 'image') {
+                $imageUrl = $item->mediaContent[0]['url'];
+
+                $tempImageName = substr($imageUrl, strrpos($imageUrl, '/') + 1);
+                copy($imageUrl, 'public/uploads/' . $tempImageName);
+
+                $fileObj = new File('public/uploads/' . $tempImageName);
+                $fileData = file_get_contents($fileObj->getRealPath());
+
+                //  upload file into channel storage
+                $uri = $this->uploadFile($fileData, $fileObj->getMimeType());
+                if ($uri === null) {
+                    $this->io->error('Error on file sign/broadcast');
+                    $this->release();
+
+                    return null;
+                }
+
+                $fileUris[] = $uri;
+                $contentUnit .= '<img src="' . $uri . '" />';
+                unlink('public/uploads/' . $tempImageName);
+            }
+
             //  title
             $contentUnit .= '<h1>' . $title . '</h1>';
 
@@ -181,7 +194,7 @@ class MirrorRssCommand extends Command
                             $tempImageName = substr($attribute->nodeValue, strrpos($attribute->nodeValue, '/') + 1);
                             copy($attribute->nodeValue, 'public/uploads/' . $tempImageName);
 
-                            $fileObj = new \Symfony\Component\HttpFoundation\File\File('public/uploads/' . $tempImageName);
+                            $fileObj = new File('public/uploads/' . $tempImageName);
                             $fileData = file_get_contents($fileObj->getRealPath());
 
                             //  upload file into channel storage
