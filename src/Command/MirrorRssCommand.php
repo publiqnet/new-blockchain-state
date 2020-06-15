@@ -98,6 +98,8 @@ class MirrorRssCommand extends Command
         $body = str_replace("<media:content", "<mediaContent", $body);
         $body = str_replace("</media:content>", "</mediaContent>", $body);
 
+        $body = str_replace(["media:description", "media:thumbnail", "media:title", "media:credit", "media:copyright"], ["mediaDescription", "mediaThumbnail", "mediaTitle", "mediaCredit", "mediaCopyright"], $body);
+
         $data = simplexml_load_string($body);
         if (!$data) {
             $this->io->error('Cannot load URL');
@@ -111,6 +113,7 @@ class MirrorRssCommand extends Command
             $description = $item->description;
             $guid = (int)$item->guid;
             $content = (string)$item->contentEncoded;
+            $media = $item->mediaContent;
 
             //  checkout for existing
             $contentUnitEntity = $this->em->getRepository(ContentUnit::class)->findOneBy(['contentId' => $guid]);
@@ -130,11 +133,44 @@ class MirrorRssCommand extends Command
 
             $contentUnit = '';
             $fileUris = [];
+            $videoContent = [];
+            $hasCover = false;
 
             //  CREATE CONTENT UNIT
-            //  cover
-            if ($item->mediaContent[0] && $item->mediaContent[0]['medium'] == 'image') {
-                $imageUrl = $item->mediaContent[0]['url'];
+            //  cover & video
+            if ($media) {
+                foreach ($media as $mediaSingle) {
+                    if ($mediaSingle['medium'] == 'video') {
+                        $videoContent[] = ['video' => '<figure class="image gridsize-image"><video title="' . $mediaSingle->mediaTitle . '" controls poster="' . $mediaSingle->mediaThumbnail['url'] . '"><source type="' . $mediaSingle['type'] . '" src="' . $mediaSingle['url'] . '"/></video></figure>', 'thumbnail' => $mediaSingle->mediaThumbnail['url']];
+                    } elseif ($mediaSingle['medium'] == 'image') {
+                        $imageUrl = $mediaSingle['url'];
+
+                        $tempImageName = substr($imageUrl, strrpos($imageUrl, '/') + 1);
+                        copy($imageUrl, 'public/uploads/' . $tempImageName);
+
+                        $fileObj = new File('public/uploads/' . $tempImageName);
+                        $fileData = file_get_contents($fileObj->getRealPath());
+
+                        //  upload file into channel storage
+                        $uri = $this->uploadFile($fileData, $fileObj->getMimeType());
+                        if ($uri === null) {
+                            $this->io->error('Error on file sign/broadcast');
+                            $this->release();
+
+                            return null;
+                        }
+
+                        $fileUris[] = $uri;
+                        $contentUnit .= '<img src="' . $uri . '" />';
+                        unlink('public/uploads/' . $tempImageName);
+
+                        $hasCover = true;
+                    }
+                }
+            }
+
+            if (!$hasCover && count($videoContent)) {
+                $imageUrl = $videoContent[0]['thumbnail'];
 
                 $tempImageName = substr($imageUrl, strrpos($imageUrl, '/') + 1);
                 copy($imageUrl, 'public/uploads/' . $tempImageName);
@@ -226,6 +262,21 @@ class MirrorRssCommand extends Command
                     $contentUnit .= ' ' . $uri;
                 } else {
                     $uri = $this->uploadFile($childNode->ownerDocument->saveHTML($childNode), 'text/html');
+                    if ($uri === null) {
+                        $this->io->error('Error on file sign/broadcast');
+                        $this->release();
+
+                        return null;
+                    }
+
+                    $fileUris[] = $uri;
+                    $contentUnit .= ' ' . $uri;
+                }
+            }
+
+            if (count($videoContent)) {
+                foreach ($videoContent as $videoContentSingle) {
+                    $uri = $this->uploadFile($videoContentSingle['video'], 'text/html');
                     if ($uri === null) {
                         $this->io->error('Error on file sign/broadcast');
                         $this->release();
