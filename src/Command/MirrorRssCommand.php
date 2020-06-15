@@ -141,7 +141,7 @@ class MirrorRssCommand extends Command
             if ($media) {
                 foreach ($media as $mediaSingle) {
                     if ($mediaSingle['medium'] == 'video') {
-                        $videoContent[] = ['video' => '<figure class="image gridsize-image"><video title="' . $mediaSingle->mediaTitle . '" controls poster="' . $mediaSingle->mediaThumbnail['url'] . '"><source type="' . $mediaSingle['type'] . '" src="' . $mediaSingle['url'] . '"/></video></figure>', 'thumbnail' => $mediaSingle->mediaThumbnail['url']];
+                        $videoContent[] = ['video' => '<figure class="media"><video title="' . $mediaSingle->mediaTitle . '" controls poster="' . $mediaSingle->mediaThumbnail['url'] . '"><source type="' . $mediaSingle['type'] . '" src="' . $mediaSingle['url'] . '"/></video></figure>', 'thumbnail' => $mediaSingle->mediaThumbnail['url']];
                     } elseif ($mediaSingle['medium'] == 'image') {
                         $imageUrl = $mediaSingle['url'];
 
@@ -243,14 +243,14 @@ class MirrorRssCommand extends Command
                             }
 
                             $fileUris[] = $uri;
-                            $contentUnit .= ' <figure class="image gridsize-image"><img src="' . $uri . '" /></figure>';
+                            $contentUnit .= ' <figure class="media"><img src="' . $uri . '" /></figure>';
                             unlink('public/uploads/' . $tempImageName);
 
                             break;
                         }
                     }
                 } elseif ($childNode->nodeName == 'video') {
-                    $uri = $this->uploadFile('<figure class="image gridsize-image">' . $childNode->ownerDocument->saveHTML($childNode) . '</figure>', 'text/html');
+                    $uri = $this->uploadFile('<figure class="media">' . $childNode->ownerDocument->saveHTML($childNode) . '</figure>', 'text/html');
                     if ($uri === null) {
                         $this->io->error('Error on file sign/broadcast');
                         $this->release();
