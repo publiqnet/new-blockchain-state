@@ -156,30 +156,31 @@ class SpecialApiController extends AbstractController
 
         $accountCustomData = $em->getRepository(AccountCustomData::class)->findOneBy(['slug' => $slug]);
         if (!$accountCustomData) {
+            $account = $em->getRepository(Account::class)->findOneBy(['email' => $email]);
+            if ($account) {
+                return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+            }
+
+            $fullName = explode(' ', $fullName);
+            $firstName = trim($fullName[0]);
+
+            unset($fullName[0]);
+            $lastName = trim(implode(' ', $fullName));
+
+            $account = new Account();
+            $account->setPublicKey($publicKey);
+            $account->setEmail($email);
+            $account->setFirstName($firstName);
+            $account->setLastName($lastName);
+            $account->setWhole(0);
+            $account->setFraction(0);
+            $em->persist($account);
+            $em->flush();
+
             $accountCustomData = new AccountCustomData();
             $accountCustomData->setSlug($slug);
             $accountCustomData->setPrivateKey($privateKey);
             $accountCustomData->setBrainKey($brainKey);
-
-            $account = $em->getRepository(Account::class)->findOneBy(['email' => $email]);
-            if (!$account) {
-                $fullName = explode(' ', $fullName);
-                $firstName = trim($fullName[0]);
-
-                unset($fullName[0]);
-                $lastName = trim(implode(' ', $fullName));
-
-                $account = new Account();
-                $account->setPublicKey($publicKey);
-                $account->setEmail($email);
-                $account->setFirstName($firstName);
-                $account->setLastName($lastName);
-                $account->setWhole(0);
-                $account->setFraction(0);
-                $em->persist($account);
-                $em->flush();
-            }
-
             $accountCustomData->setAccount($account);
             $em->persist($accountCustomData);
             $em->flush();
