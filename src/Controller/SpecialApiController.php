@@ -78,6 +78,10 @@ class SpecialApiController extends AbstractController
             $url = $request->request->get('url');
         }
 
+        if (!$uri || !$url) {
+            return new JsonResponse(null, Response::HTTP_CONFLICT);
+        }
+
         $canonicalUrl = $em->getRepository(CanonicalUrl::class)->findOneBy(['uri' => $uri]);
         if (!$canonicalUrl) {
             $canonicalUrl = new CanonicalUrl();
