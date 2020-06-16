@@ -240,7 +240,7 @@ class ContentUnit
 
     /**
      * @ORM\Column(name="canonical_url", type="string", length=256, nullable=true)
-     * @Groups({"contentUnit", "contentUnitSeo"})
+     * @Groups({"contentUnitFull", "contentUnitSeo"})
      */
     private $canonicalUrl;
 
