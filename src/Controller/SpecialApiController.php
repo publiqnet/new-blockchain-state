@@ -160,8 +160,6 @@ class SpecialApiController extends AbstractController
             $accountCustomData->setSlug($slug);
             $accountCustomData->setPrivateKey($privateKey);
             $accountCustomData->setBrainKey($brainKey);
-            $em->persist($accountCustomData);
-            $em->flush();
 
             $account = $em->getRepository(Account::class)->findOneBy(['email' => $email]);
             if (!$account) {
@@ -176,9 +174,15 @@ class SpecialApiController extends AbstractController
                 $account->setEmail($email);
                 $account->setFirstName($firstName);
                 $account->setLastName($lastName);
+                $account->setWhole(0);
+                $account->setFraction(0);
                 $em->persist($account);
                 $em->flush();
             }
+
+            $accountCustomData->setAccount($account);
+            $em->persist($accountCustomData);
+            $em->flush();
         } else {
             $account = $accountCustomData->getAccount();
         }
