@@ -161,7 +161,7 @@ class SpecialApiController extends AbstractController
             $accountCustomData->setPrivateKey($privateKey);
             $accountCustomData->setBrainKey($brainKey);
 
-            $account = $em->getRepository(Account::class)->findOneBy(['email' => $email]);
+            $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
             if (!$account) {
                 $fullName = explode(' ', $fullName);
                 $firstName = trim($fullName[0]);
