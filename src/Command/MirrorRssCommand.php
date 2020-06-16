@@ -304,6 +304,8 @@ class MirrorRssCommand extends Command
             $canonicalUrl = new CanonicalUrl();
             $canonicalUrl->setUri($uri);
             $canonicalUrl->setUrl($link);
+            $this->em->persist($canonicalUrl);
+            $this->em->flush();
 
             //  CONTENT
             $content = new Content();
