@@ -116,6 +116,7 @@ class SpecialApiController extends AbstractController
      * )
      * @SWG\Response(response=200, description="Success")
      * @SWG\Response(response=403, description="Permission denied")
+     * @SWG\Response(response=409, description="User private key is not accessible")
      * @SWG\Tag(name="Special")
      * @param Request $request
      * @return JsonResponse
@@ -154,11 +155,15 @@ class SpecialApiController extends AbstractController
             $fullName = $request->request->get('fullName');
         }
 
+        if (!$slug || !$email || !$publicKey || !$privateKey || !$brainKey) {
+            return new JsonResponse(null, Response::HTTP_CONFLICT);
+        }
+
         $accountCustomData = $em->getRepository(AccountCustomData::class)->findOneBy(['slug' => $slug]);
         if (!$accountCustomData) {
             $account = $em->getRepository(Account::class)->findOneBy(['email' => $email]);
             if ($account) {
-                return new JsonResponse(null, Response::HTTP_FORBIDDEN);
+                return new JsonResponse(null, Response::HTTP_CONFLICT);
             }
 
             $fullName = explode(' ', $fullName);
