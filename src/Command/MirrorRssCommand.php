@@ -8,6 +8,7 @@
 
 namespace App\Command;
 
+use App\Entity\CanonicalUrl;
 use App\Entity\ContentUnit;
 use App\Service\BlockChain;
 use Doctrine\ORM\EntityManager;
@@ -110,6 +111,7 @@ class MirrorRssCommand extends Command
 
         foreach ($data->channel->item as $item) {
             $title = $item->title;
+            $link = $item->link;
             $description = $item->description;
             $guid = (int)$item->guid;
             $content = (string)$item->contentEncoded;
@@ -298,6 +300,10 @@ class MirrorRssCommand extends Command
 
                 return null;
             }
+
+            $canonicalUrl = new CanonicalUrl();
+            $canonicalUrl->setUri($uri);
+            $canonicalUrl->setUrl($link);
 
             //  CONTENT
             $content = new Content();

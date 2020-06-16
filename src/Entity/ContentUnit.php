@@ -238,6 +238,12 @@ class ContentUnit
      */
     private $excluded = false;
 
+    /**
+     * @ORM\Column(name="canonical_url", type="string", length=256, nullable=true)
+     * @Groups({"contentUnitFull", "contentUnitSeo"})
+     */
+    private $canonicalUrl;
+
 
     public function __toString()
     {
@@ -811,5 +817,21 @@ class ContentUnit
     public function setExcluded($excluded)
     {
         $this->excluded = $excluded;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getCanonicalUrl()
+    {
+        return $this->canonicalUrl;
+    }
+
+    /**
+     * @param mixed $canonicalUrl
+     */
+    public function setCanonicalUrl($canonicalUrl)
+    {
+        $this->canonicalUrl = $canonicalUrl;
     }
 }

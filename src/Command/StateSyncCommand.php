@@ -15,6 +15,7 @@ use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
 use App\Entity\BoostedContentUnitSpending;
 use App\Entity\CancelBoostedContentUnit;
+use App\Entity\CanonicalUrl;
 use App\Entity\ContentUnitTag;
 use App\Entity\ContentUnitViews;
 use App\Entity\IndexNumber;
@@ -353,6 +354,12 @@ class StateSyncCommand extends Command
                                 if ($publicationArticle) {
                                     $contentUnitEntity->setPublication($publicationArticle->getPublication());
                                     $this->em->remove($publicationArticle);
+                                }
+
+                                //  check for canonical URL
+                                $canonicalUrl = $this->em->getRepository(CanonicalUrl::class)->findOneBy(['uri' => $uri]);
+                                if ($canonicalUrl) {
+                                    $contentUnitEntity->setCanonicalUrl($canonicalUrl->getUrl());
                                 }
 
                                 $this->em->persist($contentUnitEntity);
@@ -952,6 +959,12 @@ class StateSyncCommand extends Command
                         $publicationArticle = $this->em->getRepository(PublicationArticle::class)->findOneBy(['uri' => $uri]);
                         if ($publicationArticle) {
                             $contentUnitEntity->setPublication($publicationArticle->getPublication());
+                        }
+
+                        //  check for canonical URL
+                        $canonicalUrl = $this->em->getRepository(CanonicalUrl::class)->findOneBy(['uri' => $uri]);
+                        if ($canonicalUrl) {
+                            $contentUnitEntity->setCanonicalUrl($canonicalUrl->getUrl());
                         }
 
                         $this->em->persist($contentUnitEntity);

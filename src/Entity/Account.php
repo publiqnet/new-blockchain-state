@@ -299,6 +299,12 @@ class Account implements UserInterface
      */
     private $excluded = false;
 
+    /**
+     * @var AccountCustomData
+     * @ORM\OneToOne(targetEntity="App\Entity\AccountCustomData", mappedBy="account")
+     */
+    private $customData;
+
     public function __construct()
     {
         $this->signedBlocks = new ArrayCollection();
@@ -930,5 +936,21 @@ class Account implements UserInterface
     public function setExcluded($excluded)
     {
         $this->excluded = $excluded;
+    }
+
+    /**
+     * @return AccountCustomData
+     */
+    public function getCustomData()
+    {
+        return $this->customData;
+    }
+
+    /**
+     * @param AccountCustomData $customData
+     */
+    public function setCustomData(AccountCustomData $customData)
+    {
+        $this->customData = $customData;
     }
 }

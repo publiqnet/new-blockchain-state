@@ -24,6 +24,7 @@ parameters:
     mercure_topic: '%env(MERCURE_TOPIC)%'
     environment: '%env(APP_ENV)%'
     focccus_channels_addresses: '%env(FOCCCUS_CHANNELS_ADDRESSES)%'
+    special_api_key: '%env(SPECIAL_API_KEY)%'
 
 services:
     # default configuration for services in *this* file
