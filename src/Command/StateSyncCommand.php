@@ -1593,7 +1593,7 @@ class StateSyncCommand extends Command
                                 $this->em->persist($exchange);
 
                                 // notify account about completed transfer
-                                if ($exchangeStatus === AccountExchange::STATUSES['completed']) {
+                                if (AccountExchange::STATUSES[$exchangeStatus] === AccountExchange::STATUSES['completed']) {
                                     $this->eventDispatcher->dispatch(
                                         new ExchangeCompletedEvent($exchange),
                                         ExchangeCompletedEvent::NAME
