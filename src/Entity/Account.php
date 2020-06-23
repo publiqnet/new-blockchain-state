@@ -162,6 +162,11 @@ class Account implements UserInterface
     private $authorFiles;
 
     /**
+     * @ORM\OneToMany(targetEntity="App\Entity\AccountExchange", mappedBy="account", fetch="EXTRA_LAZY")
+     */
+    private $exchanges;
+
+    /**
      * @ORM\OneToMany(targetEntity="App\Entity\AccountContentUnit", mappedBy="account", fetch="EXTRA_LAZY")
      */
     private $authorContentUnits;
@@ -311,6 +316,7 @@ class Account implements UserInterface
         $this->rewards = new ArrayCollection();
         $this->files = new ArrayCollection();
         $this->authorFiles = new ArrayCollection();
+        $this->exchanges = new ArrayCollection();
         $this->authorContentUnits = new ArrayCollection();
         $this->channelContentUnits = new ArrayCollection();
         $this->contents = new ArrayCollection();
@@ -533,6 +539,14 @@ class Account implements UserInterface
     public function getAuthorFiles()
     {
         return $this->authorFiles;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getExchanges()
+    {
+        return $this->exchanges;
     }
 
     /**
