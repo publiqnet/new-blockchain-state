@@ -11,6 +11,7 @@ namespace App\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Table(name="account_exchange")
@@ -44,6 +45,7 @@ class AccountExchange
     /**
      * @var string
      * @ORM\Column(type="string", length=96, nullable=false, unique=true)
+     * @Groups({"userNotification"})
      */
     private $exchangeId;
 
@@ -56,6 +58,7 @@ class AccountExchange
     /**
      * @var float
      * @ORM\Column(type="float", nullable=true)
+     * @Groups({"userNotification"})
      */
     private $amount;
 
