@@ -10,6 +10,7 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\AccountContentUnit;
+use App\Entity\AccountExchange;
 use App\Entity\AccountFile;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
@@ -26,6 +27,7 @@ use App\Entity\Transaction;
 use App\Event\ArticleBoostedByOtherEvent;
 use App\Event\ArticleNewEvent;
 use App\Event\ArticleShareEvent;
+use App\Event\ExchangeCompletedEvent;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -1561,6 +1563,43 @@ class StateSyncCommand extends Command
                         new ArticleBoostedByOtherEvent($sponsor, $article),
                         ArticleBoostedByOtherEvent::NAME
                     );
+                }
+            }
+        }
+
+        /**
+         * @var \App\Entity\Transfer[] $transfers
+         */
+        $transfers = $this->em->getRepository(\App\Entity\Transfer::class)->getTransfersConfirmedAfterDate($datetime);
+        if ($transfers) {
+            foreach ($transfers as $transfer) {
+                /**
+                 * @var Account $toAccount
+                 */
+                $toAccount = $transfer->getTo();
+
+                $exchanges = $this->em->getRepository(AccountExchange::class)->findBy(['account' => $toAccount]);
+                if ($exchanges) {
+                    foreach ($exchanges as $exchange) {
+                        $exchangeStatus = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
+                        if ($exchangeStatus !== false) {
+                            $exchangeStatus = json_decode($exchangeStatus, true);
+                            if ($exchangeStatus['status']) {
+                                $exchangeStatus = $exchangeStatus['result']['status'];
+
+                                $exchange->setStatus(AccountExchange::STATUSES[$exchangeStatus]);
+                                $this->em->persist($exchange);
+
+                                // notify account about completed transfer
+                                if ($exchangeStatus === AccountExchange::STATUSES['completed']) {
+                                    $this->eventDispatcher->dispatch(
+                                        new ExchangeCompletedEvent($exchange),
+                                        ExchangeCompletedEvent::NAME
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -25,6 +25,7 @@ parameters:
     environment: '%env(APP_ENV)%'
     focccus_channels_addresses: '%env(FOCCCUS_CHANNELS_ADDRESSES)%'
     special_api_key: '%env(SPECIAL_API_KEY)%'
+    ataix_api_endpoint: '%env(ATAIX_API_ENDPOINT)%'
 
 services:
     # default configuration for services in *this* file

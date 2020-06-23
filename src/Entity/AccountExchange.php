@@ -18,6 +18,13 @@ use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
  */
 class AccountExchange
 {
+    const STATUSES = [
+        'new' => 0,
+        'completed' => 1,
+        'failed' => 2,
+        'expired' => 3,
+    ];
+
     /**
      * @var int
      * @ORM\Column(name="id", type="integer")
@@ -34,16 +41,16 @@ class AccountExchange
     private $account;
 
     /**
-     * @var boolean
-     * @ORM\Column(type="boolean")
-     */
-    private $completed = false;
-
-    /**
      * @var string
      * @ORM\Column(type="string", length=96, nullable=false, unique=true)
      */
     private $exchangeId;
+
+    /**
+     * @var integer
+     * @ORM\Column(type="integer", options={"default": 0})
+     */
+    private $status = 0;
 
 
     /**
@@ -71,22 +78,6 @@ class AccountExchange
     }
 
     /**
-     * @return bool
-     */
-    public function isCompleted()
-    {
-        return $this->completed;
-    }
-
-    /**
-     * @param bool $completed
-     */
-    public function setCompleted(bool $completed)
-    {
-        $this->completed = $completed;
-    }
-
-    /**
      * @return string
      */
     public function getExchangeId()
@@ -100,5 +91,21 @@ class AccountExchange
     public function setExchangeId($exchangeId)
     {
         $this->exchangeId = $exchangeId;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * @param int $status
+     */
+    public function setStatus(int $status)
+    {
+        $this->status = $status;
     }
 }
