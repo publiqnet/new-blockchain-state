@@ -37,7 +37,7 @@ class NotificationType
         'publication_membership_cancelled' => ['key' => 'publication_membership_cancelled', 'en' => 'You are no longer member of {{target}}', 'es' => 'You are no longer member of {{target}}', 'jp' => '{{target}}あなたはもはや%sのメンバーではありません'],
         'publication_membership_cancelled_by_user' => ['key' => 'publication_membership_cancelled_by_user', 'en' => '{{performer}} has left {{target}}', 'es' => '{{performer}} has left {{target}}', 'jp' => '{{performer}}は{{target}}を残しました'],
         'article_boosted_by_other' => ['key' => 'article_boosted_by_other', 'en' => '{{performer}} has boosted {{article}}', 'es' => '{{performer}} has boosted {{article}}', 'jp' => '{{performer}} has boosted {{article}}'],
-        'ataix_exchange_completed' => ['key' => 'ataix_exchange_completed', 'en' => 'Your exchange has successfully completed', 'es' => '', 'jp' => 'Your exchange has completed'],
+        'ataix_exchange_completed' => ['key' => 'ataix_exchange_completed', 'en' => 'You have received {{amount}} PBQ', 'es' => 'You have received {{amount}} PBQ', 'jp' => 'You have received {{amount}} PBQ'],
     ];
 
     /**

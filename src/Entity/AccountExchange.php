@@ -8,6 +8,7 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
 
@@ -52,6 +53,22 @@ class AccountExchange
      */
     private $status = 0;
 
+    /**
+     * @var float
+     * @ORM\Column(type="float", nullable=true)
+     */
+    private $amount;
+
+    /**
+     * @ORM\OneToMany(targetEntity="App\Entity\Notification", mappedBy="exchange", cascade="remove")
+     */
+    private $notifications;
+
+
+    public function __construct()
+    {
+        $this->notifications = new ArrayCollection();
+    }
 
     /**
      * @return int
@@ -107,5 +124,29 @@ class AccountExchange
     public function setStatus(int $status)
     {
         $this->status = $status;
+    }
+
+    /**
+     * @return float|null
+     */
+    public function getAmount()
+    {
+        return $this->amount;
+    }
+
+    /**
+     * @param float|null $amount
+     */
+    public function setAmount($amount)
+    {
+        $this->amount = $amount;
+    }
+
+    /**
+     * Get notifications
+     */
+    public function getNotifications()
+    {
+        return $this->notifications;
     }
 }

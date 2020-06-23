@@ -219,9 +219,7 @@ class ContentUnitRepository extends EntityRepository
             $query = $this->createQueryBuilder('cu');
 
             return $query->select('cu, t')
-                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
-                ->leftJoin('cu.publication', 'p')
                 ->where('cu.id < :fromId')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setParameters(['fromId' => $fromContentUnit->getId()])
@@ -233,13 +231,9 @@ class ContentUnitRepository extends EntityRepository
             $query = $this->createQueryBuilder('cu');
 
             return $query->select('cu, t')
-                ->join('cu.authors', 'acu')
                 ->join('cu.transaction', 't')
-                ->leftJoin('cu.publication', 'p')
                 ->where($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->setMaxResults($count)
-                ->addGroupBy('cu')
-                ->addGroupBy('t')
                 ->orderBy('t.timeSigned', 'desc')
                 ->getQuery()
                 ->getResult();

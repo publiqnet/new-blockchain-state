@@ -515,7 +515,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
         try {
             $exchange = $event->getExchange();
 
-            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['ataix_exchange_completed']['key'], null, $exchange->getExchangeId());
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['ataix_exchange_completed']['key'], null, $exchange->getExchangeId(), null, null, $exchange);
             $this->userNotificationService->notify($exchange->getAccount(), $notification, true);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
