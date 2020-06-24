@@ -1581,6 +1581,10 @@ class StateSyncCommand extends Command
                 $exchanges = $this->em->getRepository(AccountExchange::class)->findBy(['account' => $toAccount]);
                 if ($exchanges) {
                     foreach ($exchanges as $exchange) {
+                        if ($exchange->getStatus() === AccountExchange::STATUSES['completed']) {
+                            continue;
+                        }
+
                         $exchangeStatus = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
                         if ($exchangeStatus !== false) {
                             $exchangeStatus = json_decode($exchangeStatus, true);
