@@ -10,6 +10,7 @@ namespace App\Command;
 
 use App\Entity\Account;
 use App\Entity\AccountContentUnit;
+use App\Entity\AccountExchange;
 use App\Entity\AccountFile;
 use App\Entity\Block;
 use App\Entity\BoostedContentUnit;
@@ -26,6 +27,7 @@ use App\Entity\Transaction;
 use App\Event\ArticleBoostedByOtherEvent;
 use App\Event\ArticleNewEvent;
 use App\Event\ArticleShareEvent;
+use App\Event\ExchangeCompletedEvent;
 use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
@@ -533,7 +535,9 @@ class StateSyncCommand extends Command
 
                             if ($appliedReverted) {
                                 if ($nodeType == NodeType::channel) {
+                                    $exclude = $this->container->getParameter('focccus_channels_addresses') == 'exclude' ? true: false;
                                     $nodeAccount->setChannel(true);
+                                    $nodeAccount->setExcluded($exclude);
                                 } elseif ($nodeType == NodeType::storage) {
                                     $nodeAccount->setStorage(true);
                                 } elseif ($nodeType == NodeType::blockchain) {
@@ -551,6 +555,7 @@ class StateSyncCommand extends Command
                             } else {
                                 if ($nodeType == NodeType::channel) {
                                     $nodeAccount->setChannel(false);
+                                    $nodeAccount->setExcluded(false);
                                 } elseif ($nodeType == NodeType::storage) {
                                     $nodeAccount->setStorage(false);
                                 } elseif ($nodeType == NodeType::blockchain) {
@@ -1107,7 +1112,9 @@ class StateSyncCommand extends Command
 
                     if ($appliedReverted) {
                         if ($nodeType == NodeType::channel) {
+                            $exclude = $this->container->getParameter('focccus_channels_addresses') == 'exclude' ? true: false;
                             $nodeAccount->setChannel(true);
+                            $nodeAccount->setExcluded($exclude);
                         } elseif ($nodeType == NodeType::storage) {
                             $nodeAccount->setStorage(true);
                         } elseif ($nodeType == NodeType::blockchain) {
@@ -1124,6 +1131,7 @@ class StateSyncCommand extends Command
                     } else {
                         if ($nodeType == NodeType::channel) {
                             $nodeAccount->setChannel(false);
+                            $nodeAccount->setExcluded(false);
                         } elseif ($nodeType == NodeType::storage) {
                             $nodeAccount->setStorage(false);
                         } elseif ($nodeType == NodeType::blockchain) {
@@ -1561,6 +1569,49 @@ class StateSyncCommand extends Command
                         new ArticleBoostedByOtherEvent($sponsor, $article),
                         ArticleBoostedByOtherEvent::NAME
                     );
+                }
+            }
+        }
+
+        /**
+         * @var \App\Entity\Transfer[] $transfers
+         */
+        $transfers = $this->em->getRepository(\App\Entity\Transfer::class)->getTransfersConfirmedAfterDate($datetime);
+        if ($transfers) {
+            foreach ($transfers as $transfer) {
+                /**
+                 * @var Account $toAccount
+                 */
+                $toAccount = $transfer->getTo();
+
+                $exchanges = $this->em->getRepository(AccountExchange::class)->findBy(['account' => $toAccount]);
+                if ($exchanges) {
+                    foreach ($exchanges as $exchange) {
+                        if ($exchange->getStatus() === AccountExchange::STATUSES['completed']) {
+                            continue;
+                        }
+
+                        $exchangeStatus = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
+                        if ($exchangeStatus !== false) {
+                            $exchangeStatus = json_decode($exchangeStatus, true);
+                            if ($exchangeStatus['status']) {
+                                $exchangeAmount = $exchangeStatus['result']['amountGiven'];
+                                $exchangeStatus = $exchangeStatus['result']['status'];
+
+                                $exchange->setStatus(AccountExchange::STATUSES[$exchangeStatus]);
+                                $exchange->setAmount($exchangeAmount);
+                                $this->em->persist($exchange);
+
+                                // notify account about completed transfer
+                                if (AccountExchange::STATUSES[$exchangeStatus] === AccountExchange::STATUSES['completed']) {
+                                    $this->eventDispatcher->dispatch(
+                                        new ExchangeCompletedEvent($exchange),
+                                        ExchangeCompletedEvent::NAME
+                                    );
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

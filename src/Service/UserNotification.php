@@ -8,6 +8,7 @@
 
 namespace App\Service;
 
+use App\Entity\AccountExchange;
 use App\Entity\NotificationType;
 use App\Entity\Publication;
 use App\Entity\ContentUnit;
@@ -53,11 +54,10 @@ class UserNotification
      * @param string $data
      * @param Publication|null $publication
      * @param ContentUnit|null $contentUnit
+     * @param AccountExchange|null $exchange
      * @return Notification
-     * @throws \Doctrine\ORM\ORMException
-     * @throws \Doctrine\ORM\OptimisticLockException
      */
-    public function createNotification(string $notificationKey, Account $performer = null, string $data = null, Publication $publication = null, ContentUnit $contentUnit = null): Notification
+    public function createNotification(string $notificationKey, Account $performer = null, string $data = null, Publication $publication = null, ContentUnit $contentUnit = null, AccountExchange $exchange = null): Notification
     {
         $notificationType = $this->em->getRepository(NotificationType::class)->findOneBy(['keyword' => $notificationKey]);
 
@@ -67,6 +67,7 @@ class UserNotification
         if ($data) $notification->setData($data);
         if ($publication) $notification->setPublication($publication);
         if ($contentUnit) $notification->setContentUnit($contentUnit);
+        if ($exchange) $notification->setExchange($exchange);
 
         $this->em->persist($notification);
         $this->em->flush();

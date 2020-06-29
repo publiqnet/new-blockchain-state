@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
  * @package App\Entity
  *
  * @ORM\Table(name="transfer")
- * @ORM\Entity
+ * @ORM\Entity(repositoryClass="App\Repository\TransferRepository")
  */
 class Transfer
 {

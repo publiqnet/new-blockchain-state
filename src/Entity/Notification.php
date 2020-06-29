@@ -76,6 +76,13 @@ class Notification
      */
     private $contentUnit;
 
+    /**
+     * @var AccountExchange
+     * @ORM\ManyToOne(targetEntity="App\Entity\AccountExchange", inversedBy="notifications")
+     * @Groups({"notification"})
+     */
+    private $exchange;
+
     public function __construct()
     {
         $this->userNotifications = new ArrayCollection();
@@ -191,5 +198,21 @@ class Notification
     public function setContentUnit(ContentUnit $contentUnit)
     {
         $this->contentUnit = $contentUnit;
+    }
+
+    /**
+     * @return AccountExchange|null
+     */
+    public function getExchange()
+    {
+        return $this->exchange;
+    }
+
+    /**
+     * @param AccountExchange $exchange
+     */
+    public function setExchange(AccountExchange $exchange)
+    {
+        $this->exchange = $exchange;
     }
 }

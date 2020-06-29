@@ -17,6 +17,7 @@ use App\Entity\UserPreference;
 use App\Event\ArticleBoostedByOtherEvent;
 use App\Event\ArticleNewEvent;
 use App\Event\ArticleShareEvent;
+use App\Event\ExchangeCompletedEvent;
 use App\Event\PublicationInvitationAcceptEvent;
 use App\Event\PublicationInvitationCancelEvent;
 use App\Event\PublicationInvitationRejectEvent;
@@ -112,6 +113,7 @@ class GeneralEventSubscriber implements EventSubscriberInterface
             SubscribeUserEvent::NAME => 'onSubscribeUserEvent',
             UnsubscribeUserEvent::NAME => 'onUnsubscribeUserEvent',
             ArticleBoostedByOtherEvent::NAME => 'onArticleBoostedByOtherEvent',
+            ExchangeCompletedEvent::NAME => 'onExchangeCompletedEvent',
         ];
     }
 
@@ -500,6 +502,21 @@ class GeneralEventSubscriber implements EventSubscriberInterface
                     ->setBody($emailBody, 'text/html');
                 $this->swiftMailer->send($messageObj);
             }
+        } catch (\Throwable $e) {
+            // ignore all exceptions for now
+        }
+    }
+
+    /**
+     * @param ExchangeCompletedEvent $event
+     */
+    public function onExchangeCompletedEvent(ExchangeCompletedEvent $event)
+    {
+        try {
+            $exchange = $event->getExchange();
+
+            $notification = $this->userNotificationService->createNotification(NotificationType::TYPES['ataix_exchange_completed']['key'], null, $exchange->getExchangeId(), null, null, $exchange);
+            $this->userNotificationService->notify($exchange->getAccount(), $notification, true);
         } catch (\Throwable $e) {
             // ignore all exceptions for now
         }

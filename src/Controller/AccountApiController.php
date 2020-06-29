@@ -9,6 +9,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\AccountExchange;
 use App\Entity\ContentUnit;
 use App\Entity\Draft;
 use App\Entity\Publication;
@@ -956,6 +957,72 @@ class AccountApiController extends AbstractController
             }
 
             return new JsonResponse($subscriptionStatus);
+        } catch (\Exception $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
+        }
+    }
+
+    /**
+     * @Route("/exchange/add", methods={"POST"})
+     * @SWG\Post(
+     *     summary="Add exchange",
+     *     consumes={"application/json"},
+     *     @SWG\Parameter(
+     *         name="body",
+     *         in="body",
+     *         description="JSON Payload",
+     *         required=true,
+     *         format="application/json",
+     *         @SWG\Schema(
+     *             type="object",
+     *             @SWG\Property(property="exchangeId", type="string"),
+     *         )
+     *     ),
+     *     @SWG\Parameter(name="X-API-TOKEN", in="header", required=true, type="string")
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Response(response=409, description="Error - see description for more information")
+     * @SWG\Tag(name="User")
+     * @param Request $request
+     * @return Response
+     */
+    public function addExchange(Request $request)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        /**
+         * @var Account $account
+         */
+        $account = $this->getUser();
+
+        //  get data from submitted data
+        $contentType = $request->getContentType();
+        if ($contentType == 'application/json' || $contentType == 'json') {
+            $content = $request->getContent();
+            $contentArr = json_decode($content, true);
+
+            $exchangeId = $contentArr['exchangeId'];
+        } else {
+            $exchangeId = $request->request->get('exchangeId');
+        }
+
+        try {
+            $accountExchange = $em->getRepository(AccountExchange::class)->findOneBy(['exchangeId' => $exchangeId]);
+            if ($accountExchange) {
+                return new JsonResponse(['message' => 'exchange_id_exist'], Response::HTTP_CONFLICT);
+            }
+
+            $accountExchange = new AccountExchange();
+            $accountExchange->setAccount($account);
+            $accountExchange->setExchangeId($exchangeId);
+            $em->persist($accountExchange);
+            $em->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         } catch (\Exception $e) {
             return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_CONFLICT);
         }

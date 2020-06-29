@@ -35,13 +35,12 @@ class NotificationTypeFixture extends Fixture implements FixtureGroupInterface
             if (!$notificationTypeObj) {
                 $notificationTypeObj = new NotificationType();
                 $notificationTypeObj->setKeyword($notificationType['key']);
+                $notificationTypeObj->setBodyEn($notificationType['en']);
+                $notificationTypeObj->setBodyEs($notificationType['es']);
+                $notificationTypeObj->setBodyJp($notificationType['jp']);
+
+                $manager->persist($notificationTypeObj);
             }
-
-            $notificationTypeObj->setBodyEn($notificationType['en']);
-            $notificationTypeObj->setBodyEs($notificationType['es']);
-            $notificationTypeObj->setBodyJp($notificationType['jp']);
-
-            $manager->persist($notificationTypeObj);
         }
         $manager->flush();
     }
