@@ -535,7 +535,9 @@ class StateSyncCommand extends Command
 
                             if ($appliedReverted) {
                                 if ($nodeType == NodeType::channel) {
+                                    $exclude = $this->container->getParameter('focccus_channels_addresses') == 'exclude' ? true: false;
                                     $nodeAccount->setChannel(true);
+                                    $nodeAccount->setExcluded($exclude);
                                 } elseif ($nodeType == NodeType::storage) {
                                     $nodeAccount->setStorage(true);
                                 } elseif ($nodeType == NodeType::blockchain) {
@@ -553,6 +555,7 @@ class StateSyncCommand extends Command
                             } else {
                                 if ($nodeType == NodeType::channel) {
                                     $nodeAccount->setChannel(false);
+                                    $nodeAccount->setExcluded(false);
                                 } elseif ($nodeType == NodeType::storage) {
                                     $nodeAccount->setStorage(false);
                                 } elseif ($nodeType == NodeType::blockchain) {
@@ -1109,7 +1112,9 @@ class StateSyncCommand extends Command
 
                     if ($appliedReverted) {
                         if ($nodeType == NodeType::channel) {
+                            $exclude = $this->container->getParameter('focccus_channels_addresses') == 'exclude' ? true: false;
                             $nodeAccount->setChannel(true);
+                            $nodeAccount->setExcluded($exclude);
                         } elseif ($nodeType == NodeType::storage) {
                             $nodeAccount->setStorage(true);
                         } elseif ($nodeType == NodeType::blockchain) {
@@ -1126,6 +1131,7 @@ class StateSyncCommand extends Command
                     } else {
                         if ($nodeType == NodeType::channel) {
                             $nodeAccount->setChannel(false);
+                            $nodeAccount->setExcluded(false);
                         } elseif ($nodeType == NodeType::storage) {
                             $nodeAccount->setStorage(false);
                         } elseif ($nodeType == NodeType::blockchain) {
