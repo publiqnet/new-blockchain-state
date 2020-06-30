@@ -1,0 +1,13 @@
+<td>
+
+    {% if object.disableViews == 1 %}
+
+        <a class="btn btn-sm btn-default view_link" href="{{ admin.generateObjectUrl('enableViews', object) }}">Enable</a>
+
+    {% else %}
+
+        <a class="btn btn-sm btn-default view_link" href="{{ admin.generateObjectUrl('disableViews', object) }}">Disable</a>
+
+    {% endif %}
+
+</td>

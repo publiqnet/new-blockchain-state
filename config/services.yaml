@@ -99,7 +99,7 @@ services:
         public: true
     admin.account:
         class: App\Admin\AccountAdmin
-        arguments: [~, App\Entity\Account, ~]
+        arguments: [~, App\Entity\Account, App\Controller\Admin\AccountController]
         tags:
             - { name: sonata.admin, manager_type: orm, label: Users, group: Stats }
         public: true

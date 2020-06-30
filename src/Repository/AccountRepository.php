@@ -344,7 +344,7 @@ class AccountRepository extends EntityRepository
      * @return mixed
      * @throws \Doctrine\ORM\NonUniqueResultException
      */
-    public function getCoverFirstChannel(File $file)
+    public function getFileFirstChannel(File $file)
     {
         return $this->createQueryBuilder('a')
             ->select("a")

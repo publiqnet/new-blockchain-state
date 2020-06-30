@@ -789,6 +789,7 @@ class ContentApiController extends AbstractController
 
         // update user preference if viewer is not article author
         $isOwner = false;
+        $disableViews = false;
         if ($account) {
             /**
              * @var AccountContentUnit[] $contentUnitAuthors
@@ -797,7 +798,10 @@ class ContentApiController extends AbstractController
             foreach ($contentUnitAuthors as $contentUnitAuthor) {
                 if ($contentUnitAuthor->getAccount() === $account) {
                     $isOwner = true;
-                    break;
+                }
+
+                if ($contentUnitAuthor->getAccount()->isDisableViews()) {
+                    $disableViews = true;
                 }
             }
         }
@@ -810,7 +814,7 @@ class ContentApiController extends AbstractController
         }
 
         //  if viewer is article author return full data without adding view
-        if ($isOwner) {
+        if ($isOwner || $disableViews) {
             //  get files & find storage address
             $files = $contentUnit->getFiles();
             if ($files) {
@@ -824,6 +828,14 @@ class ContentApiController extends AbstractController
                      * @var Account $channel
                      */
                     $channel = $contentUnit->getChannel();
+
+                    /**
+                     * @var Account $firstChannel
+                     */
+                    $firstChannel = $em->getRepository(Account::class)->getFileFirstChannel($file);
+                    if ($firstChannel && $firstChannel->getUrl()) {
+                        $channel = $firstChannel;
+                    }
 
                     $fileUrl = $channel->getUrl() . '/storage?file=' . $file->getUri();
 

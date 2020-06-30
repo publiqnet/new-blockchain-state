@@ -531,7 +531,7 @@ class Custom
             /**
              * @var Account $channel
              */
-            $channel = $this->em->getRepository(Account::class)->getCoverFirstChannel($cover);
+            $channel = $this->em->getRepository(Account::class)->getFileFirstChannel($cover);
             if ($channel && $channel->getUrl()) {
                 $tempImage = $imagePath . '/temp_' . rand(1, 99999) . '.jpg';
                 copy($channel->getUrl() . '/storage?file=' . $cover->getUri(), $tempImage);
