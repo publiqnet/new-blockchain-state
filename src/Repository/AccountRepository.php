@@ -244,7 +244,8 @@ class AccountRepository extends EntityRepository
         if ($exception) {
             return $this->createQueryBuilder('a')
                 ->select("a, SUM(cu.views) as totalViews, COUNT(cu) as totalArticles")
-                ->leftJoin('a.authorContentUnits', 'cu')
+                ->leftJoin('a.authorContentUnits', 'acu')
+                ->leftJoin('acu.contentUnit', 'cu')
                 ->where('a != :exception')
                 ->having('totalArticles > 0')
                 ->setParameter('exception', $exception)
@@ -256,7 +257,8 @@ class AccountRepository extends EntityRepository
         } else {
             return $this->createQueryBuilder('a')
                 ->select("a, SUM(cu.views) as totalViews, COUNT(cu) as totalArticles")
-                ->leftJoin('a.authorContentUnits', 'cu')
+                ->leftJoin('a.authorContentUnits', 'acu')
+                ->leftJoin('acu.contentUnit', 'cu')
                 ->having('totalArticles > 0')
                 ->setMaxResults($count)
                 ->groupBy('a.id')
