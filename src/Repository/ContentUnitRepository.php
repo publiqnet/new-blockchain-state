@@ -557,7 +557,7 @@ class ContentUnitRepository extends EntityRepository
                 select cu3
                 from App:ContentUnit cu3 
                 left join App:ContentUnitTag cut with cut.contentUnit = cu3
-                left join App:AccountContentUnit acu2 with cut.contentUnit = cu3
+                left join App:AccountContentUnit acu2 with acu2.contentUnit = cu3
                 where acu2.account = :user " . $tagQueryString . "
                 group by cu3
             ");
