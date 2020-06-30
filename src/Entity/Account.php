@@ -305,6 +305,11 @@ class Account implements UserInterface
     private $excluded = false;
 
     /**
+     * @ORM\Column(name="disable_views", type="boolean", options={"default": 0})
+     */
+    private $disableViews = false;
+
+    /**
      * @var AccountCustomData
      * @ORM\OneToOne(targetEntity="App\Entity\AccountCustomData", mappedBy="account")
      */
@@ -950,6 +955,22 @@ class Account implements UserInterface
     public function setExcluded($excluded)
     {
         $this->excluded = $excluded;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function isDisableViews()
+    {
+        return $this->disableViews;
+    }
+
+    /**
+     * @param mixed $disableViews
+     */
+    public function setDisableViews($disableViews)
+    {
+        $this->disableViews = $disableViews;
     }
 
     /**

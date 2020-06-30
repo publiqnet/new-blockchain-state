@@ -27,15 +27,13 @@ class AccountAdmin extends AbstractAdmin
         $collection->remove('create');
     }
 
-//    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-//    {
-//        $datagridMapper
-//            ->add('publicKey')
-//            ->add('email')
-//            ->add('channel')
-//            ->add('storage')
-//        ;
-//    }
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    {
+        $datagridMapper
+            ->add('publicKey')
+            ->add('email')
+        ;
+    }
 
     protected function configureListFields(ListMapper $listMapper)
     {
@@ -48,6 +46,7 @@ class AccountAdmin extends AbstractAdmin
             ->add('authorContentUnits', null, ['label' => 'Articles', 'template' => 'admin/account_articles_count.html.twig'])
             ->add('channel')
             ->add('storage')
+            ->add('disableViews')
         ;
     }
 }
