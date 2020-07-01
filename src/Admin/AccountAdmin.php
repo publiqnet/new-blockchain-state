@@ -22,20 +22,23 @@ class AccountAdmin extends AbstractAdmin
 
     protected function configureRoutes(RouteCollection $collection)
     {
-        $collection->remove('delete');
-        $collection->remove('edit');
-        $collection->remove('create');
+        $collection
+            ->remove('delete')
+            ->remove('edit')
+            ->remove('create')
+            ->add('disableViews', $this->getRouterIdParameter() . '/disableViews')
+            ->add('enableViews', $this->getRouterIdParameter() . '/enableViews')
+        ;
     }
 
-//    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-//    {
-//        $datagridMapper
-//            ->add('publicKey')
-//            ->add('email')
-//            ->add('channel')
-//            ->add('storage')
-//        ;
-//    }
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    {
+        $datagridMapper
+            ->add('publicKey')
+            ->add('email')
+            ->add('disableViews')
+        ;
+    }
 
     protected function configureListFields(ListMapper $listMapper)
     {
@@ -48,6 +51,7 @@ class AccountAdmin extends AbstractAdmin
             ->add('authorContentUnits', null, ['label' => 'Articles', 'template' => 'admin/account_articles_count.html.twig'])
             ->add('channel')
             ->add('storage')
+            ->add('disableViews', null, ['header_style' => 'width: 200px', 'label' => 'View calculation', 'template' => 'admin/account_disable_views.html.twig'])
         ;
     }
 }

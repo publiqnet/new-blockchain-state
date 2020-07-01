@@ -2,8 +2,8 @@
 /**
  * Created by PhpStorm.
  * User: Grigor
- * Date: 5/26/20
- * Time: 1:30 PM
+ * Date: 6/30/20
+ * Time: 5:42 PM
  */
 
 namespace App\Controller\Admin;
@@ -13,9 +13,9 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Sonata\AdminBundle\Controller\CRUDController as Controller;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
-class ChannelController extends Controller
+class AccountController extends Controller
 {
-    public function excludeAction()
+    public function enableViewsAction()
     {
         /**
          * @var Account $object
@@ -27,10 +27,10 @@ class ChannelController extends Controller
         }
 
         try {
-            $object->setExcluded(true);
+            $object->setDisableViews(false);
             $this->admin->update($object);
 
-            $this->addFlash('sonata_flash_success', sprintf('%s has excluded', $object->getPublicKey()));
+            $this->addFlash('sonata_flash_success', sprintf('For %s view calculating has been enabled', $object->getPublicKey()));
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             $this->addFlash('sonata_flash_error', $errorMessage);
@@ -39,7 +39,7 @@ class ChannelController extends Controller
         return new RedirectResponse($this->admin->generateUrl('list'));
     }
 
-    public function includeAction()
+    public function disableViewsAction()
     {
         /**
          * @var Account $object
@@ -51,10 +51,10 @@ class ChannelController extends Controller
         }
 
         try {
-            $object->setExcluded(false);
+            $object->setDisableViews(true);
             $this->admin->update($object);
 
-            $this->addFlash('sonata_flash_success', sprintf('%s has included', $object->getPublicKey()));
+            $this->addFlash('sonata_flash_success', sprintf('For %s view calculating has been disabled', $object->getPublicKey()));
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             $this->addFlash('sonata_flash_error', $errorMessage);
