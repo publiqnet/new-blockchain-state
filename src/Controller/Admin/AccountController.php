@@ -30,7 +30,7 @@ class AccountController extends Controller
             $object->setDisableViews(false);
             $this->admin->update($object);
 
-            $this->addFlash('sonata_flash_success', sprintf('%s has excluded', $object->getPublicKey()));
+            $this->addFlash('sonata_flash_success', sprintf('For %s view calculating has been enabled', $object->getPublicKey()));
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             $this->addFlash('sonata_flash_error', $errorMessage);
@@ -54,7 +54,7 @@ class AccountController extends Controller
             $object->setDisableViews(true);
             $this->admin->update($object);
 
-            $this->addFlash('sonata_flash_success', sprintf('%s has excluded', $object->getPublicKey()));
+            $this->addFlash('sonata_flash_success', sprintf('For %s view calculating has been disabled', $object->getPublicKey()));
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             $this->addFlash('sonata_flash_error', $errorMessage);

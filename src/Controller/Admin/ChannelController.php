@@ -54,7 +54,7 @@ class ChannelController extends Controller
             $object->setExcluded(false);
             $this->admin->update($object);
 
-            $this->addFlash('sonata_flash_success', sprintf('%s has excluded', $object->getPublicKey()));
+            $this->addFlash('sonata_flash_success', sprintf('%s has included', $object->getPublicKey()));
         } catch (\Exception $e) {
             $errorMessage = $e->getMessage();
             $this->addFlash('sonata_flash_error', $errorMessage);
