@@ -130,6 +130,18 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
         }
     }
 
+    public function fulltextSearchCount($searchWord)
+    {
+        return $this->createQueryBuilder('p')
+            ->select("count(p) as totalCount")
+            ->leftJoin('p.tags', 't')
+            ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->orWhere('t.name like :tagSearchWord')
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getPopularPublications($count = 5)
     {
         return $this->createQueryBuilder('p')

@@ -421,6 +421,39 @@ class ContentUnitRepository extends EntityRepository
         }
     }
 
+    public function fulltextSearchCount($searchWord)
+    {
+        $subQuery = $this->createQueryBuilder('cu2');
+        $subQuery
+            ->select('max(cu2.id)')
+            ->join('cu2.transaction', 't2')
+            ->where('t2.block is not null')
+            ->andWhere('cu2.content is not null')
+            ->groupBy('cu2.contentId');
+
+        $preferenceQuery = $this->getEntityManager()
+            ->createQuery("
+                select cu3
+                from App:ContentUnit cu3 
+                join App:ContentUnitTag cut with cut.contentUnit = cu3
+                where cut.tag in (select tg from App:Tag tg where tg.name like :tagSearchWord) 
+                group by cu3
+            ");
+
+        $query = $this->createQueryBuilder('cu');
+        return $query->select('count(cu) as totalCount')
+            ->join('cu.authors', 'acu')
+            ->join('cu.transaction', 't')
+            ->where('MATCH_AGAINST(cu.title, cu.textWithData, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->orWhere($query->expr()->in('cu.id', $preferenceQuery->getDQL()))
+            ->andWhere('t.block is not null')
+            ->andWhere('cu.content is not null')
+            ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getArticleHistory(ContentUnit $article, $previous = false)
     {
         $query = $this->createQueryBuilder('cu')

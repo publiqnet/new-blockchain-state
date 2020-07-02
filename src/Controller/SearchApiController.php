@@ -131,7 +131,7 @@ class SearchApiController extends AbstractController
         $account = $this->getUser();
 
         //  SEARCH IN PUBLICATIONS
-        $publicationsAll = $em->getRepository(Publication::class)->fulltextSearch($word, 1000000);
+        $publicationsAll = $em->getRepository(Publication::class)->fulltextSearchCount($word);
         $publications = $em->getRepository(Publication::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $publications) {
             /**
@@ -164,7 +164,7 @@ class SearchApiController extends AbstractController
         }
 
         //  SEARCH IN ARTICLES
-        $articlesAll = $em->getRepository(ContentUnit::class)->fulltextSearch($word, 1000000);
+        $articlesAll = $em->getRepository(ContentUnit::class)->fulltextSearchCount($word);
         $articles = $em->getRepository(ContentUnit::class)->fulltextSearch($word, $defaultCount + 1);
         if ($articles) {
             try {
@@ -183,7 +183,7 @@ class SearchApiController extends AbstractController
         }
 
         //  SEARCH IN AUTHORS
-        $authorsAll = $em->getRepository(Account::class)->fulltextSearch($word, 1000000);
+        $authorsAll = $em->getRepository(Account::class)->fulltextSearchCount($word);
         $authors = $em->getRepository(Account::class)->fulltextSearch($word, $defaultCount + 1);
         if ($account && $authors) {
             /**
@@ -207,7 +207,7 @@ class SearchApiController extends AbstractController
             unset($authors[$defaultCount]);
         }
 
-        return new JsonResponse(['publication' => $publications, 'publicationMore' => $publicationsMore, 'publicationCount' => count($publicationsAll), 'article' => $articles, 'articleMore' => $articlesMore, 'articleCount' => count($articlesAll), 'authors' => $authors, 'authorsMore' => $authorsMore, 'authorsCount' => count($authorsAll)]);
+        return new JsonResponse(['publication' => $publications, 'publicationMore' => $publicationsMore, 'publicationCount' => $publicationsAll[0]['totalCount'], 'article' => $articles, 'articleMore' => $articlesMore, 'articleCount' => $articlesAll[0]['totalCount'], 'authors' => $authors, 'authorsMore' => $authorsMore, 'authorsCount' => $authorsAll[0]['totalCount']]);
     }
 
     /**
