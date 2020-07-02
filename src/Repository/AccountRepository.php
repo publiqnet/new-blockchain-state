@@ -239,6 +239,16 @@ class AccountRepository extends EntityRepository
         }
     }
 
+    public function fulltextSearchCount($searchWord)
+    {
+        return $this->createQueryBuilder('a')
+            ->select("count(a) as totalCount")
+            ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
+            ->setParameter('searchWord', $searchWord)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function getPopularAuthors($count = 5, Account $exception = null, $order = 'totalViews')
     {
         if ($exception) {
