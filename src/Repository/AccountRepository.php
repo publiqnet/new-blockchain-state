@@ -362,6 +362,7 @@ class AccountRepository extends EntityRepository
             ->join('cu.transaction', 't')
             ->where('cu.cover = :file')
             ->setParameters(['file' => $file])
+            ->setMaxResults(1)
             ->orderBy('t.timeSigned', 'ASC')
             ->getQuery()
             ->getOneOrNullResult();
