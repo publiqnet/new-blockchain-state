@@ -245,7 +245,6 @@ class Custom
         $font = $assetsPath . '/OpenSansCondensed-Bold.ttf';
 
         $authorName = null;
-        $authorBio = null;
 
         /**
          * @var AccountContentUnit $accountContentUnit
@@ -258,10 +257,7 @@ class Custom
         $author = $accountContentUnit->getAccount();
         if ($author->getFirstName() || $author->getLastName()) {
             $authorName = trim($author->getFirstName() . ' ' . $author->getLastName());
-            $authorBio = trim($author->getBio());
-
             $authorName = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorName);
-            $authorBio = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorBio);
         } else {
             $authorName = $author->getPublicKey();
         }
@@ -325,11 +321,8 @@ class Custom
         $logoWorkshop = ImageWorkshop::initFromPath($assetsPath . '/logo.png');
         $coverWorkshop->addLayerOnTop($logoWorkshop, 50, 50, 'RT');
 
-        //  create author name & bio layers
+        //  create author name layer
         $authorNameLayer = ImageWorkshop::initTextLayer($authorName, $font, 32);
-        if ($authorBio) {
-            $authorBioLayer = ImageWorkshop::initTextLayer($authorBio, $font, 22);
-        }
 
         //  CREATE SOCIAL IMAGE
         $socialImageName = 'article-' . md5(random_bytes(128)) . '.jpg';
@@ -341,12 +334,8 @@ class Custom
         }
 
         if ($author->getImage() && $authorImageMimeType != 'image/webp') {
-            //  add author name & bio
+            //  add author name
             $coverWorkshop->addLayerOnTop($authorNameLayer, 200, 60, 'LT');
-            if (isset($authorBioLayer)) {
-                $coverWorkshop->addLayerOnTop($authorBioLayer, 200, 120, 'LT');
-            }
-
             $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
 
             //  AUTHOR IMAGE MANIPULATION
@@ -366,14 +355,8 @@ class Custom
             $this->imageCreateCorners($imagePath . '/' . $authorImageName, $imagePath . '/' . $socialImageName, 48, 44);
             unlink($imagePath . '/' . $authorImageName);
         } else {
-            //  add author name & bio
-            if (isset($authorBioLayer)) {
-                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 66, 'LT');
-                $coverWorkshop->addLayerOnTop($authorBioLayer, 48, 120, 'LT');
-            } else {
-                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 88, 'LT');
-            }
-
+            //  add author name
+            $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 88, 'LT');
             $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
         }
 
@@ -415,10 +398,7 @@ class Custom
         $font = $assetsPath . '/OpenSansCondensed-Bold.ttf';
 
         $publicationTitle = trim($publication->getTitle());
-        $authorDescription = trim($publication->getDescription());
-
         $publicationTitle = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $publicationTitle);
-        $authorDescription = preg_replace(array('/\s{2,}/', '/[\t\n]/'), ' ', $authorDescription);
 
         if ($publication->getCover()) {
             $cover = $publication->getCover();
@@ -456,21 +436,14 @@ class Custom
         $logoWorkshop = ImageWorkshop::initFromPath($assetsPath . '/logo.png');
         $coverWorkshop->addLayerOnTop($logoWorkshop, 50, 50, 'RT');
 
-        //  create author name & bio layers
+        //  create author name layer
         $authorNameLayer = ImageWorkshop::initTextLayer($publicationTitle, $font, 32);
-        if ($authorDescription) {
-            $authorBioLayer = ImageWorkshop::initTextLayer($authorDescription, $font, 22);
-        }
 
         //  CREATE SOCIAL IMAGE
         $socialImageName = 'publication-' . md5(random_bytes(128)) . '.jpg';
         if ($publication->getLogo()) {
-            //  add author name & bio
+            //  add author name
             $coverWorkshop->addLayerOnTop($authorNameLayer, 200, 60, 'LT');
-            if (isset($authorBioLayer)) {
-                $coverWorkshop->addLayerOnTop($authorBioLayer, 200, 120, 'LT');
-            }
-
             $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
 
             //  AUTHOR IMAGE MANIPULATION
@@ -490,14 +463,8 @@ class Custom
             $this->imageCreateCorners($imagePath . '/' . $authorImageName, $imagePath . '/' . $socialImageName, 48, 44);
             unlink($imagePath . '/' . $authorImageName);
         } else {
-            //  add author name & bio
-            if (isset($authorBioLayer)) {
-                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 66, 'LT');
-                $coverWorkshop->addLayerOnTop($authorBioLayer, 48, 120, 'LT');
-            } else {
-                $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 88, 'LT');
-            }
-
+            //  add author name
+            $coverWorkshop->addLayerOnTop($authorNameLayer, 48, 88, 'LT');
             $coverWorkshop->save($imagePath, $socialImageName, false, null, 99);
         }
 
