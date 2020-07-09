@@ -53,14 +53,14 @@ class Account implements UserInterface
 
     /**
      * @var string
-     * @ORM\Column(name="first_name", type="string", length=64, nullable=true)
+     * @ORM\Column(name="first_name", type="string", length=96, nullable=true)
      * @Groups({"account", "accountBase"})
      */
     private $firstName;
 
     /**
      * @var string
-     * @ORM\Column(name="last_name", type="string", length=64, nullable=true)
+     * @ORM\Column(name="last_name", type="string", length=96, nullable=true)
      * @Groups({"account", "accountBase"})
      */
     private $lastName;
