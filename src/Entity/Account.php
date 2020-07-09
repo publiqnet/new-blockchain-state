@@ -67,7 +67,7 @@ class Account implements UserInterface
 
     /**
      * @var string
-     * @ORM\Column(name="bio", type="text", nullable=true)
+     * @ORM\Column(name="bio", type="string", length=1024, nullable=true)
      * @Groups({"account", "accountBase"})
      */
     private $bio;
