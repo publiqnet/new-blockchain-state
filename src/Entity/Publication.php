@@ -49,7 +49,7 @@ class Publication
     /**
      * @var string
      *
-     * @ORM\Column(name="description", type="text", nullable=true)
+     * @ORM\Column(name="description", type="string", length=2048, nullable=true)
      * @Groups({ "publication", "publicationSeo"})
      */
     private $description;
