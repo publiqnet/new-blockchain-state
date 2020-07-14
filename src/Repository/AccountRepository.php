@@ -376,6 +376,7 @@ class AccountRepository extends EntityRepository
         $query = $this->createQueryBuilder('a');
         return $query->select("count(a) as totalAuthors")
             ->join('a.authorContentUnits', 'acu')
+            ->groupBy('a')
             ->getQuery()
             ->getResult();
     }
