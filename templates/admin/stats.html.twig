@@ -2,6 +2,14 @@
 
 {% block content %}
     <div class="row">
+        <div class="col-md-12">
+            <h3 style="border-bottom: 2px solid #999999;">Last synced Block</h3>
+            <h4>{{ 'Number: ' ~ lastBlock.number }}</h4>
+            <h4>{{ 'Hash: ' ~ lastBlock.hash }}</h4>
+            <h4>{{ 'Time: ' ~ lastBlock.signTime|date }}</h4>
+        </div>
+    </div>
+    <div class="row">
         <div class="col-md-3">
             <h3 style="border-bottom: 2px solid #999999;">Publications</h3>
             <h4>{{ publicationsSummary.totalPublications }}</h4>
