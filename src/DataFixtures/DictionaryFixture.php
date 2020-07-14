@@ -8,7 +8,7 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\NotificationType;
+use App\Entity\Dictionary;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Bundle\FixturesBundle\FixtureGroupInterface;
 use Doctrine\Common\Persistence\ObjectManager;
@@ -574,19 +574,15 @@ class DictionaryFixture extends Fixture implements FixtureGroupInterface
      */
     public function load(ObjectManager $manager)
     {
-        $notificationTypes = NotificationType::TYPES;
-
-        foreach ($notificationTypes as $notificationType) {
-            $notificationTypeObj = $manager->getRepository(NotificationType::class)->findOneBy(['keyword' => $notificationType['key']]);
-            if (!$notificationTypeObj) {
-                $notificationTypeObj = new NotificationType();
-                $notificationTypeObj->setKeyword($notificationType['key']);
+        foreach (self::items as $key => $item) {
+            $dictionaryObj = $manager->getRepository(Dictionary::class)->findOneBy(['wordKey' => $key]);
+            if (!$dictionaryObj) {
+                $dictionaryObj = new Dictionary();
+                $dictionaryObj->setWordKey($key);
+                $dictionaryObj->setLocale('en');
+                $dictionaryObj->setValue($item['en']);
+                $manager->persist($dictionaryObj);
             }
-
-            $notificationTypeObj->setBodyEn($notificationType['en']);
-            $notificationTypeObj->setBodyJp($notificationType['jp']);
-
-            $manager->persist($notificationTypeObj);
         }
         $manager->flush();
     }

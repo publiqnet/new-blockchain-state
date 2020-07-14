@@ -41,7 +41,7 @@ class StatsController extends CRUDController
         return $this->render('admin/stats.html.twig', [
             'publicationsSummary' => $publicationsSummary[0],
             'articlesSummary' => $articlesSummary[0],
-            'authorSummary' => $authorsSummary[0],
+            'authorsCount' => count($authorsSummary),
             'popularAuthorsViews' => $popularAuthorsViews,
             'popularAuthorsArticles' => $popularAuthorsArticles,
             'popularPublications' => $popularPublications,
