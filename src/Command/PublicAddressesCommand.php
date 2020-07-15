@@ -74,6 +74,8 @@ class PublicAddressesCommand extends Command
             return 0;
         }
 
+        $checkedNodeAddresses = [];
+
         /**
          * @var PublicAddressesInfo $publicAddresses
          */
@@ -117,6 +119,20 @@ class PublicAddressesCommand extends Command
                         $this->em->flush();
                     }
                 }
+
+                $checkedNodeAddresses[] = $nodeAddress;
+            }
+        }
+
+        /**
+         * @var Account[] $nodes
+         */
+        $nodes = $this->em->getRepository(Account::class)->getNodesByPublicKeysWithException($checkedNodeAddresses);
+        if ($nodes) {
+            foreach ($nodes as $nodeEntity) {
+                $nodeEntity->setUrl(null);
+                $this->em->persist($nodeEntity);
+                $this->em->flush();
             }
         }
 

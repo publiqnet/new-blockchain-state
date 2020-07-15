@@ -389,4 +389,24 @@ class AccountRepository extends EntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function getNodesByPublicKeysWithException($exceptions = null)
+    {
+        $query = $this->createQueryBuilder('a');
+        $query
+            ->select("a")
+            ->where('a.storage = 1 or a.channel = 1')
+        ;
+
+        if ($exceptions) {
+            $query
+                ->andWhere('a.publicKey not in (:publicKeys)')
+                ->setParameters(['publicKeys' => $exceptions])
+            ;
+        }
+
+        return $query
+            ->getQuery()
+            ->getResult();
+    }
 }
