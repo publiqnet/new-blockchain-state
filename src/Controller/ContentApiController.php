@@ -935,6 +935,8 @@ class ContentApiController extends AbstractController
         }
 
         //  get article next & previous versions
+        $em->getFilters()->enable('channel_exclude_filter');
+
         $previousVersions = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
         if ($previousVersions) {
             /**
