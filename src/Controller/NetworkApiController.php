@@ -77,12 +77,10 @@ class NetworkApiController extends AbstractController
         $date->setTimezone($timezone);
 
         //  last month
-        $date->modify('-1 month');
-
         /**
          * @var Account[] $rewardsRes
          */
-        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
+        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp() - 30 * 86400);
         if ($rewardsRes) {
             foreach ($rewardsRes as $rewardsResSingle) {
                 $whole = $rewardsResSingle->getTotalWhole();
@@ -100,9 +98,7 @@ class NetworkApiController extends AbstractController
         $rewards['lastMonth'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
 
         //  last week
-        $date->modify('+1 month');
-        $date->modify('-1 week');
-        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
+        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp() - 7 * 86400);
         if ($rewardsRes) {
             foreach ($rewardsRes as $rewardsResSingle) {
                 $whole = $rewardsResSingle->getTotalWhole();
@@ -120,9 +116,7 @@ class NetworkApiController extends AbstractController
         $rewards['lastWeek'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
 
         //  last day
-        $date->modify('+1 week');
-        $date->modify('-1 day');
-        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp());
+        $rewardsRes = $em->getRepository(Account::class)->getTotalRewardSummary($date->getTimestamp() - 86400);
         if ($rewardsRes) {
             foreach ($rewardsRes as $rewardsResSingle) {
                 $whole = $rewardsResSingle->getTotalWhole();
@@ -140,23 +134,14 @@ class NetworkApiController extends AbstractController
         $rewards['lastDay'] = $this->get('serializer')->normalize($rewardsRes, null, ['groups' => ['networkAccountReward']]);
 
         //  MINERS  ///////////////////////////////////////////////////////////////////////////////////////
-        $timezone = new \DateTimeZone('UTC');
-        $date = new \DateTime();
-        $date->setTimezone($timezone);
-
         //  last month
-        $date->modify('-1 month');
-        $miners['lastMonth'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
+        $miners['lastMonth'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp() - 30 * 86400);
 
         //  last week
-        $date->modify('+1 month');
-        $date->modify('-1 week');
-        $miners['lastWeek'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
+        $miners['lastWeek'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp() - 7 * 86400);
 
         //  last day
-        $date->modify('+1 week');
-        $date->modify('-1 day');
-        $miners['lastDay'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp());
+        $miners['lastDay'] = $em->getRepository(Block::class)->getMiners($date->getTimestamp() - 86400);
 
         //  PBQ TOTAL SUPPLY
         $scheduled = [
@@ -247,12 +232,7 @@ class NetworkApiController extends AbstractController
         }
 
         //  CHANNELS    ///////////////////////////////////////////////////////////////////////////////////////
-        $timezone = new \DateTimeZone('UTC');
-        $date = new \DateTime();
-        $date->setTimezone($timezone);
-
         //  last month
-        $date->modify('-1 month');
         $channelsArr = [];
         $channelsRes = $em->getRepository(ChannelSummary::class)->findBy([], ['publishedMonth' => 'DESC']);
         foreach ($channelsRes as $channelsResSingle) {
@@ -260,7 +240,7 @@ class NetworkApiController extends AbstractController
              * @var Account $channelSingle
              */
             $channelSingle = $channelsResSingle->getChannel();
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp());
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp() - 30 * 86400);
             $channelSingle->setContributorsCount($contributors['contributorsCount']);
             $channelSingle->setPublishedContentsCount($channelsResSingle->getPublishedMonth());
             $channelSingle->setDistributedContentsCount($channelsResSingle->getDistributedMonth());
@@ -270,13 +250,11 @@ class NetworkApiController extends AbstractController
         $channels['lastMonth'] = $this->get('serializer')->normalize($channelsArr, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  last week
-        $date->modify('+1 month');
-        $date->modify('-1 week');
         $channelsArr = [];
         $channelsRes = $em->getRepository(ChannelSummary::class)->findBy([], ['publishedWeek' => 'DESC']);
         foreach ($channelsRes as $channelsResSingle) {
             $channelSingle = $channelsResSingle->getChannel();
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp());
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp() - 7 * 86400);
             $channelSingle->setContributorsCount($contributors['contributorsCount']);
             $channelSingle->setPublishedContentsCount($channelsResSingle->getPublishedWeek());
             $channelSingle->setDistributedContentsCount($channelsResSingle->getDistributedWeek());
@@ -286,13 +264,11 @@ class NetworkApiController extends AbstractController
         $channels['lastWeek'] = $this->get('serializer')->normalize($channelsArr, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  last day
-        $date->modify('+1 week');
-        $date->modify('-1 day');
         $channelsArr = [];
         $channelsRes = $em->getRepository(ChannelSummary::class)->findBy([], ['publishedDay' => 'DESC']);
         foreach ($channelsRes as $channelsResSingle) {
             $channelSingle = $channelsResSingle->getChannel();
-            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp());
+            $contributors = $em->getRepository(Account::class)->getChannelContributorsCount($channelSingle, $date->getTimestamp() - 86400);
             $channelSingle->setContributorsCount($contributors['contributorsCount']);
             $channelSingle->setPublishedContentsCount($channelsResSingle->getPublishedDay());
             $channelSingle->setDistributedContentsCount($channelsResSingle->getDistributedDay());
@@ -302,25 +278,16 @@ class NetworkApiController extends AbstractController
         $channels['lastDay'] = $this->get('serializer')->normalize($channelsArr, null, ['groups' => ['networkAccountLight', 'networkAccountChannel', 'site']]);
 
         //  STORAGE ///////////////////////////////////////////////////////////////////////////////////////
-        $timezone = new \DateTimeZone('UTC');
-        $date = new \DateTime();
-        $date->setTimezone($timezone);
-
         //  last month
-        $date->modify('-1 month');
-        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp());
+        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp() - 30 * 86400);
         $storages['lastMonth'] = $this->get('serializer')->normalize($storageRes, null, ['groups' => ['networkAccountLight', 'networkAccountStorage']]);
 
         //  last week
-        $date->modify('+1 month');
-        $date->modify('-1 week');
-        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp());
+        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp() - 7 * 86400);
         $storages['lastWeek'] = $this->get('serializer')->normalize($storageRes, null, ['groups' => ['networkAccountLight', 'networkAccountStorage']]);
 
         //  last day
-        $date->modify('+1 week');
-        $date->modify('-1 day');
-        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp());
+        $storageRes = $em->getRepository(Account::class)->getStorageSummary($date->getTimestamp() - 86400);
         $storages['lastDay'] = $this->get('serializer')->normalize($storageRes, null, ['groups' => ['networkAccountLight', 'networkAccountStorage']]);
 
         //  ACTIVE NODES    ///////////////////////////////////////////////////////////////////////////////////////
