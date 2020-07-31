@@ -832,4 +832,141 @@ class NetworkApiController extends AbstractController
 
         return new JsonResponse($focccusThumbnails);
     }
+
+    /**
+     * @Route("/total-supply", methods={"GET"}, name="network_total_supply")
+     * @SWG\Get(
+     *     summary="Get total supply",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return Response
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function totalSupply()
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        //  PBQ TOTAL SUPPLY
+        $scheduled = [
+            ['whole' => 1000, 'fraction' => 0],
+            ['whole' => 800, 'fraction' => 0],
+            ['whole' => 640, 'fraction' => 0],
+            ['whole' => 512, 'fraction' => 0],
+            ['whole' => 410, 'fraction' => 0],
+            ['whole' => 327, 'fraction' => 0],
+            ['whole' => 262, 'fraction' => 0],
+            ['whole' => 210, 'fraction' => 0],
+            ['whole' => 168, 'fraction' => 0],
+            ['whole' => 134, 'fraction' => 0],
+            ['whole' => 107, 'fraction' => 0],
+            ['whole' => 86, 'fraction' => 0],
+            ['whole' => 68, 'fraction' => 0],
+            ['whole' => 55, 'fraction' => 0],
+            ['whole' => 44, 'fraction' => 0],
+            ['whole' => 35, 'fraction' => 0],
+            ['whole' => 28, 'fraction' => 0],
+            ['whole' => 22, 'fraction' => 0],
+            ['whole' => 18, 'fraction' => 0],
+            ['whole' => 15, 'fraction' => 0],
+            ['whole' => 12, 'fraction' => 0],
+            ['whole' => 9, 'fraction' => 0],
+            ['whole' => 7, 'fraction' => 0],
+            ['whole' => 6, 'fraction' => 0],
+            ['whole' => 5, 'fraction' => 0],
+            ['whole' => 4, 'fraction' => 0],
+            ['whole' => 3, 'fraction' => 0],
+            ['whole' => 2, 'fraction' => 50000000],
+            ['whole' => 2, 'fraction' => 0],
+            ['whole' => 1, 'fraction' => 50000000],
+            ['whole' => 1, 'fraction' => 20000000],
+            ['whole' => 1, 'fraction' => 0],
+            ['whole' => 0, 'fraction' => 80000000],
+            ['whole' => 0, 'fraction' => 70000000],
+            ['whole' => 0, 'fraction' => 60000000],
+            ['whole' => 0, 'fraction' => 50000000],
+            ['whole' => 0, 'fraction' => 40000000],
+            ['whole' => 0, 'fraction' => 30000000],
+            ['whole' => 0, 'fraction' => 20000000],
+            ['whole' => 0, 'fraction' => 17000000],
+            ['whole' => 0, 'fraction' => 14000000],
+            ['whole' => 0, 'fraction' => 12000000],
+            ['whole' => 0, 'fraction' => 10000000],
+            ['whole' => 0, 'fraction' => 8000000],
+            ['whole' => 0, 'fraction' => 7000000],
+            ['whole' => 0, 'fraction' => 6000000],
+            ['whole' => 0, 'fraction' => 6000000],
+            ['whole' => 0, 'fraction' => 5000000],
+            ['whole' => 0, 'fraction' => 5000000],
+            ['whole' => 0, 'fraction' => 5000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 4000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+            ['whole' => 0, 'fraction' => 3000000],
+        ];
+        //  get last block
+        $lastBlock = $em->getRepository(Block::class)->findOneBy([], ['id' => 'DESC']);
+        $lastBlockNumber = $lastBlock->getNumber();
+
+        $issued = ['whole' => 250000000, 'fraction' => 0];
+        $scheduledIndex = 0;
+        while ($lastBlockNumber > 50000) {
+            $issued['whole'] += 50000 * $scheduled[$scheduledIndex]['whole'];
+            $issued['fraction'] += 50000 * $scheduled[$scheduledIndex]['fraction'];
+
+            $lastBlockNumber -= 50000;
+            $scheduledIndex++;
+        }
+        if (isset($scheduled[$scheduledIndex])) {
+            $issued['whole'] += $lastBlockNumber * $scheduled[$scheduledIndex]['whole'];
+            $issued['fraction'] += $lastBlockNumber * $scheduled[$scheduledIndex]['fraction'];
+        }
+
+        if ($issued['fraction'] > 99999999) {
+            while ($issued['fraction'] > 99999999) {
+                $issued['whole']++;
+                $issued['fraction'] -= 100000000;
+            }
+        }
+
+        return new Response($issued['whole'] . '.' .  $issued['fraction']);
+    }
+
+    /**
+     * @Route("/reach-list", methods={"GET"}, name="network_reach_list")
+     * @SWG\Get(
+     *     summary="Get reach list",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Tag(name="Network")
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     * @throws \Doctrine\ORM\NonUniqueResultException
+     */
+    public function reachList()
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+
+        $reachList = $em->getRepository(Account::class)->findBy([], ['whole' => 'desc', 'fraction' => 'desc'], 20);
+        $reachList = $this->get('serializer')->normalize($reachList, null, ['groups' => ['explorerAccountLight']]);
+
+        return new JsonResponse($reachList);
+    }
 }
