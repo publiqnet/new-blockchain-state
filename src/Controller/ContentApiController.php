@@ -790,19 +790,18 @@ class ContentApiController extends AbstractController
         // update user preference if viewer is not article author
         $isOwner = false;
         $disableViews = false;
-        if ($account) {
-            /**
-             * @var AccountContentUnit[] $contentUnitAuthors
-             */
-            $contentUnitAuthors = $contentUnit->getAuthors();
-            foreach ($contentUnitAuthors as $contentUnitAuthor) {
-                if ($contentUnitAuthor->getAccount() === $account) {
-                    $isOwner = true;
-                }
 
-                if ($contentUnitAuthor->getAccount()->isDisableViews()) {
-                    $disableViews = true;
-                }
+        /**
+         * @var AccountContentUnit[] $contentUnitAuthors
+         */
+        $contentUnitAuthors = $contentUnit->getAuthors();
+        foreach ($contentUnitAuthors as $contentUnitAuthor) {
+            if ($contentUnitAuthor->getAccount() === $account) {
+                $isOwner = true;
+            }
+
+            if ($contentUnitAuthor->getAccount()->isDisableViews()) {
+                $disableViews = true;
             }
         }
 
@@ -936,6 +935,8 @@ class ContentApiController extends AbstractController
         }
 
         //  get article next & previous versions
+        $em->getFilters()->enable('channel_exclude_filter');
+
         $previousVersions = $em->getRepository(\App\Entity\ContentUnit::class)->getArticleHistory($contentUnit, true);
         if ($previousVersions) {
             /**
