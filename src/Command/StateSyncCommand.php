@@ -886,11 +886,6 @@ class StateSyncCommand extends Command
                         $authorAccount = $this->checkAccount($authorAddresses[0]);
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, false);
                     } else {
-                        $fileTransaction = $this->em->getRepository(Transaction::class)->findOneBy(['transactionHash' => $transactionHash]);
-                        $fileTransaction->setFile(null);
-                        $this->em->persist($fileTransaction);
-                        $this->em->flush();
-
                         //  update account balances
                         $authorAccount = $this->checkAccount($authorAddresses[0]);
                         $this->updateAccountBalance($authorAccount, $feeWhole, $feeFraction, true);
