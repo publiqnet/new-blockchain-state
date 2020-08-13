@@ -30,20 +30,23 @@ class DictionaryAdmin extends AbstractAdmin
     {
         $formMapper
             ->add('wordKey', null, ['label' => 'Key'])
-            ->add('value');
+            ->add('value')
+        ;
     }
 
-//    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
-//    {
-//        $datagridMapper
-//            ->add('wordKey');
-//    }
+    protected function configureDatagridFilters(DatagridMapper $datagridMapper)
+    {
+        $datagridMapper
+            ->add('wordKey')
+        ;
+    }
 
     protected function configureListFields(ListMapper $listMapper)
     {
         $listMapper
             ->addIdentifier('wordKey', null, ['label' => 'Key', 'header_style' => 'width: 300px'])
-            ->add('value');
+            ->add('value')
+        ;
     }
 
     public function postUpdate($object)
