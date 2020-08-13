@@ -27,6 +27,7 @@ parameters:
     special_api_key: '%env(SPECIAL_API_KEY)%'
     ataix_api_endpoint: '%env(ATAIX_API_ENDPOINT)%'
     new_channel_status: '%env(NEW_CHANNEL_STATUS)%'
+    boosted_articles_from_excluded_channels: '%env(BOOSTED_ARTICLES_FROM_EXCLUDED_CHANNELS)%'
 
 services:
     # default configuration for services in *this* file

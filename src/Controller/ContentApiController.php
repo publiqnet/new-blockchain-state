@@ -612,7 +612,9 @@ class ContentApiController extends AbstractController
         }
 
         //  disable channel exclude filter
-        $em->getFilters()->disable('channel_exclude_filter');
+        if ($this->getParameter('boosted_articles_from_excluded_channels') == 'show') {
+            $em->getFilters()->disable('channel_exclude_filter');
+        }
 
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
@@ -691,6 +693,12 @@ class ContentApiController extends AbstractController
         } else {
             $contentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getAuthorArticles($author, $count + 1, $fromContentUnit);
         }
+
+        //  disable channel exclude filter
+        if ($this->getParameter('boosted_articles_from_excluded_channels') == 'show') {
+            $em->getFilters()->disable('channel_exclude_filter');
+        }
+
         $boostedContentUnits = $em->getRepository(\App\Entity\ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
 
         //  prepare data to return
@@ -761,7 +769,9 @@ class ContentApiController extends AbstractController
         $em = $this->getDoctrine()->getManager();
 
         //  disable channel exclude filter
-        $em->getFilters()->disable('channel_exclude_filter');
+        if ($this->getParameter('boosted_articles_from_excluded_channels') == 'show') {
+            $em->getFilters()->disable('channel_exclude_filter');
+        }
 
         /**
          * @var Account $account
@@ -1049,7 +1059,9 @@ class ContentApiController extends AbstractController
         $em = $this->getDoctrine()->getManager();
 
         //  disable channel exclude filter
-        $em->getFilters()->disable('channel_exclude_filter');
+        if ($this->getParameter('boosted_articles_from_excluded_channels') == 'show') {
+            $em->getFilters()->disable('channel_exclude_filter');
+        }
 
         $contentUnit = $em->getRepository(\App\Entity\ContentUnit::class)->findOneBy(['uri' => $uri]);
         if (!$contentUnit) {

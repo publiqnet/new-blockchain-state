@@ -66,7 +66,7 @@ class Transaction
 
     /**
      * @ORM\JoinColumn(nullable=true, referencedColumnName="id")
-     * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", cascade={"remove"}, fetch="EXTRA_LAZY")
+     * @ORM\OneToOne(targetEntity="App\Entity\File", inversedBy="transaction", fetch="EXTRA_LAZY")
      * @Groups({"transaction"})
      */
     private $file;
