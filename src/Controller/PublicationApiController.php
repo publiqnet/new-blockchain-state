@@ -1952,6 +1952,11 @@ class PublicationApiController extends AbstractController
             }
         }
 
+        //  disable channel exclude filter
+        if ($this->getParameter('boosted_articles_from_excluded_channels') == 'show') {
+            $em->getFilters()->disable('channel_exclude_filter');
+        }
+
         $boostedContentUnits = $em->getRepository(ContentUnit::class)->getBoostedArticles($boostedCount, $contentUnits);
         if ($boostedContentUnits) {
             try {
