@@ -518,7 +518,9 @@ class Account
 
     public function addStorageFile(File $file)
     {
-        $this->storageFiles[] = $file;
+        if (!$this->storageFiles->contains($file)) {
+            $this->storageFiles->add($file);
+        }
     }
 
     public function removeStorageFile(File $file)
