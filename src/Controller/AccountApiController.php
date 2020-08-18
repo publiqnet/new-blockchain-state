@@ -99,26 +99,26 @@ class AccountApiController extends AbstractController
             $em->persist($account);
             $em->flush();
 
-            if (!$account->getOldPublicKey()) {
-                $oldPublicKey = $customService->getOldPublicKey($email);
-                if ($oldPublicKey) {
-                    $account->setOldPublicKey($oldPublicKey);
-                    $em->persist($account);
-                    $em->flush();
-
-                    /**
-                     * @var Draft[] $drafts
-                     */
-                    $drafts = $em->getRepository(Draft::class)->findBy(['publicKey' => $oldPublicKey]);
-                    if ($drafts) {
-                        foreach ($drafts as $draft) {
-                            $draft->setAccount($account);
-                            $em->persist($draft);
-                        }
-                        $em->flush();
-                    }
-                }
-            }
+//            if (!$account->getOldPublicKey()) {
+//                $oldPublicKey = $customService->getOldPublicKey($email);
+//                if ($oldPublicKey) {
+//                    $account->setOldPublicKey($oldPublicKey);
+//                    $em->persist($account);
+//                    $em->flush();
+//
+//                    /**
+//                     * @var Draft[] $drafts
+//                     */
+//                    $drafts = $em->getRepository(Draft::class)->findBy(['publicKey' => $oldPublicKey]);
+//                    if ($drafts) {
+//                        foreach ($drafts as $draft) {
+//                            $draft->setAccount($account);
+//                            $em->persist($draft);
+//                        }
+//                        $em->flush();
+//                    }
+//                }
+//            }
 
             $account = $this->get('serializer')->normalize($account, null, ['groups' => ['account']]);
 
