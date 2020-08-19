@@ -139,6 +139,7 @@ class SpecialApiController extends AbstractController
         $em = $this->getDoctrine()->getManager();
 
         //  get data from submitted data
+        $content = null;
         $contentType = $request->getContentType();
         if ($contentType == 'application/json' || $contentType == 'json') {
             $content = $request->getContent();
@@ -160,14 +161,14 @@ class SpecialApiController extends AbstractController
         }
 
         if (!$slug || !$email || !$publicKey || !$privateKey || !$brainKey) {
-            return new JsonResponse(null, Response::HTTP_CONFLICT);
+            return new JsonResponse(['msg' => 'Missing required data', 'data' => $content], Response::HTTP_CONFLICT);
         }
 
         $accountCustomData = $em->getRepository(AccountCustomData::class)->findOneBy(['slug' => $slug]);
         if (!$accountCustomData) {
             $account = $em->getRepository(Account::class)->findOneBy(['email' => $email]);
             if ($account) {
-                return new JsonResponse(null, Response::HTTP_CONFLICT);
+                return new JsonResponse(['msg' => 'Account already exist'], Response::HTTP_CONFLICT);
             }
 
             $fullName = explode(' ', $fullName);
