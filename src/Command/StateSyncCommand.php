@@ -1602,24 +1602,24 @@ class StateSyncCommand extends Command
                             continue;
                         }
 
-                        $exchangeStatus = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
-                        if ($exchangeStatus !== false) {
-                            $exchangeStatus = json_decode($exchangeStatus, true);
-                            if ($exchangeStatus['status']) {
-                                $exchangeAmount = $exchangeStatus['result']['amountGiven'];
-                                $exchangeStatus = $exchangeStatus['result']['status'];
-
-                                $exchange->setStatus(AccountExchange::STATUSES[$exchangeStatus]);
-                                $exchange->setAmount($exchangeAmount);
-                                $this->em->persist($exchange);
-
-                                // notify account about completed transfer
+                        $exchangeState = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
+                        if ($exchangeState !== false) {
+                            $exchangeState = json_decode($exchangeState, true);
+                            if ($exchangeState['status']) {
+                                $exchangeStatus = $exchangeState['result']['status'];
                                 if (AccountExchange::STATUSES[$exchangeStatus] === AccountExchange::STATUSES['completed']) {
+                                    $exchangeAmount = $exchangeState['result']['amountGiven'];
+                                    $exchange->setAmount($exchangeAmount);
+
+                                    // notify account about completed transfer
                                     $this->eventDispatcher->dispatch(
                                         new ExchangeCompletedEvent($exchange),
                                         ExchangeCompletedEvent::NAME
                                     );
                                 }
+
+                                $exchange->setStatus(AccountExchange::STATUSES[$exchangeStatus]);
+                                $this->em->persist($exchange);
                             }
                         }
                     }
