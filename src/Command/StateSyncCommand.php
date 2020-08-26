@@ -1602,13 +1602,13 @@ class StateSyncCommand extends Command
                             continue;
                         }
 
-                        $exchangeStatus = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
-                        if ($exchangeStatus !== false) {
-                            $exchangeStatus = json_decode($exchangeStatus, true);
-                            if ($exchangeStatus['status']) {
-                                $exchangeStatus = $exchangeStatus['result']['status'];
+                        $exchangeState = file_get_contents($this->container->getParameter('ataix_api_endpoint') . '/exchange?id=' . $exchange->getExchangeId());
+                        if ($exchangeState !== false) {
+                            $exchangeState = json_decode($exchangeState, true);
+                            if ($exchangeState['status']) {
+                                $exchangeStatus = $exchangeState['result']['status'];
                                 if (AccountExchange::STATUSES[$exchangeStatus] === AccountExchange::STATUSES['completed']) {
-                                    $exchangeAmount = $exchangeStatus['result']['amountGiven'];
+                                    $exchangeAmount = $exchangeState['result']['amountGiven'];
                                     $exchange->setAmount($exchangeAmount);
 
                                     // notify account about completed transfer
