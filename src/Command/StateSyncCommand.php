@@ -1606,20 +1606,20 @@ class StateSyncCommand extends Command
                         if ($exchangeStatus !== false) {
                             $exchangeStatus = json_decode($exchangeStatus, true);
                             if ($exchangeStatus['status']) {
-                                $exchangeAmount = $exchangeStatus['result']['amountGiven'];
                                 $exchangeStatus = $exchangeStatus['result']['status'];
-
-                                $exchange->setStatus(AccountExchange::STATUSES[$exchangeStatus]);
-                                $exchange->setAmount($exchangeAmount);
-                                $this->em->persist($exchange);
-
-                                // notify account about completed transfer
                                 if (AccountExchange::STATUSES[$exchangeStatus] === AccountExchange::STATUSES['completed']) {
+                                    $exchangeAmount = $exchangeStatus['result']['amountGiven'];
+                                    $exchange->setAmount($exchangeAmount);
+
+                                    // notify account about completed transfer
                                     $this->eventDispatcher->dispatch(
                                         new ExchangeCompletedEvent($exchange),
                                         ExchangeCompletedEvent::NAME
                                     );
                                 }
+
+                                $exchange->setStatus(AccountExchange::STATUSES[$exchangeStatus]);
+                                $this->em->persist($exchange);
                             }
                         }
                     }
