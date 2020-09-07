@@ -217,6 +217,9 @@ class AccountRepository extends EntityRepository
 
     public function fulltextSearch($searchWord, $count = 5, Account $fromAccount = null)
     {
+        $searchWord = explode(' ', $searchWord);
+        $searchWord = '*' . implode('* *', $searchWord) . '*';
+
         if ($fromAccount) {
             return $this->createQueryBuilder('a')
                 ->select("a")
@@ -241,6 +244,9 @@ class AccountRepository extends EntityRepository
 
     public function fulltextSearchCount($searchWord)
     {
+        $searchWord = explode(' ', $searchWord);
+        $searchWord = '*' . implode('* *', $searchWord) . '*';
+
         return $this->createQueryBuilder('a')
             ->select("count(a) as totalCount")
             ->where('MATCH_AGAINST(a.firstName, a.lastName, a.bio, :searchWord \'IN BOOLEAN MODE\') > 0')
