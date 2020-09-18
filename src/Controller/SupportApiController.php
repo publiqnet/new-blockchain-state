@@ -78,8 +78,8 @@ class SupportApiController extends AbstractController
             );
 
             $messageObj = (new \Swift_Message('Support'))
-                ->setFrom('no-reply@publiq.network', 'SlogMedia')
-                ->setTo('grigor@arattauna.com')
+                ->setFrom($this->getParameter('support_email_from'), $this->getParameter('support_email_from_title'))
+                ->setTo($this->getParameter('support_email_to'))
                 ->setBody($emailBody, 'text/html');
             $mailer->send($messageObj);
 

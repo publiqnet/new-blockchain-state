@@ -28,6 +28,9 @@ parameters:
     ataix_api_endpoint: '%env(ATAIX_API_ENDPOINT)%'
     new_channel_status: '%env(NEW_CHANNEL_STATUS)%'
     boosted_articles_from_excluded_channels: '%env(BOOSTED_ARTICLES_FROM_EXCLUDED_CHANNELS)%'
+    support_email_from_title: '%env(SUPPORT_EMAIL_FROM_TITLE)%'
+    support_email_from: '%env(SUPPORT_EMAIL_FROM)%'
+    support_email_to: '%env(SUPPORT_EMAIL_TO)%'
 
 services:
     # default configuration for services in *this* file
