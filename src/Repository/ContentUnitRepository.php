@@ -370,6 +370,10 @@ class ContentUnitRepository extends EntityRepository
 
     public function fulltextSearch($searchWord, $count = 5, ContentUnit $fromContentUnit = null)
     {
+        $searchWordMain = $searchWord;
+        $searchWord = explode(' ', $searchWord);
+        $searchWord = '*' . implode('* *', $searchWord) . '*';
+
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
@@ -399,7 +403,7 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere('cu.content is not null')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
                 ->andWhere('cu.id < :fromId')
-                ->setParameters(['fromId' => $fromContentUnit->getId(), 'searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setParameters(['fromId' => $fromContentUnit->getId(), 'searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWordMain . '%'])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()
@@ -413,7 +417,7 @@ class ContentUnitRepository extends EntityRepository
                 ->andWhere('t.block is not null')
                 ->andWhere('cu.content is not null')
                 ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-                ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWordMain . '%'])
                 ->setMaxResults($count)
                 ->orderBy('cu.id', 'desc')
                 ->getQuery()
@@ -423,6 +427,10 @@ class ContentUnitRepository extends EntityRepository
 
     public function fulltextSearchCount($searchWord)
     {
+        $searchWordMain = $searchWord;
+        $searchWord = explode(' ', $searchWord);
+        $searchWord = '*' . implode('* *', $searchWord) . '*';
+
         $subQuery = $this->createQueryBuilder('cu2');
         $subQuery
             ->select('max(cu2.id)')
@@ -449,7 +457,7 @@ class ContentUnitRepository extends EntityRepository
             ->andWhere('t.block is not null')
             ->andWhere('cu.content is not null')
             ->andWhere($query->expr()->in('cu.id', $subQuery->getDQL()))
-            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWordMain . '%'])
             ->getQuery()
             ->getResult();
     }

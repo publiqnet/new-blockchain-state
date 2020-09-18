@@ -104,6 +104,10 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
 
     public function fulltextSearch($searchWord, $count = 5, Publication $publication = null)
     {
+        $searchWordMain = $searchWord;
+        $searchWord = explode(' ', $searchWord);
+        $searchWord = '*' . implode('* *', $searchWord) . '*';
+        
         if ($publication) {
             return $this->createQueryBuilder('p')
                 ->select("p")
@@ -111,7 +115,7 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
                 ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
                 ->orWhere('t.name like :tagSearchWord')
                 ->andWhere('p.id < :id')
-                ->setParameters(['id' => $publication->getId(), 'searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setParameters(['id' => $publication->getId(), 'searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWordMain . '%'])
                 ->setMaxResults($count)
                 ->orderBy('p.id', 'DESC')
                 ->getQuery()
@@ -122,7 +126,7 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
                 ->leftJoin('p.tags', 't')
                 ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
                 ->orWhere('t.name like :tagSearchWord')
-                ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+                ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWordMain . '%'])
                 ->setMaxResults($count)
                 ->orderBy('p.id', 'DESC')
                 ->getQuery()
@@ -132,12 +136,16 @@ class PublicationRepository extends \Doctrine\ORM\EntityRepository
 
     public function fulltextSearchCount($searchWord)
     {
+        $searchWordMain = $searchWord;
+        $searchWord = explode(' ', $searchWord);
+        $searchWord = '*' . implode('* *', $searchWord) . '*';
+
         return $this->createQueryBuilder('p')
             ->select("count(p) as totalCount")
             ->leftJoin('p.tags', 't')
             ->where('MATCH_AGAINST(p.title, p.description, :searchWord \'IN BOOLEAN MODE\') > 0')
             ->orWhere('t.name like :tagSearchWord')
-            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWord . '%'])
+            ->setParameters(['searchWord' => $searchWord, 'tagSearchWord' => '%' . $searchWordMain . '%'])
             ->getQuery()
             ->getResult();
     }
