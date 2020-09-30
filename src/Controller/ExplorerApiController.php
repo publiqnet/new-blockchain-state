@@ -618,7 +618,7 @@ class ExplorerApiController extends AbstractController
     }
 
     /**
-     * @Route("/account/{publicKey}/transactions-rewards/{count}/{fromHash}", methods={"GET"}, name="get_account_transactions_rewards")
+     * @Route("/account/{publicKey}/transactions-rewards/{count}/{from}", methods={"GET"}, name="get_account_transactions_rewards")
      * @SWG\Get(
      *     summary="Get user transactions & rewards",
      *     consumes={"application/json"},
