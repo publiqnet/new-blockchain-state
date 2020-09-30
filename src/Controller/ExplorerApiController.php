@@ -655,7 +655,6 @@ class ExplorerApiController extends AbstractController
                 from transaction t 
                 left join transfer tr on (t.transfer_id = tr.id)
                 where 
-                    t.account_id = :account or 
                     tr.from_id = :account or
                     tr.to_id = :account
             )
