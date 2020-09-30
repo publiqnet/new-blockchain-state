@@ -662,7 +662,7 @@ class ExplorerApiController extends AbstractController
             (
                 select NULL as transaction_id, b.sign_time as datetime, r.id as reward_id 
                 from reward r left join block b on (r.block_id = b.id) 
-                where r.account_id = :account
+                where r.to_id = :account
             )
             order by datetime desc, transaction_id desc, reward_id desc 
             limit ' . $from . ', ' . ($count + 1) . '
