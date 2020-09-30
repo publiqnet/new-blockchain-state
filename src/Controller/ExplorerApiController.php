@@ -359,8 +359,9 @@ class ExplorerApiController extends AbstractController
      * @param int $from
      * @param int $count
      * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    public function getBlockTransactions(string $blockHash, int $rtt = null, int $from, int $count)
+    public function getBlockTransactions(string $blockHash, int $rtt = null, int $from = 0, int $count = 10)
     {
         /**
          * @var EntityManager $em
@@ -614,6 +615,84 @@ class ExplorerApiController extends AbstractController
         }
 
         return new JsonResponse(['transactions' => $accountTransactions, 'more' => $moreTransactions]);
+    }
+
+    /**
+     * @Route("/account/{publicKey}/transactions-rewards/{count}/{fromHash}", methods={"GET"}, name="get_account_transactions_rewards")
+     * @SWG\Get(
+     *     summary="Get user transactions & rewards",
+     *     consumes={"application/json"},
+     *     produces={"application/json"},
+     * )
+     * @SWG\Response(response=200, description="Success")
+     * @SWG\Response(response=401, description="Unauthorized user")
+     * @SWG\Tag(name="Explorer")
+     * @param string $publicKey
+     * @param int $count
+     * @param int $from
+     * @return JsonResponse
+     * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
+     */
+    public function getAccountTransactionsRewards(string $publicKey, int $count, int $from)
+    {
+        /**
+         * @var EntityManager $em
+         */
+        $em = $this->getDoctrine()->getManager();
+        $conn = $this->getDoctrine()->getConnection();
+
+        /**
+         * @var Account $account
+         */
+        $account = $em->getRepository(Account::class)->findOneBy(['publicKey' => $publicKey]);
+        if (!$account) {
+            return new JsonResponse('', Response::HTTP_NOT_FOUND);
+        }
+
+        $sql = '
+            (
+                select t.id as transaction_id, t.time_signed as datetime, NULL as reward_id 
+                from transaction t 
+                left join transfer tr on (t.transfer_id = tr.id)
+                where 
+                    t.account_id = :account or 
+                    tr.from_id = :account or
+                    tr.to_id = :account
+            )
+            union all
+            (
+                select NULL as transaction_id, b.sign_time as datetime, r.id as reward_id 
+                from reward r left join block b on (r.block_id = b.id) 
+                where r.account_id = :account
+            )
+            order by datetime desc, transaction_id desc, reward_id desc 
+            limit ' . $from . ', ' . ($count + 1) . '
+        ';
+        $stmt = $conn->prepare($sql);
+        $stmt->execute(array('account' => $account->getId()));
+
+        $result = $stmt->fetchAll();
+
+        $more = false;
+        if (count($result) > $count) {
+            $more = true;
+            unset($result[$count]);
+        }
+
+        $returnRes = [];
+        foreach ($result as $resultSingle) {
+            if ($resultSingle['transaction_id']) {
+                $transaction = $em->getRepository(Transaction::class)->find($resultSingle['transaction_id']);
+                $transaction = $this->get('serializer')->normalize($transaction, null, ['groups' => ['explorerTransaction', 'explorerBlockLight', 'explorerAccountLight', 'explorerFile', 'explorerContentUnit', 'explorerContent', 'explorerTransfer', 'explorerRole', 'explorerStorageUpdate', 'explorerServiceStatistics', 'explorerBoostedContentUnit', 'explorerCancelBoostedContentUnit']]);
+                $returnRes[] = ['type' => 'transaction', 'data' => $transaction];
+            } else {
+                $reward = $em->getRepository(Reward::class)->find($resultSingle['reward_id']);
+                $reward = $this->get('serializer')->normalize($reward, null, ['groups' => ['explorerRewardLight', 'explorerBlockLight']]);
+                $returnRes[] = ['type' => 'reward', 'data' => $reward];
+            }
+        }
+
+        return new JsonResponse(['data' => $returnRes, 'more' => $more]);
     }
 
     /**
