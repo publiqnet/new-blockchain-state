@@ -35,6 +35,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
 use PubliqAPI\Base\UpdateType;
+use PubliqAPI\Model\AuthorizationUpdate;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\CancelSponsorContentUnit;
 use PubliqAPI\Model\ContentUnit;
@@ -743,6 +744,26 @@ class StateSyncCommand extends Command
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
                             }
+                        } elseif ($action->getAction() instanceof AuthorizationUpdate) {
+                            /**
+                             * @var AuthorizationUpdate $authorizationUpdate
+                             */
+                            $authorizationUpdate = $action->getAction();
+                            $owner = $authorizationUpdate->getOwner();
+
+                            $ownerAccount = $this->checkAccount($owner);
+
+                            if ($appliedReverted) {
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, true);
+                            }
                         } else {
                             var_dump($transaction->getAction());
                             exit();
@@ -1303,6 +1324,24 @@ class StateSyncCommand extends Command
 
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                    }
+                } elseif ($action->getAction() instanceof AuthorizationUpdate) {
+                    /**
+                     * @var AuthorizationUpdate $authorizationUpdate
+                     */
+                    $authorizationUpdate = $action->getAction();
+                    $owner = $authorizationUpdate->getOwner();
+
+                    $ownerAccount = $this->checkAccount($owner);
+
+                    if ($appliedReverted) {
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, false);
+                    } else {
+                        //  update account balances
+                        $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, true);
                     }
                 } else {
                     var_dump($action->getAction());
