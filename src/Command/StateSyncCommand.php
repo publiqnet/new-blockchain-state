@@ -744,11 +744,11 @@ class StateSyncCommand extends Command
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
                             }
-                        } elseif ($action->getAction() instanceof AuthorizationUpdate) {
+                        } elseif ($transaction->getAction() instanceof AuthorizationUpdate) {
                             /**
                              * @var AuthorizationUpdate $authorizationUpdate
                              */
-                            $authorizationUpdate = $action->getAction();
+                            $authorizationUpdate = $transaction->getAction();
                             $owner = $authorizationUpdate->getOwner();
 
                             $ownerAccount = $this->checkAccount($owner);
