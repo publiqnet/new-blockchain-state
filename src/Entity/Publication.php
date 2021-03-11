@@ -666,7 +666,7 @@ class Publication
     /**
      * @param int $totalViews
      */
-    public function setTotalViews(int $totalViews)
+    public function setTotalViews(?int $totalViews)
     {
         $this->totalViews = $totalViews;
     }
