@@ -113,6 +113,7 @@ class ContentUnit
     private $content;
 
     /**
+     * @var Transaction
      * @ORM\OneToOne(targetEntity="App\Entity\Transaction", mappedBy="contentUnit")
      */
     private $transaction;
@@ -243,6 +244,12 @@ class ContentUnit
      * @Groups({"contentUnitList", "contentUnitFull", "contentUnitSeo"})
      */
     private $canonicalUrl;
+
+    /**
+     * @var string
+     * @Groups({"contentUnitList", "contentUnitFull"})
+     */
+    private $transactionHash;
 
 
     public function __toString()
@@ -508,17 +515,17 @@ class ContentUnit
     }
 
     /**
-     * @return mixed
+     * @return Transaction
      */
-    public function getTransaction()
+    public function getTransaction(): ?Transaction
     {
         return $this->transaction;
     }
 
     /**
-     * @param mixed $transaction
+     * @param Transaction $transaction
      */
-    public function setTransaction($transaction)
+    public function setTransaction(?Transaction $transaction)
     {
         $this->transaction = $transaction;
     }
@@ -833,5 +840,13 @@ class ContentUnit
     public function setCanonicalUrl($canonicalUrl)
     {
         $this->canonicalUrl = $canonicalUrl;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTransactionHash()
+    {
+        return $this->transactionHash = ($this->transaction ? $this->transaction->getTransactionHash() : null);
     }
 }
