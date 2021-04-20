@@ -363,7 +363,9 @@ class ContentUnit
 
     public function addFile(File $file)
     {
-        $this->files[] = $file;
+        if (!$this->files->contains($file)) {
+            $this->files->add($file);
+        }
     }
 
     /**

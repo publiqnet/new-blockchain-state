@@ -24,6 +24,7 @@ use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
 use PubliqAPI\Base\Rtt;
 use PubliqAPI\Base\UpdateType;
+use PubliqAPI\Model\AuthorizationUpdate;
 use PubliqAPI\Model\BlockLog;
 use PubliqAPI\Model\CancelSponsorContentUnit;
 use PubliqAPI\Model\ContentUnit;
@@ -100,7 +101,6 @@ class StateSyncCommand extends ContainerAwareCommand
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int|null
-     * @throws \Doctrine\Common\Persistence\Mapping\MappingException
      * @throws \Doctrine\ORM\ORMException
      * @throws \Doctrine\ORM\OptimisticLockException
      * @throws \Exception
@@ -266,6 +266,9 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $contentUnitEntity->setText($contentUnitText);
                                 $contentUnitEntity->setTextWithData($contentUnitText);
                                 foreach ($fileUris as $fileUri) {
+                                    /**
+                                     * @var \App\Entity\File $fileEntity
+                                     */
                                     $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                                     $contentUnitEntity->addFile($fileEntity);
                                 }
@@ -433,6 +436,9 @@ class StateSyncCommand extends ContainerAwareCommand
                             $storageAddressAccount = $this->checkAccount($storageAddress);
 
                             if ($appliedReverted) {
+                                /**
+                                 * @var \App\Entity\File $fileEntity
+                                 */
                                 $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                                 if ($status == UpdateType::store) {
                                     $storageAddressAccount->addStorageFile($fileEntity);
@@ -457,6 +463,9 @@ class StateSyncCommand extends ContainerAwareCommand
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
                                 $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, false);
                             } else {
+                                /**
+                                 * @var \App\Entity\File $fileEntity
+                                 */
                                 $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                                 if ($status == UpdateType::store) {
                                     $storageAddressAccount->removeStorageFile($fileEntity);
@@ -621,6 +630,26 @@ class StateSyncCommand extends ContainerAwareCommand
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
                                 $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                            }
+                        } elseif ($transaction->getAction() instanceof AuthorizationUpdate) {
+                            /**
+                             * @var AuthorizationUpdate $authorizationUpdate
+                             */
+                            $authorizationUpdate = $transaction->getAction();
+                            $owner = $authorizationUpdate->getOwner();
+
+                            $ownerAccount = $this->checkAccount($owner);
+
+                            if ($appliedReverted) {
+                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
+                                $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, false);
+                            } else {
+                                //  update account balances
+                                $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, false);
+                                $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, true);
                             }
                         } else {
                             var_dump($transaction->getAction());
@@ -793,6 +822,9 @@ class StateSyncCommand extends ContainerAwareCommand
                         $contentUnitEntity->setText($contentUnitText);
                         $contentUnitEntity->setTextWithData($contentUnitText);
                         foreach ($fileUris as $fileUri) {
+                            /**
+                             * @var \App\Entity\File $fileEntity
+                             */
                             $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                             $contentUnitEntity->addFile($fileEntity);
                         }
@@ -953,6 +985,9 @@ class StateSyncCommand extends ContainerAwareCommand
                     $storageAddressAccount = $this->checkAccount($storageAddress);
 
                     if ($appliedReverted) {
+                        /**
+                         * @var \App\Entity\File $fileEntity
+                         */
                         $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                         if ($status == UpdateType::store) {
                             $storageAddressAccount->addStorageFile($fileEntity);
@@ -976,6 +1011,9 @@ class StateSyncCommand extends ContainerAwareCommand
                         //  update account balances
                         $this->updateAccountBalance($storageAddressAccount, $feeWhole, $feeFraction, false);
                     } else {
+                        /**
+                         * @var \App\Entity\File $fileEntity
+                         */
                         $fileEntity = $this->em->getRepository(\App\Entity\File::class)->findOneBy(['uri' => $fileUri]);
                         if ($status == UpdateType::store) {
                             $storageAddressAccount->removeStorageFile($fileEntity);
@@ -1097,6 +1135,24 @@ class StateSyncCommand extends ContainerAwareCommand
 
                         //  update account balances
                         $this->updateAccountBalance($sponsorAddressAccount, $feeWhole, $feeFraction, true);
+                    }
+                } elseif ($action->getAction() instanceof AuthorizationUpdate) {
+                    /**
+                     * @var AuthorizationUpdate $authorizationUpdate
+                     */
+                    $authorizationUpdate = $action->getAction();
+                    $owner = $authorizationUpdate->getOwner();
+
+                    $ownerAccount = $this->checkAccount($owner);
+
+                    if ($appliedReverted) {
+                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+
+                        //  update account balances
+                        $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, false);
+                    } else {
+                        //  update account balances
+                        $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, true);
                     }
                 } else {
                     var_dump($action->getAction());
