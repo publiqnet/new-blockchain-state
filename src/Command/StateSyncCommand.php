@@ -641,7 +641,7 @@ class StateSyncCommand extends ContainerAwareCommand
                             $ownerAccount = $this->checkAccount($owner);
 
                             if ($appliedReverted) {
-                                $this->addTransaction($block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                                $this->addTransaction('AuthorizationUpdate', $block, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
 
                                 //  update account balances
                                 $this->updateAccountBalance($authorityAccount, $feeWhole, $feeFraction, true);
@@ -1146,7 +1146,7 @@ class StateSyncCommand extends ContainerAwareCommand
                     $ownerAccount = $this->checkAccount($owner);
 
                     if ($appliedReverted) {
-                        $this->addTransaction(null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
+                        $this->addTransaction('AuthorizationUpdate', null, $transactionHash, $transactionSize, $timeSigned, $feeWhole, $feeFraction);
 
                         //  update account balances
                         $this->updateAccountBalance($ownerAccount, $feeWhole, $feeFraction, false);
