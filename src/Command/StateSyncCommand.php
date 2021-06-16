@@ -32,6 +32,8 @@ use App\Service\BlockChain;
 use App\Service\Custom;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Google\Cloud\PubSub\MessageBuilder;
+use Google\Cloud\PubSub\PubSubClient;
 use PubliqAPI\Base\LoggingType;
 use PubliqAPI\Base\NodeType;
 use PubliqAPI\Base\UpdateType;
@@ -374,6 +376,8 @@ class StateSyncCommand extends Command
                                 $canonicalUrl = $this->em->getRepository(CanonicalUrl::class)->findOneBy(['uri' => $uri]);
                                 if ($canonicalUrl) {
                                     $contentUnitEntity->setCanonicalUrl($canonicalUrl->getUrl());
+
+                                    $this->googlePubSub($canonicalUrl->getUrl(), $transactionHash);
                                 }
 
                                 $this->em->persist($contentUnitEntity);
@@ -1673,5 +1677,38 @@ class StateSyncCommand extends Command
         $this->io->success('Notifications sent');
 
         return null;
+    }
+
+    private function googlePubSub($canonicalUrl, $transactionHash) {
+
+        $ch = curl_init('https://www.forbes.com/forbesapi/content/uri.json?uri=' . $canonicalUrl . '&type=ng&shortcodes=true');
+
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
+
+        $response = curl_exec($ch);
+
+        $headerStatusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $body = substr($response, $headerSize);
+
+        curl_close($ch);
+
+        if ($headerStatusCode == 200) {
+            $data = json_decode($body, true);
+            $naturalId = $data['content']['naturalId'];
+
+            $message = [
+                'naturalId' => $naturalId,
+                'publiqUrl' => $_ENV['PUBLIQ_EXPLORER_URL'] . '/t/' . $transactionHash
+            ];
+
+            $pubSub = new PubSubClient();
+            $topic = $pubSub->topic($_ENV['GOOGLE_PUBSUB_TOPIC_ID']);
+            $topic->publish((new MessageBuilder)->setData(json_encode($message))->build());
+        }
     }
 }
