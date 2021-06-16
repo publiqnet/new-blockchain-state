@@ -66,7 +66,7 @@ class PubSubTestCommand extends Command
             return 0;
         }
 
-        $publishRes = $this->googlePubSub('blogAndPostId/blog/post/4265-608203fc64125e0006f705ee', 'H47Jaj419ggDGmuoaBpBUe15M46MEhmxspPJ3BjhBwDy');
+        $publishRes = $this->googlePubSub('http://www.forbes.com/sites/christopherhelman/2020/05/21/how-this-billionaire-backed-crypto-startup-gets-paid-to-not-mine-bitcoin/', 'H47Jaj419ggDGmuoaBpBUe15M46MEhmxspPJ3BjhBwDy');
         var_dump($publishRes);
 
         $this->io->success('Done');
@@ -75,12 +75,14 @@ class PubSubTestCommand extends Command
         return null;
     }
 
-    private function googlePubSub($canonicalUrl, $transactionHash) {
+    private function googlePubSub($canonicalUrl, $transactionHash)
+    {
+        $url = 'https://www.forbes.com/forbesapi/content/uri.json?uri=' . $canonicalUrl . '&type=ng&shortcodes=true';
 
-        $ch = curl_init('https://www.forbes.com/forbesapi/content/uri.json?uri=' . $canonicalUrl . '&type=ng&shortcodes=true');
-
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_HEADER, true);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 0);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type:application/json']);
